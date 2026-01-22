@@ -210,7 +210,7 @@ app.get(UI_ROUTE, (_req, res) => {
       <div class="logo">E</div>
       <div class="brand">
         <div class="brand-name">Extreme Networks MCP Exchange</div>
-        <div class="brand-sub">Proxy Gateway</div>
+        <div class="brand-sub">Meraki MCP Server (RDU)</div>
       </div>
     </div>
 
