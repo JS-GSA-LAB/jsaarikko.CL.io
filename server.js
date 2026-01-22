@@ -67,65 +67,199 @@ app.get(UI_ROUTE, (_req, res) => {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Meraki MCP Proxy (Railway)</title>
+  <title>Extreme Networks EDGE | MCP Proxy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 0; background:#0b0f17; color:#e8eefc; }
-    .wrap { max-width: 860px; margin: 0 auto; padding: 28px 18px; }
-    .card { background:#111a2b; border:1px solid #1e2b46; border-radius:14px; padding:18px; margin: 14px 0; }
-    h1 { font-size: 20px; margin: 0 0 8px; }
-    .muted { color:#9fb0d3; font-size: 14px; }
-    code, pre { background:#0b1220; border:1px solid #1e2b46; border-radius:10px; padding:10px; display:block; overflow:auto; }
-    .row { display:flex; gap:12px; flex-wrap:wrap; }
-    .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#0b1220; border:1px solid #1e2b46; color:#cfe0ff; font-size: 12px; }
-    a { color:#a8c7ff; }
-    button { background:#2b6cff; color:white; border:0; border-radius:10px; padding:10px 12px; cursor:pointer; font-weight:600; }
-    button:active { transform: translateY(1px); }
-    .warn { color:#ffd48a; }
+    :root {
+      --background: #121212;
+      --foreground: rgba(255, 255, 255, 0.87);
+      --foreground-muted: rgba(255, 255, 255, 0.60);
+      --primary: #BB86FC;
+      --secondary: #03DAC5;
+      --destructive: #CF6679;
+      --success: #81C784;
+      --warning: #FFB74D;
+      --border: rgba(255, 255, 255, 0.12);
+      --surface-1dp: rgba(255, 255, 255, 0.05);
+      --surface-2dp: rgba(255, 255, 255, 0.07);
+      --surface-4dp: rgba(255, 255, 255, 0.09);
+      --font-sans: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'Roboto Mono', 'SF Mono', Monaco, monospace;
+      --radius: 0.25rem;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: var(--font-sans);
+      font-weight: 400;
+      margin: 0;
+      background: var(--background);
+      color: var(--foreground);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 32px 20px; }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      color: rgba(0, 0, 0, 0.87);
+    }
+    .brand { font-size: 14px; }
+    .brand-name { font-weight: 500; color: var(--foreground); }
+    .brand-sub { color: var(--foreground-muted); font-size: 12px; }
+    .card {
+      background: linear-gradient(var(--surface-2dp), var(--surface-2dp)), var(--background);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 16px 0;
+      transition: background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+                  border-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .card:hover {
+      background: linear-gradient(var(--surface-4dp), var(--surface-4dp)), var(--background);
+    }
+    h1 { font-size: 1.25rem; font-weight: 500; margin: 0 0 8px; color: var(--foreground); }
+    h2 { font-size: 1rem; font-weight: 500; margin: 0 0 8px; color: var(--foreground); }
+    .muted { color: var(--foreground-muted); font-size: 0.875rem; }
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      background: linear-gradient(var(--surface-1dp), var(--surface-1dp)), var(--background);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    pre {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      background: linear-gradient(var(--surface-1dp), var(--surface-1dp)), var(--background);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      margin: 12px 0;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: linear-gradient(var(--surface-1dp), var(--surface-1dp)), var(--background);
+      border: 1px solid var(--border);
+      color: var(--foreground-muted);
+      font-size: 0.75rem;
+      font-weight: 400;
+    }
+    .pill b { color: var(--secondary); font-weight: 500; }
+    a { color: var(--primary); text-decoration: none; transition: color 200ms cubic-bezier(0.4, 0, 0.2, 1); }
+    a:hover { color: var(--secondary); }
+    .warn { color: var(--warning); }
+    .success { color: var(--success); }
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      margin-right: 8px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .section-title h2 { margin: 0; }
+    .icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="card">
-      <h1>Meraki MCP Proxy (Railway)</h1>
-      <div class="muted">
-        This Railway service provides a stable HTTPS URL + simple UI in front of your existing Meraki MCP server.
-      </div>
-      <div style="margin-top:10px" class="row">
-        <span class="pill">Upstream: <b>\${UPSTREAM}</b></span>
-        <span class="pill">Proxy route: <b>\${PROXY_ROUTE}</b></span>
+    <div class="header">
+      <div class="logo">E</div>
+      <div class="brand">
+        <div class="brand-name">Extreme Networks EDGE</div>
+        <div class="brand-sub">MCP Proxy Gateway</div>
       </div>
     </div>
 
     <div class="card">
-      <h2 style="margin:0 0 8px; font-size:16px;">Use from Claude / MCP clients</h2>
-      <div class="muted">Point your client at:</div>
+      <h1><span class="status-dot"></span>Service Active</h1>
+      <div class="muted">
+        This gateway provides a stable HTTPS endpoint for your Meraki MCP server with built-in health monitoring.
+      </div>
+      <div class="row">
+        <span class="pill">Upstream: <b>\${UPSTREAM}</b></span>
+        <span class="pill">Route: <b>\${PROXY_ROUTE}</b></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">
+        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+        <h2>Client Connection</h2>
+      </div>
+      <div class="muted">Configure your Claude or MCP client to connect to:</div>
       <pre id="clientUrl"></pre>
       <script>
         document.getElementById("clientUrl").textContent = location.origin + "\${PROXY_ROUTE}";
       </script>
-
       <div class="muted" style="margin-top:12px">
-        If your upstream expects an <code>Authorization</code> header (e.g. API token), send it from your MCP client.
-        \${FORWARD_AUTH_HEADER ? "" : "<div class='warn'>Server is configured NOT to forward Authorization headers.</div>"}
+        \${FORWARD_AUTH_HEADER ? "Authorization headers are forwarded to upstream." : "<span class='warn'>Authorization headers are NOT forwarded.</span>"}
       </div>
     </div>
 
     <div class="card">
-      <h2 style="margin:0 0 8px; font-size:16px;">Railway environment variables</h2>
-      <div class="muted">Set these in Railway → Service → Variables:</div>
+      <div class="section-title">
+        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+        <h2>Configuration</h2>
+      </div>
+      <div class="muted">Railway environment variables:</div>
       <pre>UPSTREAM_MCP_URL=\${UPSTREAM || "http://YOUR_MERAKI_MCP_SERVER:PORT"}
 PROXY_ROUTE=/mcp
 FORWARD_AUTH_HEADER=true</pre>
-      <div class="muted">
-        Optional Basic Auth:
-      </div>
+      <div class="muted" style="margin-top:12px">Optional authentication:</div>
       <pre>BASIC_AUTH_USER=youruser
 BASIC_AUTH_PASS=yourpass</pre>
     </div>
 
     <div class="card">
-      <h2 style="margin:0 0 8px; font-size:16px;">Debug</h2>
-      <div class="muted">Check health:</div>
+      <div class="section-title">
+        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+        <h2>Health Check</h2>
+      </div>
+      <div class="muted">Monitor service status:</div>
       <pre><a href="/healthz">/healthz</a></pre>
     </div>
   </div>
