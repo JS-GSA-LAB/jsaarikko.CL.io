@@ -6,8 +6,6 @@ import { createProxyMiddleware } from "http-proxy-middleware";
  * ENV VARS (set these in Railway):
  * - UPSTREAM_MCP_URL        (required) e.g. "http://134.141.116.46:8000"  (no trailing slash)
  * - MERAKI_API_KEY          (required) Meraki Dashboard API key
- * - PEPLINK_CLIENT_ID       (optional) Peplink InControl OAuth client ID
- * - PEPLINK_CLIENT_SECRET   (optional) Peplink InControl OAuth client secret
  * - PROXY_ROUTE             (optional) default "/mcp"
  * - UI_ROUTE                (optional) default "/"
  * - BASIC_AUTH_USER         (optional) if set, enables Basic Auth for UI + proxy
@@ -36,62 +34,6 @@ async function merakiFetch(endpoint) {
   });
   if (!res.ok) {
     throw new Error(`Meraki API error: ${res.status} ${res.statusText}`);
-  }
-  return res.json();
-}
-
-// Peplink InControl API
-const PEPLINK_API_BASE = "https://api.ic.peplink.com/rest";
-const PEPLINK_TOKEN_URL = "https://api.ic.peplink.com/api/oauth2/token";
-const PEPLINK_CLIENT_ID = process.env.PEPLINK_CLIENT_ID || "";
-const PEPLINK_CLIENT_SECRET = process.env.PEPLINK_CLIENT_SECRET || "";
-
-let peplinkToken = null;
-let peplinkTokenExpiry = 0;
-
-// Get Peplink OAuth token
-async function getPeplinkToken() {
-  if (peplinkToken && Date.now() < peplinkTokenExpiry - 60000) {
-    return peplinkToken;
-  }
-
-  if (!PEPLINK_CLIENT_ID || !PEPLINK_CLIENT_SECRET) {
-    throw new Error("PEPLINK_CLIENT_ID and PEPLINK_CLIENT_SECRET not configured");
-  }
-
-  const res = await fetch(PEPLINK_TOKEN_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: PEPLINK_CLIENT_ID,
-      client_secret: PEPLINK_CLIENT_SECRET,
-    }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Peplink OAuth error: ${res.status} ${res.statusText}`);
-  }
-
-  const data = await res.json();
-  peplinkToken = data.access_token;
-  peplinkTokenExpiry = Date.now() + (data.expires_in * 1000);
-  return peplinkToken;
-}
-
-// Peplink API helper
-async function peplinkFetch(endpoint) {
-  const token = await getPeplinkToken();
-  const res = await fetch(`${PEPLINK_API_BASE}${endpoint}`, {
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-  if (!res.ok) {
-    throw new Error(`Peplink API error: ${res.status} ${res.statusText}`);
   }
   return res.json();
 }
@@ -178,86 +120,6 @@ app.get("/api/organizations/:orgId/devices", async (req, res) => {
   }
 });
 
-// Peplink API: List Organizations
-app.get("/api/peplink/organizations", async (_req, res) => {
-  try {
-    const data = await peplinkFetch("/o");
-    res.json(data.data || data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Peplink API: Get Organization details
-app.get("/api/peplink/organizations/:orgId", async (req, res) => {
-  try {
-    const data = await peplinkFetch(`/o/${req.params.orgId}`);
-    res.json(data.data || data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Peplink API: List Groups (locations) for an Organization
-app.get("/api/peplink/organizations/:orgId/groups", async (req, res) => {
-  try {
-    const data = await peplinkFetch(`/o/${req.params.orgId}/g`);
-    res.json(data.data || data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Peplink API: List Devices for an Organization
-app.get("/api/peplink/organizations/:orgId/devices", async (req, res) => {
-  try {
-    const data = await peplinkFetch(`/o/${req.params.orgId}/d`);
-    res.json(data.data || data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Peplink API: Get Device details
-app.get("/api/peplink/devices/:deviceId", async (req, res) => {
-  try {
-    const data = await peplinkFetch(`/d/${req.params.deviceId}`);
-    res.json(data.data || data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Peplink API: Get all locations (groups) with devices
-app.get("/api/peplink/locations", async (_req, res) => {
-  try {
-    // First get all organizations
-    const orgsData = await peplinkFetch("/o");
-    const orgs = orgsData.data || orgsData;
-
-    // Then get groups for each org
-    const locations = [];
-    for (const org of orgs) {
-      try {
-        const groupsData = await peplinkFetch(`/o/${org.id}/g`);
-        const groups = groupsData.data || groupsData;
-        for (const group of groups) {
-          locations.push({
-            ...group,
-            orgId: org.id,
-            orgName: org.name,
-          });
-        }
-      } catch (e) {
-        // Skip orgs we can't access
-      }
-    }
-    res.json(locations);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // UI
 app.get(UI_ROUTE, (_req, res) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -270,8 +132,6 @@ app.get(UI_ROUTE, (_req, res) => {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <style>
     :root {
       --background: #121212;
@@ -475,26 +335,7 @@ BASIC_AUTH_PASS=yourpass</pre>
       </div>
     </div>
 
-    <div class="card">
-      <div class="section-title">
-        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/></svg></span>
-        <h2>Peplink Locations</h2>
-      </div>
-      <div class="muted">Connected Peplink InControl locations:</div>
-      <div id="peplink-container" style="margin-top:12px">
-        <div class="muted">Loading...</div>
-      </div>
     </div>
-
-    <div class="card">
-      <div class="section-title">
-        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg></span>
-        <h2>Location Map</h2>
-      </div>
-      <div class="muted">Peplink device locations worldwide:</div>
-      <div id="map" style="height:400px;margin-top:12px;border-radius:8px;border:1px solid var(--border);"></div>
-    </div>
-  </div>
 
   <script>
     async function loadOrganizations() {
@@ -523,87 +364,7 @@ BASIC_AUTH_PASS=yourpass</pre>
       }
     }
 
-    // Initialize map
-    const map = L.map('map', {
-      center: [30, 0],
-      zoom: 2,
-      scrollWheelZoom: true,
-    });
-
-    // Dark theme map tiles
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: 'abcd',
-      maxZoom: 19
-    }).addTo(map);
-
-    // Custom marker icon
-    const createMarkerIcon = (online, offline) => {
-      const color = online > 0 ? '#81C784' : (offline > 0 ? '#CF6679' : '#FFB74D');
-      return L.divIcon({
-        className: 'custom-marker',
-        html: '<div style="background:' + color + ';width:24px;height:24px;border-radius:50%;border:3px solid rgba(255,255,255,0.8);box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;color:#000;">' + (online + offline) + '</div>',
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
-      });
-    };
-
-    async function loadPeplinkLocations() {
-      const container = document.getElementById('peplink-container');
-      try {
-        const res = await fetch('/api/peplink/locations');
-        if (!res.ok) throw new Error('Failed to fetch');
-        const locations = await res.json();
-        if (locations.error) {
-          container.innerHTML = '<div class="warn">' + locations.error + '</div>';
-          return;
-        }
-        if (!locations.length) {
-          container.innerHTML = '<div class="muted">No locations found</div>';
-          return;
-        }
-        container.innerHTML = locations.map(loc =>
-          '<div style="padding:10px;margin:6px 0;background:linear-gradient(rgba(255,255,255,0.05),rgba(255,255,255,0.05)),#121212;border:1px solid rgba(255,255,255,0.12);border-radius:8px">' +
-          '<div style="font-weight:500;color:rgba(255,255,255,0.87)">' + (loc.name || 'Unnamed') + '</div>' +
-          '<div style="font-size:12px;color:rgba(255,255,255,0.6)">Org: ' + (loc.orgName || loc.orgId) + '</div>' +
-          '<div style="font-size:12px;color:rgba(255,255,255,0.6);font-family:var(--font-mono)">ID: ' + loc.id + '</div>' +
-          '</div>'
-        ).join('');
-
-        // Add markers to map
-        const bounds = [];
-        locations.forEach(loc => {
-          if (loc.latitude && loc.longitude) {
-            const marker = L.marker([loc.latitude, loc.longitude], {
-              icon: createMarkerIcon(loc.online_device_count || 0, loc.offline_device_count || 0)
-            }).addTo(map);
-
-            marker.bindPopup(
-              '<div style="font-family:Roboto,sans-serif;min-width:180px">' +
-              '<div style="font-weight:500;font-size:14px;margin-bottom:4px">' + (loc.name || 'Unnamed') + '</div>' +
-              '<div style="font-size:12px;color:#666;margin-bottom:8px">' + (loc.address || '') + '</div>' +
-              '<div style="display:flex;gap:12px;font-size:12px">' +
-              '<span style="color:#4CAF50">Online: ' + (loc.online_device_count || 0) + '</span>' +
-              '<span style="color:#f44336">Offline: ' + (loc.offline_device_count || 0) + '</span>' +
-              '</div>' +
-              '</div>'
-            );
-
-            bounds.push([loc.latitude, loc.longitude]);
-          }
-        });
-
-        // Fit map to markers
-        if (bounds.length > 0) {
-          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 6 });
-        }
-      } catch (err) {
-        container.innerHTML = '<div class="warn">Error loading locations</div>';
-      }
-    }
-
     loadOrganizations();
-    loadPeplinkLocations();
   </script>
 </body>
 </html>`);
