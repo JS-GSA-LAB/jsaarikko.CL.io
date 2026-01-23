@@ -22,20 +22,25 @@ const MERAKI_API_BASE = "https://api.meraki.com/api/v1";
 const MERAKI_API_KEY = process.env.MERAKI_API_KEY || "";
 
 // Meraki API helper
-async function merakiFetch(endpoint) {
+async function merakiFetch(endpoint, options = {}) {
   if (!MERAKI_API_KEY) {
     throw new Error("MERAKI_API_KEY not configured");
   }
   const res = await fetch(`${MERAKI_API_BASE}${endpoint}`, {
+    method: options.method || "GET",
     headers: {
       "X-Cisco-Meraki-API-Key": MERAKI_API_KEY,
       "Content-Type": "application/json",
     },
+    body: options.body ? JSON.stringify(options.body) : undefined,
   });
   if (!res.ok) {
-    throw new Error(`Meraki API error: ${res.status} ${res.statusText}`);
+    const text = await res.text();
+    throw new Error(`Meraki API error: ${res.status} ${res.statusText} - ${text}`);
   }
-  return res.json();
+  // Handle empty responses (like DELETE)
+  const text = await res.text();
+  return text ? JSON.parse(text) : { success: true };
 }
 
 const app = express();
@@ -95,6 +100,16 @@ app.get("/api/organizations/:orgId", async (req, res) => {
   try {
     const org = await merakiFetch(`/organizations/${req.params.orgId}`);
     res.json(org);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Meraki API: Delete Organization
+app.delete("/api/organizations/:orgId", async (req, res) => {
+  try {
+    const result = await merakiFetch(`/organizations/${req.params.orgId}`, { method: "DELETE" });
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
