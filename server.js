@@ -6,6 +6,7 @@ import { createProxyMiddleware } from "http-proxy-middleware";
  * ENV VARS (set these in Railway):
  * - UPSTREAM_MCP_URL        (required) e.g. "http://134.141.116.46:8000"  (no trailing slash)
  * - MERAKI_API_KEY          (required) Meraki Dashboard API key
+ * - XIQ_API_TOKEN           (optional) ExtremeCloud IQ API bearer token
  * - PROXY_ROUTE             (optional) default "/mcp"
  * - UI_ROUTE                (optional) default "/"
  * - BASIC_AUTH_USER         (optional) if set, enables Basic Auth for UI + proxy
@@ -39,6 +40,31 @@ async function merakiFetch(endpoint, options = {}) {
     throw new Error(`Meraki API error: ${res.status} ${res.statusText} - ${text}`);
   }
   // Handle empty responses (like DELETE)
+  const text = await res.text();
+  return text ? JSON.parse(text) : { success: true };
+}
+
+// ExtremeCloud IQ API
+const XIQ_API_BASE = "https://api.us.extremecloudiq.com";
+const XIQ_API_TOKEN = process.env.XIQ_API_TOKEN || "";
+
+// XIQ API helper
+async function xiqFetch(endpoint, options = {}) {
+  if (!XIQ_API_TOKEN) {
+    throw new Error("XIQ_API_TOKEN not configured");
+  }
+  const res = await fetch(`${XIQ_API_BASE}${endpoint}`, {
+    method: options.method || "GET",
+    headers: {
+      "Authorization": `Bearer ${XIQ_API_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`XIQ API error: ${res.status} ${res.statusText} - ${text}`);
+  }
   const text = await res.text();
   return text ? JSON.parse(text) : { success: true };
 }
@@ -130,6 +156,84 @@ app.get("/api/organizations/:orgId/devices", async (req, res) => {
   try {
     const devices = await merakiFetch(`/organizations/${req.params.orgId}/devices`);
     res.json(devices);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// XIQ API: List Devices
+app.get("/api/xiq/devices", async (req, res) => {
+  try {
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 100;
+    const data = await xiqFetch(`/devices?page=${page}&limit=${limit}`);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// XIQ API: Get Device details
+app.get("/api/xiq/devices/:deviceId", async (req, res) => {
+  try {
+    const data = await xiqFetch(`/devices/${req.params.deviceId}`);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// XIQ API: List Sites (Locations)
+app.get("/api/xiq/sites", async (req, res) => {
+  try {
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 100;
+    const data = await xiqFetch(`/locations/site?page=${page}&limit=${limit}`);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// XIQ API: Get Site details
+app.get("/api/xiq/sites/:siteId", async (req, res) => {
+  try {
+    const data = await xiqFetch(`/locations/site/${req.params.siteId}`);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// XIQ API: List Clients
+app.get("/api/xiq/clients", async (req, res) => {
+  try {
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 100;
+    const data = await xiqFetch(`/clients/active?page=${page}&limit=${limit}`);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// XIQ API: List Alerts
+app.get("/api/xiq/alerts", async (req, res) => {
+  try {
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 100;
+    const data = await xiqFetch(`/alerts?page=${page}&limit=${limit}`);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// XIQ API: Get Network Summary
+app.get("/api/xiq/network/summary", async (req, res) => {
+  try {
+    const data = await xiqFetch(`/network/summary`);
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -350,6 +454,50 @@ BASIC_AUTH_PASS=yourpass</pre>
       </div>
     </div>
 
+    <div class="card">
+      <div class="section-title">
+        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
+        <h2>ExtremeCloud IQ Devices</h2>
+      </div>
+      <div class="muted">Connected XIQ devices:</div>
+      <div id="xiq-devices-container" style="margin-top:12px">
+        <div class="muted">Loading...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">
+        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/></svg></span>
+        <h2>ExtremeCloud IQ Sites</h2>
+      </div>
+      <div class="muted">XIQ site locations:</div>
+      <div id="xiq-sites-container" style="margin-top:12px">
+        <div class="muted">Loading...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">
+        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+        <h2>ExtremeCloud IQ Clients</h2>
+      </div>
+      <div class="muted">Active clients:</div>
+      <div id="xiq-clients-container" style="margin-top:12px">
+        <div class="muted">Loading...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">
+        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        <h2>ExtremeCloud IQ Alerts</h2>
+      </div>
+      <div class="muted">Active alerts:</div>
+      <div id="xiq-alerts-container" style="margin-top:12px">
+        <div class="muted">Loading...</div>
+      </div>
+    </div>
+
     </div>
 
   <script>
@@ -379,7 +527,121 @@ BASIC_AUTH_PASS=yourpass</pre>
       }
     }
 
+    async function loadXiqDevices() {
+      const container = document.getElementById('xiq-devices-container');
+      try {
+        const res = await fetch('/api/xiq/devices?limit=10');
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        if (data.error) {
+          container.innerHTML = '<div class="warn">' + data.error + '</div>';
+          return;
+        }
+        const devices = data.data || data;
+        if (!devices || devices.length === 0) {
+          container.innerHTML = '<div class="muted">No devices found</div>';
+          return;
+        }
+        container.innerHTML = devices.slice(0, 10).map(device =>
+          '<div style="padding:10px;margin:6px 0;background:linear-gradient(rgba(255,255,255,0.05),rgba(255,255,255,0.05)),#121212;border:1px solid rgba(255,255,255,0.12);border-radius:8px">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center">' +
+          '<div style="font-weight:500;color:rgba(255,255,255,0.87)">' + (device.hostname || device.name || 'Unknown') + '</div>' +
+          '<span style="font-size:11px;padding:2px 8px;border-radius:999px;background:' + (device.connected ? '#81C784' : '#CF6679') + ';color:#000">' + (device.connected ? 'Online' : 'Offline') + '</span>' +
+          '</div>' +
+          '<div style="font-size:12px;color:rgba(255,255,255,0.6)">' + (device.product_type || device.device_function || '') + '</div>' +
+          '<div style="font-size:12px;color:rgba(255,255,255,0.6);font-family:var(--font-mono)">' + (device.mac_address || device.serial_number || '') + '</div>' +
+          '</div>'
+        ).join('') + (devices.length > 10 ? '<div class="muted" style="margin-top:8px">...and ' + (devices.length - 10) + ' more</div>' : '');
+      } catch (err) {
+        container.innerHTML = '<div class="warn">Error loading devices</div>';
+      }
+    }
+
+    async function loadXiqSites() {
+      const container = document.getElementById('xiq-sites-container');
+      try {
+        const res = await fetch('/api/xiq/sites?limit=10');
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        if (data.error) {
+          container.innerHTML = '<div class="warn">' + data.error + '</div>';
+          return;
+        }
+        const sites = data.data || data;
+        if (!sites || sites.length === 0) {
+          container.innerHTML = '<div class="muted">No sites found</div>';
+          return;
+        }
+        container.innerHTML = sites.slice(0, 10).map(site =>
+          '<div style="padding:10px;margin:6px 0;background:linear-gradient(rgba(255,255,255,0.05),rgba(255,255,255,0.05)),#121212;border:1px solid rgba(255,255,255,0.12);border-radius:8px">' +
+          '<div style="font-weight:500;color:rgba(255,255,255,0.87)">' + (site.name || 'Unnamed') + '</div>' +
+          '<div style="font-size:12px;color:rgba(255,255,255,0.6)">' + (site.address || '') + '</div>' +
+          '<div style="font-size:12px;color:rgba(255,255,255,0.6);font-family:var(--font-mono)">ID: ' + site.id + '</div>' +
+          '</div>'
+        ).join('');
+      } catch (err) {
+        container.innerHTML = '<div class="warn">Error loading sites</div>';
+      }
+    }
+
+    async function loadXiqClients() {
+      const container = document.getElementById('xiq-clients-container');
+      try {
+        const res = await fetch('/api/xiq/clients?limit=10');
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        if (data.error) {
+          container.innerHTML = '<div class="warn">' + data.error + '</div>';
+          return;
+        }
+        const clients = data.data || data;
+        if (!clients || clients.length === 0) {
+          container.innerHTML = '<div class="muted">No active clients</div>';
+          return;
+        }
+        container.innerHTML = '<div style="font-size:14px;color:var(--secondary);font-weight:500">' + clients.length + ' active clients</div>' +
+          clients.slice(0, 5).map(client =>
+            '<div style="padding:8px;margin:4px 0;background:linear-gradient(rgba(255,255,255,0.03),rgba(255,255,255,0.03)),#121212;border-radius:6px">' +
+            '<span style="color:rgba(255,255,255,0.87)">' + (client.hostname || client.mac_address || 'Unknown') + '</span>' +
+            '<span style="font-size:11px;color:rgba(255,255,255,0.5);margin-left:8px">' + (client.ip_address || '') + '</span>' +
+            '</div>'
+          ).join('');
+      } catch (err) {
+        container.innerHTML = '<div class="warn">Error loading clients</div>';
+      }
+    }
+
+    async function loadXiqAlerts() {
+      const container = document.getElementById('xiq-alerts-container');
+      try {
+        const res = await fetch('/api/xiq/alerts?limit=10');
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        if (data.error) {
+          container.innerHTML = '<div class="warn">' + data.error + '</div>';
+          return;
+        }
+        const alerts = data.data || data;
+        if (!alerts || alerts.length === 0) {
+          container.innerHTML = '<div class="success">No active alerts</div>';
+          return;
+        }
+        container.innerHTML = alerts.slice(0, 5).map(alert =>
+          '<div style="padding:10px;margin:6px 0;background:linear-gradient(rgba(255,255,255,0.05),rgba(255,255,255,0.05)),#121212;border:1px solid rgba(255,255,255,0.12);border-radius:8px;border-left:3px solid ' + (alert.severity === 'CRITICAL' ? '#CF6679' : alert.severity === 'WARNING' ? '#FFB74D' : '#81C784') + '">' +
+          '<div style="font-weight:500;color:rgba(255,255,255,0.87)">' + (alert.summary || alert.category || 'Alert') + '</div>' +
+          '<div style="font-size:12px;color:rgba(255,255,255,0.6)">' + (alert.description || '') + '</div>' +
+          '</div>'
+        ).join('');
+      } catch (err) {
+        container.innerHTML = '<div class="warn">Error loading alerts</div>';
+      }
+    }
+
     loadOrganizations();
+    loadXiqDevices();
+    loadXiqSites();
+    loadXiqClients();
+    loadXiqAlerts();
   </script>
 </body>
 </html>`);
