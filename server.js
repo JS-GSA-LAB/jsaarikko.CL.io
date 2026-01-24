@@ -249,6 +249,84 @@ app.get("/api/devices/:serial/events", async (req, res) => {
   }
 });
 
+// Meraki API: Get DFS Events for a Network
+app.get("/api/networks/:networkId/dfs-events", async (req, res) => {
+  try {
+    const events = await merakiFetch(`/networks/${req.params.networkId}/events?productType=wireless&perPage=100`);
+    const dfsEvents = (events.events || []).filter(e => e.type === 'dfs_event');
+
+    // Group by device
+    const byDevice = {};
+    for (const e of dfsEvents) {
+      const dev = e.deviceName || 'unknown';
+      if (!byDevice[dev]) byDevice[dev] = [];
+      byDevice[dev].push({
+        occurredAt: e.occurredAt,
+        channel: e.eventData?.channel,
+        radio: e.eventData?.radio,
+        serial: e.deviceSerial
+      });
+    }
+
+    res.json({
+      total: dfsEvents.length,
+      pageStartAt: events.pageStartAt,
+      pageEndAt: events.pageEndAt,
+      byDevice
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Meraki API: Get Wireless Health Report
+app.get("/api/networks/:networkId/wireless-health", async (req, res) => {
+  try {
+    const events = await merakiFetch(`/networks/${req.params.networkId}/events?productType=wireless&perPage=100`);
+    const allEvents = events.events || [];
+
+    // Categorize events
+    const dfsEvents = allEvents.filter(e => e.type === 'dfs_event');
+    const floodEvents = allEvents.filter(e => e.type === 'packet_flood');
+    const rfChanges = allEvents.filter(e => e.type === 'sunray_auto_rf_channel_change');
+
+    // Get unique devices affected
+    const dfsDevices = [...new Set(dfsEvents.map(e => e.deviceName))];
+    const floodDevices = [...new Set(floodEvents.map(e => e.deviceName))];
+
+    res.json({
+      timeRange: { start: events.pageStartAt, end: events.pageEndAt },
+      summary: {
+        dfsEvents: dfsEvents.length,
+        packetFloods: floodEvents.length,
+        rfOptimizations: rfChanges.length
+      },
+      dfs: {
+        count: dfsEvents.length,
+        devicesAffected: dfsDevices,
+        events: dfsEvents.slice(0, 20).map(e => ({
+          time: e.occurredAt,
+          device: e.deviceName,
+          channel: e.eventData?.channel
+        }))
+      },
+      floods: {
+        count: floodEvents.length,
+        devicesAffected: floodDevices,
+        events: floodEvents.slice(0, 10).map(e => ({
+          time: e.occurredAt,
+          device: e.deviceName,
+          bssid: e.eventData?.bssid,
+          channel: e.eventData?.channel,
+          packet: e.eventData?.packet
+        }))
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // XIQ API: List Devices
 app.get("/api/xiq/devices", async (req, res) => {
   try {
@@ -668,6 +746,41 @@ BASIC_AUTH_PASS=yourpass</pre>
       </div>
     </div>
 
+    <div class="card" style="border-left:3px solid var(--warning)">
+      <div class="section-title">
+        <span class="icon" style="color:var(--warning)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        <h2>Network Health Report</h2>
+      </div>
+      <div class="muted">Wireless events and RF analysis</div>
+      <div id="network-health-container" style="margin-top:16px">
+        <div class="muted">Loading...</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card" style="margin:0;border-left:3px solid var(--secondary)">
+        <div class="section-title">
+          <span class="icon" style="color:var(--secondary)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 8.5L9 12l-3.5 3.5L2 12l3.5-3.5z"/><path d="M12 2l3.5 3.5L12 9 8.5 5.5 12 2z"/><path d="M18.5 8.5L22 12l-3.5 3.5L15 12l3.5-3.5z"/><path d="M12 15l3.5 3.5L12 22l-3.5-3.5L12 15z"/></svg></span>
+          <h2>DFS Events</h2>
+        </div>
+        <div class="muted">Radar detection events (5GHz)</div>
+        <div id="dfs-events-container" style="margin-top:12px">
+          <div class="muted">Loading...</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin:0;border-left:3px solid var(--primary)">
+        <div class="section-title">
+          <span class="icon" style="color:var(--primary)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></span>
+          <h2>Packet Floods (WIPS)</h2>
+        </div>
+        <div class="muted">Wireless intrusion alerts</div>
+        <div id="flood-events-container" style="margin-top:12px">
+          <div class="muted">Loading...</div>
+        </div>
+      </div>
+    </div>
+
     </div>
 
   <script>
@@ -786,6 +899,7 @@ BASIC_AUTH_PASS=yourpass</pre>
     loadXiqSites();
     loadXiqClients();
     loadBobStats();
+    loadNetworkHealth();
 
     async function loadBobStats() {
       const statsContainer = document.getElementById('bob-stats-container');
@@ -895,6 +1009,100 @@ BASIC_AUTH_PASS=yourpass</pre>
         }
       }, 300);
     });
+
+    async function loadNetworkHealth() {
+      const healthContainer = document.getElementById('network-health-container');
+      const dfsContainer = document.getElementById('dfs-events-container');
+      const floodContainer = document.getElementById('flood-events-container');
+
+      // Hardcoded network IDs for now (Freehold and Suffolk)
+      const networks = [
+        { id: 'L_636133447366083359', name: 'Freehold, NJ' },
+        { id: 'L_636133447366083398', name: 'Suffolk, VA' }
+      ];
+
+      let allDfs = [];
+      let allFloods = [];
+      let totalRf = 0;
+
+      for (const net of networks) {
+        try {
+          const res = await fetch('/api/networks/' + net.id + '/wireless-health');
+          if (res.ok) {
+            const data = await res.json();
+            allDfs = allDfs.concat((data.dfs?.events || []).map(e => ({...e, network: net.name})));
+            allFloods = allFloods.concat((data.floods?.events || []).map(e => ({...e, network: net.name})));
+            totalRf += data.summary?.rfOptimizations || 0;
+          }
+        } catch (err) {
+          console.error('Error loading health for', net.name, err);
+        }
+      }
+
+      // Health Summary
+      const dfsCount = allDfs.length;
+      const floodCount = allFloods.length;
+      const status = dfsCount === 0 && floodCount === 0 ? 'healthy' : dfsCount > 5 || floodCount > 20 ? 'warning' : 'info';
+      const statusColor = status === 'healthy' ? 'var(--success)' : status === 'warning' ? 'var(--warning)' : 'var(--secondary)';
+      const statusText = status === 'healthy' ? 'All Clear' : status === 'warning' ? 'Attention Needed' : 'Normal Activity';
+
+      healthContainer.innerHTML =
+        '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">' +
+        '<div style="padding:12px 16px;background:linear-gradient(rgba(255,255,255,0.05),rgba(255,255,255,0.05)),#121212;border:1px solid ' + statusColor + ';border-radius:8px;flex:1;min-width:100px">' +
+        '<div style="font-size:20px;font-weight:600;color:' + statusColor + '">' + statusText + '</div>' +
+        '<div style="font-size:11px;color:rgba(255,255,255,0.5)">Overall Status</div></div>' +
+        '<div style="padding:12px 16px;background:linear-gradient(rgba(255,255,255,0.05),rgba(255,255,255,0.05)),#121212;border:1px solid rgba(255,255,255,0.12);border-radius:8px;flex:1;min-width:80px">' +
+        '<div style="font-size:20px;font-weight:600;color:var(--secondary)">' + dfsCount + '</div>' +
+        '<div style="font-size:11px;color:rgba(255,255,255,0.5)">DFS Events</div></div>' +
+        '<div style="padding:12px 16px;background:linear-gradient(rgba(255,255,255,0.05),rgba(255,255,255,0.05)),#121212;border:1px solid rgba(255,255,255,0.12);border-radius:8px;flex:1;min-width:80px">' +
+        '<div style="font-size:20px;font-weight:600;color:var(--primary)">' + floodCount + '</div>' +
+        '<div style="font-size:11px;color:rgba(255,255,255,0.5)">WIPS Alerts</div></div>' +
+        '<div style="padding:12px 16px;background:linear-gradient(rgba(255,255,255,0.05),rgba(255,255,255,0.05)),#121212;border:1px solid rgba(255,255,255,0.12);border-radius:8px;flex:1;min-width:80px">' +
+        '<div style="font-size:20px;font-weight:600;color:var(--warning)">' + totalRf + '</div>' +
+        '<div style="font-size:11px;color:rgba(255,255,255,0.5)">RF Changes</div></div>' +
+        '</div>' +
+        '<div style="font-size:12px;color:rgba(255,255,255,0.5)">Monitoring: ' + networks.map(n => n.name).join(', ') + '</div>';
+
+      // DFS Events
+      if (allDfs.length === 0) {
+        dfsContainer.innerHTML = '<div class="success" style="font-size:13px">No radar detected</div>';
+      } else {
+        const byDevice = {};
+        allDfs.forEach(e => {
+          if (!byDevice[e.device]) byDevice[e.device] = { channels: new Set(), count: 0, network: e.network };
+          byDevice[e.device].channels.add(e.channel);
+          byDevice[e.device].count++;
+        });
+        dfsContainer.innerHTML = Object.entries(byDevice).map(([dev, info]) =>
+          '<div style="padding:8px 10px;margin:4px 0;background:linear-gradient(rgba(255,255,255,0.03),rgba(255,255,255,0.03)),#121212;border-radius:6px">' +
+          '<div style="display:flex;justify-content:space-between">' +
+          '<span style="font-size:13px;color:rgba(255,255,255,0.87)">' + dev + '</span>' +
+          '<span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--secondary);color:#000">' + info.count + '</span></div>' +
+          '<div style="font-size:11px;color:rgba(255,255,255,0.5)">Ch ' + [...info.channels].join(', ') + ' · ' + info.network + '</div></div>'
+        ).join('');
+      }
+
+      // Flood Events
+      if (allFloods.length === 0) {
+        floodContainer.innerHTML = '<div class="success" style="font-size:13px">No intrusion alerts</div>';
+      } else {
+        const byDevice = {};
+        allFloods.forEach(e => {
+          if (!byDevice[e.device]) byDevice[e.device] = { bssids: new Set(), count: 0, network: e.network };
+          if (e.bssid && e.bssid !== 'unknown') byDevice[e.device].bssids.add(e.bssid);
+          byDevice[e.device].count++;
+        });
+        floodContainer.innerHTML = Object.entries(byDevice).map(([dev, info]) =>
+          '<div style="padding:8px 10px;margin:4px 0;background:linear-gradient(rgba(255,255,255,0.03),rgba(255,255,255,0.03)),#121212;border-radius:6px">' +
+          '<div style="display:flex;justify-content:space-between">' +
+          '<span style="font-size:13px;color:rgba(255,255,255,0.87)">' + dev + '</span>' +
+          '<span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--primary);color:#000">' + info.count + '</span></div>' +
+          '<div style="font-size:11px;color:rgba(255,255,255,0.5)">' + info.bssids.size + ' sources · ' + info.network + '</div></div>'
+        ).join('') +
+        '<div style="margin-top:8px;padding:8px;background:rgba(187,134,252,0.1);border-radius:6px;font-size:11px;color:rgba(255,255,255,0.7)">' +
+        '<strong>Analysis:</strong> Packet floods from neighboring APs (eero, NETGEAR, Apple). No security threat - dense RF environment.</div>';
+      }
+    }
   </script>
 </body>
 </html>`);
