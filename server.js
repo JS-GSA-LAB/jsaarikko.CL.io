@@ -366,6 +366,52 @@ app.get("/api/networks/:networkId/wireless-health", async (req, res) => {
   }
 });
 
+// Meraki API: Get Network Wireless Settings
+app.get("/api/networks/:networkId/wireless/settings", async (req, res) => {
+  try {
+    const data = await merakiFetch(`/networks/${req.params.networkId}/wireless/settings`);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Meraki API: Update Network Wireless Settings
+app.put("/api/networks/:networkId/wireless/settings", express.json(), async (req, res) => {
+  try {
+    const data = await merakiFetch(`/networks/${req.params.networkId}/wireless/settings`, {
+      method: "PUT",
+      body: req.body
+    });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Meraki API: Get Network Settings (including event logging)
+app.get("/api/networks/:networkId/settings", async (req, res) => {
+  try {
+    const data = await merakiFetch(`/networks/${req.params.networkId}/settings`);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Meraki API: Update Network Settings
+app.put("/api/networks/:networkId/settings", express.json(), async (req, res) => {
+  try {
+    const data = await merakiFetch(`/networks/${req.params.networkId}/settings`, {
+      method: "PUT",
+      body: req.body
+    });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // XIQ API: List Devices
 app.get("/api/xiq/devices", async (req, res) => {
   try {
