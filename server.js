@@ -270,18 +270,6 @@ app.get("/api/xiq/clients", async (req, res) => {
   }
 });
 
-// XIQ API: List Alerts
-app.get("/api/xiq/alerts", async (req, res) => {
-  try {
-    const page = req.query.page || 1;
-    const limit = req.query.limit || 100;
-    const data = await xiqFetch(`/alerts?page=${page}&limit=${limit}`);
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // XIQ API: Get Network Summary
 app.get("/api/xiq/network/summary", async (req, res) => {
   try {
@@ -601,17 +589,6 @@ BASIC_AUTH_PASS=yourpass</pre>
 
     <div class="card">
       <div class="section-title">
-        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-        <h2>ExtremeCloud IQ Alerts</h2>
-      </div>
-      <div class="muted">Active alerts:</div>
-      <div id="xiq-alerts-container" style="margin-top:12px">
-        <div class="muted">Loading...</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="section-title">
         <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
         <h2>BOB Asset Tracker</h2>
       </div>
@@ -769,37 +746,10 @@ BASIC_AUTH_PASS=yourpass</pre>
       }
     }
 
-    async function loadXiqAlerts() {
-      const container = document.getElementById('xiq-alerts-container');
-      try {
-        const res = await fetch('/api/xiq/alerts?limit=10');
-        if (!res.ok) throw new Error('Failed to fetch');
-        const data = await res.json();
-        if (data.error) {
-          container.innerHTML = '<div class="warn">' + data.error + '</div>';
-          return;
-        }
-        const alerts = data.data || data;
-        if (!alerts || alerts.length === 0) {
-          container.innerHTML = '<div class="success">No active alerts</div>';
-          return;
-        }
-        container.innerHTML = alerts.slice(0, 5).map(alert =>
-          '<div style="padding:10px;margin:6px 0;background:linear-gradient(rgba(255,255,255,0.05),rgba(255,255,255,0.05)),#121212;border:1px solid rgba(255,255,255,0.12);border-radius:8px;border-left:3px solid ' + (alert.severity === 'CRITICAL' ? '#CF6679' : alert.severity === 'WARNING' ? '#FFB74D' : '#81C784') + '">' +
-          '<div style="font-weight:500;color:rgba(255,255,255,0.87)">' + (alert.summary || alert.category || 'Alert') + '</div>' +
-          '<div style="font-size:12px;color:rgba(255,255,255,0.6)">' + (alert.description || '') + '</div>' +
-          '</div>'
-        ).join('');
-      } catch (err) {
-        container.innerHTML = '<div class="warn">Error loading alerts</div>';
-      }
-    }
-
     loadOrganizations();
     loadXiqDevices();
     loadXiqSites();
     loadXiqClients();
-    loadXiqAlerts();
     loadBobStats();
 
     async function loadBobStats() {
