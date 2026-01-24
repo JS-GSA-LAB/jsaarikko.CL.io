@@ -1073,28 +1073,127 @@ app.get(UI_ROUTE, (_req, res) => {
           <div style="font-size:10px;color:rgba(255,255,255,0.4)">$0</div>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px">
-          <div style="width:100%;background:linear-gradient(to top,var(--success),var(--secondary));border-radius:6px;height:20px"></div>
+          <div style="width:100%;display:flex;flex-direction:column;border-radius:6px;overflow:hidden;height:20px">
+            <div style="width:100%;background:var(--primary);flex:1"></div>
+          </div>
           <div style="font-size:11px;color:rgba(255,255,255,0.5)">FY2024</div>
           <div style="font-size:10px;color:var(--success)">$1.17M</div>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px">
-          <div style="width:100%;background:linear-gradient(to top,var(--success),var(--secondary));border-radius:6px;height:50px"></div>
+          <div style="width:100%;display:flex;flex-direction:column;border-radius:6px;overflow:hidden;height:50px">
+            <div style="width:100%;background:var(--secondary);height:16px"></div>
+            <div style="width:100%;background:var(--primary);flex:1"></div>
+          </div>
           <div style="font-size:11px;color:rgba(255,255,255,0.5)">FY2025</div>
           <div style="font-size:10px;color:var(--success)">$2.90M</div>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px">
-          <div style="width:100%;background:linear-gradient(to top,var(--success),var(--secondary));border-radius:6px;height:95px"></div>
+          <div style="width:100%;display:flex;flex-direction:column;border-radius:6px;overflow:hidden;height:95px">
+            <div style="width:100%;background:var(--secondary);height:57px"></div>
+            <div style="width:100%;background:var(--primary);flex:1"></div>
+          </div>
           <div style="font-size:11px;color:rgba(255,255,255,0.5)">FY2026</div>
           <div style="font-size:10px;color:var(--success)">$5.50M</div>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px">
-          <div style="width:100%;background:linear-gradient(to top,var(--primary),#00C853);border-radius:6px;height:140px"></div>
+          <div style="width:100%;display:flex;flex-direction:column;border-radius:6px;overflow:hidden;height:140px">
+            <div style="width:100%;background:var(--secondary);height:15px"></div>
+            <div style="width:100%;background:var(--primary);flex:1"></div>
+          </div>
           <div style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:500">Total</div>
           <div style="font-size:10px;color:var(--primary);font-weight:600">$18.1M</div>
         </div>
       </div>
+      <div style="display:flex;justify-content:center;gap:24px;margin-top:16px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:12px;height:12px;background:var(--primary);border-radius:3px"></div>
+          <span style="font-size:11px;color:rgba(255,255,255,0.7)">Internal ($16.1M)</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:12px;height:12px;background:var(--secondary);border-radius:3px"></div>
+          <span style="font-size:11px;color:rgba(255,255,255,0.7)">Partner ($2.0M)</span>
+        </div>
+      </div>
       <div style="margin-top:16px;padding:12px;background:rgba(255,183,77,0.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.7)">
         <strong style="color:var(--warning)">Pipeline Health:</strong> Strong YoY growth with 89% increase from FY2025 to FY2026. Total ACV: $13.9M across 224 opportunities.
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card" style="margin:0">
+        <div class="section-title">
+          <span class="icon" style="color:var(--primary)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+          <h2>Internal Pipeline by Year</h2>
+        </div>
+        <div class="muted">xx-Internal BOB Kit progression</div>
+        <div style="margin-top:12px">
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+            <span style="font-size:11px;color:rgba(255,255,255,0.5);width:50px">FY2024</span>
+            <div style="flex:1;height:16px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden">
+              <div style="width:7%;height:100%;background:var(--primary)"></div>
+            </div>
+            <span style="font-size:11px;font-weight:500;color:var(--primary);width:70px;text-align:right">$1.17M</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+            <span style="font-size:11px;color:rgba(255,255,255,0.5);width:50px">FY2025</span>
+            <div style="flex:1;height:16px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden">
+              <div style="width:12%;height:100%;background:var(--primary)"></div>
+            </div>
+            <span style="font-size:11px;font-weight:500;color:var(--primary);width:70px;text-align:right">$1.95M</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+            <span style="font-size:11px;color:rgba(255,255,255,0.5);width:50px">FY2026</span>
+            <div style="flex:1;height:16px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden">
+              <div style="width:14%;height:100%;background:var(--primary)"></div>
+            </div>
+            <span style="font-size:11px;font-weight:500;color:var(--primary);width:70px;text-align:right">$2.19M</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;margin-top:4px;background:rgba(187,134,252,0.1);border-radius:6px;padding-left:8px;padding-right:8px">
+            <span style="font-size:11px;font-weight:600;color:var(--primary);width:50px">Total</span>
+            <div style="flex:1;height:16px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden">
+              <div style="width:100%;height:100%;background:linear-gradient(90deg,var(--primary),rgba(187,134,252,0.5))"></div>
+            </div>
+            <span style="font-size:11px;font-weight:600;color:var(--primary);width:70px;text-align:right">$16.1M</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin:0">
+        <div class="section-title">
+          <span class="icon" style="color:var(--secondary)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+          <h2>Partner Pipeline by Year</h2>
+        </div>
+        <div class="muted">xx-Partner BOB Kit progression</div>
+        <div style="margin-top:12px">
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+            <span style="font-size:11px;color:rgba(255,255,255,0.5);width:50px">FY2024</span>
+            <div style="flex:1;height:16px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden">
+              <div style="width:0%;height:100%;background:var(--secondary)"></div>
+            </div>
+            <span style="font-size:11px;font-weight:500;color:var(--secondary);width:70px;text-align:right">$0</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+            <span style="font-size:11px;color:rgba(255,255,255,0.5);width:50px">FY2025</span>
+            <div style="flex:1;height:16px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden">
+              <div style="width:50%;height:100%;background:var(--secondary)"></div>
+            </div>
+            <span style="font-size:11px;font-weight:500;color:var(--secondary);width:70px;text-align:right">$0.99M</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+            <span style="font-size:11px;color:rgba(255,255,255,0.5);width:50px">FY2026</span>
+            <div style="flex:1;height:16px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden">
+              <div style="width:100%;height:100%;background:var(--secondary)"></div>
+            </div>
+            <span style="font-size:11px;font-weight:500;color:var(--secondary);width:70px;text-align:right">$3.83M</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;margin-top:4px;background:rgba(3,218,197,0.1);border-radius:6px;padding-left:8px;padding-right:8px">
+            <span style="font-size:11px;font-weight:600;color:var(--secondary);width:50px">Total</span>
+            <div style="flex:1;height:16px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden">
+              <div style="width:100%;height:100%;background:linear-gradient(90deg,var(--secondary),rgba(3,218,197,0.5))"></div>
+            </div>
+            <span style="font-size:11px;font-weight:600;color:var(--secondary);width:70px;text-align:right">$2.0M</span>
+          </div>
+        </div>
       </div>
     </div>
 
