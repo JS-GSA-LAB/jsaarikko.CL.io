@@ -1231,7 +1231,7 @@ BASIC_AUTH_PASS=yourpass</pre>
         longitude: -80.14033,
         address: 'Miami, FL',
         lastUpdate: '2025-07-23 17:08:10',
-        owner: 'John Saarikko',
+        owner: 'James Saarikko',
         isStatic: true
       },
       {
