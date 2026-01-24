@@ -1236,6 +1236,19 @@ BASIC_AUTH_PASS=yourpass</pre>
         address: 'Nashville, TN',
         lastUpdate: '2025-10-01 23:45:00',
         isStatic: true
+      },
+      {
+        device: 'BOBKit-33-US-West-1',
+        organization: 'Extreme Networks',
+        group: 'US West',
+        model: 'PepLink Balance 20X',
+        serial: 'BOBKIT-33-001',
+        status: 'online',
+        latitude: 38.884247,
+        longitude: -104.82047,
+        address: 'Colorado Springs, CO',
+        lastUpdate: '2025-10-28 20:40:50',
+        isStatic: true
       }
     ];
 
