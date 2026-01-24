@@ -1231,6 +1231,7 @@ BASIC_AUTH_PASS=yourpass</pre>
         longitude: -80.14033,
         address: 'Miami, FL',
         lastUpdate: '2025-07-23 17:08:10',
+        owner: 'John Saarikko',
         isStatic: true
       },
       {
@@ -1244,6 +1245,7 @@ BASIC_AUTH_PASS=yourpass</pre>
         longitude: -86.892845,
         address: 'Nashville, TN',
         lastUpdate: '2025-10-01 23:45:00',
+        owner: 'SE Team East',
         isStatic: true
       },
       {
@@ -1257,6 +1259,7 @@ BASIC_AUTH_PASS=yourpass</pre>
         longitude: -104.82047,
         address: 'Colorado Springs, CO',
         lastUpdate: '2025-10-28 20:40:50',
+        owner: 'SE Team West',
         isStatic: true
       }
     ];
@@ -1350,6 +1353,7 @@ BASIC_AUTH_PASS=yourpass</pre>
               '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + (isOnline ? '#81C784' : '#CF6679') + ';margin-right:6px"></span>' +
               (isOnline ? 'Online' : 'Offline') + '</div>' +
               (loc.address ? '<div style="font-size:10px;color:#888;margin-top:4px">' + loc.address + '</div>' : '') +
+              (loc.owner ? '<div style="font-size:10px;margin-top:6px"><span style="display:inline-block;padding:2px 6px;background:#BB86FC;color:#000;border-radius:8px;font-weight:500">' + loc.owner + '</span></div>' : '') +
               (loc.lastUpdate ? '<div style="font-size:10px;color:#aaa;margin-top:4px">Updated: ' + loc.lastUpdate + '</div>' : '') +
               '</div>';
 
@@ -1391,6 +1395,7 @@ BASIC_AUTH_PASS=yourpass</pre>
                 (loc.address ? ' · ' + loc.address : '') +
                 (loc.lastUpdate ? ' <span style="color:rgba(255,255,255,0.4)">(' + loc.lastUpdate + ')</span>' : '') + '</div>' :
                 (loc.error ? '<div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:4px">' + loc.error + '</div>' : '')) +
+              (loc.owner ? '<div style="margin-top:6px"><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(187,134,252,0.15);border:1px solid rgba(187,134,252,0.3);border-radius:12px;font-size:10px;color:var(--primary)"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' + loc.owner + '</span></div>' : '') +
               '</div>';
           }).join('');
         }
