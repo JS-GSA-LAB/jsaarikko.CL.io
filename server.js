@@ -725,6 +725,8 @@ app.get(UI_ROUTE, (_req, res) => {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <style>
     :root {
       --background: #121212;
@@ -937,7 +939,9 @@ app.get(UI_ROUTE, (_req, res) => {
       <div id="peplink-summary-container" style="margin-top:12px">
         <div class="muted">Loading...</div>
       </div>
-      <div id="peplink-locations-container" style="margin-top:12px;max-height:400px;overflow-y:auto">
+      <div id="peplink-map" style="height:300px;margin-top:16px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.12)">
+      </div>
+      <div id="peplink-locations-container" style="margin-top:12px;max-height:300px;overflow-y:auto">
       </div>
     </div>
 
@@ -1203,8 +1207,11 @@ BASIC_AUTH_PASS=yourpass</pre>
     loadNetworkHealth();
     loadPeplinkLocations();
 
+    let peplinkMap = null;
+
     async function loadPeplinkLocations() {
       const summaryContainer = document.getElementById('peplink-summary-container');
+      const mapContainer = document.getElementById('peplink-map');
       const locationsContainer = document.getElementById('peplink-locations-container');
 
       try {
@@ -1214,12 +1221,14 @@ BASIC_AUTH_PASS=yourpass</pre>
 
         if (data.error) {
           summaryContainer.innerHTML = '<div class="warn">' + data.error + '</div>';
+          mapContainer.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5)">Map unavailable</div>';
           return;
         }
 
         const locations = data.locations || [];
         const onlineCount = locations.filter(l => l.status === 'online' || l.status === 1).length;
         const withGps = locations.filter(l => l.latitude && l.longitude).length;
+        const gpsLocations = locations.filter(l => l.latitude && l.longitude);
 
         // Summary stats
         summaryContainer.innerHTML =
@@ -1234,6 +1243,71 @@ BASIC_AUTH_PASS=yourpass</pre>
           '<span style="font-size:16px;font-weight:600;color:var(--secondary)">' + withGps + '</span>' +
           '<span style="font-size:11px;color:rgba(255,255,255,0.5);margin-left:6px">With GPS</span></div>' +
           '</div>';
+
+        // Initialize map
+        if (peplinkMap) {
+          peplinkMap.remove();
+        }
+
+        if (gpsLocations.length > 0) {
+          // Create map centered on first device or US center
+          const centerLat = gpsLocations.reduce((sum, l) => sum + l.latitude, 0) / gpsLocations.length;
+          const centerLng = gpsLocations.reduce((sum, l) => sum + l.longitude, 0) / gpsLocations.length;
+
+          peplinkMap = L.map('peplink-map', {
+            center: [centerLat, centerLng],
+            zoom: 4,
+            zoomControl: true,
+            attributionControl: false
+          });
+
+          // Dark theme map tiles (CartoDB Dark Matter)
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19
+          }).addTo(peplinkMap);
+
+          // Custom marker icon
+          const createMarkerIcon = (isOnline) => {
+            const color = isOnline ? '#81C784' : '#CF6679';
+            return L.divIcon({
+              className: 'peplink-marker',
+              html: '<div style="width:24px;height:24px;background:' + color + ';border:2px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><circle cx="12" cy="17" r="2"/></svg></div>',
+              iconSize: [24, 24],
+              iconAnchor: [12, 12],
+              popupAnchor: [0, -12]
+            });
+          };
+
+          // Add markers for each device
+          const bounds = [];
+          gpsLocations.forEach(loc => {
+            const isOnline = loc.status === 'online' || loc.status === 1;
+            const marker = L.marker([loc.latitude, loc.longitude], {
+              icon: createMarkerIcon(isOnline)
+            }).addTo(peplinkMap);
+
+            const popupContent =
+              '<div style="font-family:Roboto,sans-serif;min-width:180px">' +
+              '<div style="font-weight:600;font-size:13px;margin-bottom:4px">' + (loc.device || 'Unknown') + '</div>' +
+              '<div style="font-size:11px;color:#666">' + (loc.model || '') + '</div>' +
+              '<div style="font-size:11px;color:#888;margin-top:4px">' + (loc.organization || '') + (loc.group ? ' / ' + loc.group : '') + '</div>' +
+              '<div style="font-size:11px;margin-top:6px;padding-top:6px;border-top:1px solid #eee">' +
+              '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + (isOnline ? '#81C784' : '#CF6679') + ';margin-right:6px"></span>' +
+              (isOnline ? 'Online' : 'Offline') + '</div>' +
+              (loc.address ? '<div style="font-size:10px;color:#888;margin-top:4px">' + loc.address + '</div>' : '') +
+              '</div>';
+
+            marker.bindPopup(popupContent);
+            bounds.push([loc.latitude, loc.longitude]);
+          });
+
+          // Fit map to show all markers
+          if (bounds.length > 1) {
+            peplinkMap.fitBounds(bounds, { padding: [20, 20] });
+          }
+        } else {
+          mapContainer.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;background:#1a1a1a;color:rgba(255,255,255,0.5);font-size:13px">No GPS locations available</div>';
+        }
 
         // Location list
         if (locations.length === 0) {
@@ -1265,6 +1339,7 @@ BASIC_AUTH_PASS=yourpass</pre>
         }
       } catch (err) {
         summaryContainer.innerHTML = '<div class="warn">PepLink not configured</div>';
+        mapContainer.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;background:#1a1a1a;color:rgba(255,255,255,0.5);font-size:12px">Configure PepLink to view map</div>';
         locationsContainer.innerHTML = '<div class="muted" style="font-size:12px">Set PEPLINK_CLIENT_ID and PEPLINK_CLIENT_SECRET in Railway</div>';
       }
     }
