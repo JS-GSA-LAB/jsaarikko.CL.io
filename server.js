@@ -1265,35 +1265,6 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
     </div>
 
-    <div class="card">
-      <div class="section-title">
-        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
-        <h2>Client Connection</h2>
-      </div>
-      <div class="muted">Configure your Claude or MCP client to connect to:</div>
-      <pre id="clientUrl"></pre>
-      <script>
-        document.getElementById("clientUrl").textContent = location.origin + "${PROXY_ROUTE}";
-      </script>
-      <div class="muted" style="margin-top:12px">
-        ${FORWARD_AUTH_HEADER ? "Authorization headers are forwarded to upstream." : "<span class='warn'>Authorization headers are NOT forwarded.</span>"}
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="section-title">
-        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-        <h2>Configuration</h2>
-      </div>
-      <div class="muted">Railway environment variables:</div>
-      <pre>UPSTREAM_MCP_URL=${UPSTREAM || "http://YOUR_MERAKI_MCP_SERVER:PORT"}
-PROXY_ROUTE=${PROXY_ROUTE}
-FORWARD_AUTH_HEADER=${FORWARD_AUTH_HEADER}</pre>
-      <div class="muted" style="margin-top:12px">Optional authentication:</div>
-      <pre>BASIC_AUTH_USER=youruser
-BASIC_AUTH_PASS=yourpass</pre>
-    </div>
-
     <div class="grid-2">
       <div class="card" style="margin:0">
         <div class="section-title">
