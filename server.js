@@ -842,6 +842,449 @@ app.get("/api/rca/health-summary", async (req, res) => {
   }
 });
 
+// =============================================================================
+// PREDICTIVE OUTAGE DETECTION ENGINE
+// =============================================================================
+
+// Predictive API: Analyze for potential outages
+app.get("/api/predictive/analyze", async (req, res) => {
+  try {
+    const orgs = await merakiFetch("/organizations");
+    if (!orgs || orgs.length === 0) {
+      return res.status(500).json({ error: "No organizations found" });
+    }
+
+    const orgId = orgs[0].id;
+    const predictions = {
+      timestamp: new Date().toISOString(),
+      riskLevel: 'low',
+      riskScore: 0,
+      predictions: [],
+      metrics: {},
+      recommendations: []
+    };
+
+    // Get devices and their statuses
+    const [devices, statuses, networks] = await Promise.all([
+      merakiFetch(`/organizations/${orgId}/devices`),
+      merakiFetch(`/organizations/${orgId}/devices/statuses`),
+      merakiFetch(`/organizations/${orgId}/networks`)
+    ]);
+
+    const statusMap = {};
+    for (const s of statuses) {
+      statusMap[s.serial] = s;
+    }
+
+    predictions.metrics.totalDevices = devices.length;
+    predictions.metrics.networks = networks.length;
+
+    // ===========================================
+    // 1. UPLINK DEGRADATION DETECTION
+    // ===========================================
+    const uplinkIssues = [];
+    const mxDevices = devices.filter(d => d.model?.startsWith('MX') || d.model?.startsWith('Z'));
+
+    for (const device of mxDevices) {
+      const status = statusMap[device.serial];
+      if (status) {
+        // Check for WAN status issues
+        if (status.wan1Ip && !status.wan2Ip && device.model?.includes('MX')) {
+          uplinkIssues.push({
+            device: device.name || device.serial,
+            model: device.model,
+            issue: 'Single WAN active - no redundancy',
+            severity: 'medium'
+          });
+        }
+
+        // Check for high latency indicators (if device is alerting)
+        if (status.status === 'alerting') {
+          uplinkIssues.push({
+            device: device.name || device.serial,
+            model: device.model,
+            issue: 'Device in alerting state - possible uplink issues',
+            severity: 'high'
+          });
+        }
+      }
+    }
+
+    // Try to get uplink status for appliances
+    for (const network of networks) {
+      if (network.productTypes?.includes('appliance')) {
+        try {
+          const uplinkStatus = await merakiFetch(`/networks/${network.id}/appliance/uplinks/statuses`);
+          if (uplinkStatus && Array.isArray(uplinkStatus)) {
+            for (const uplink of uplinkStatus) {
+              if (uplink.highAvailability?.enabled === false) {
+                uplinkIssues.push({
+                  device: uplink.serial,
+                  network: network.name,
+                  issue: 'High availability not configured',
+                  severity: 'low'
+                });
+              }
+              // Check each WAN interface
+              for (const iface of (uplink.uplinks || [])) {
+                if (iface.status === 'failed') {
+                  uplinkIssues.push({
+                    device: uplink.serial,
+                    network: network.name,
+                    interface: iface.interface,
+                    issue: `WAN interface ${iface.interface} has failed`,
+                    severity: 'critical'
+                  });
+                } else if (iface.status === 'not connected') {
+                  uplinkIssues.push({
+                    device: uplink.serial,
+                    network: network.name,
+                    interface: iface.interface,
+                    issue: `WAN interface ${iface.interface} not connected`,
+                    severity: 'medium'
+                  });
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // Uplink API may not be available for all networks
+        }
+      }
+    }
+
+    if (uplinkIssues.length > 0) {
+      const criticalUplink = uplinkIssues.filter(i => i.severity === 'critical');
+      predictions.predictions.push({
+        category: 'uplink_degradation',
+        title: 'Uplink Degradation Risk',
+        severity: criticalUplink.length > 0 ? 'critical' : 'medium',
+        probability: criticalUplink.length > 0 ? 85 : 45,
+        timeframe: criticalUplink.length > 0 ? 'Immediate' : '24-48 hours',
+        details: `${uplinkIssues.length} uplink concern(s) detected across your network infrastructure.`,
+        issues: uplinkIssues.slice(0, 5),
+        impact: 'Internet connectivity loss, site isolation, business disruption'
+      });
+      predictions.riskScore += criticalUplink.length > 0 ? 40 : 15;
+    }
+
+    predictions.metrics.uplinkIssues = uplinkIssues.length;
+
+    // ===========================================
+    // 2. RF CONGESTION TRENDS
+    // ===========================================
+    const rfIssues = [];
+    const wirelessDevices = devices.filter(d => d.model?.startsWith('MR') || d.model?.startsWith('CW'));
+
+    // Get wireless events to analyze RF trends
+    for (const network of networks) {
+      if (network.productTypes?.includes('wireless')) {
+        try {
+          const events = await merakiFetch(`/networks/${network.id}/events?productType=wireless&perPage=500&timespan=86400`);
+          const wirelessEvents = events.events || [];
+
+          // Count RF-related events
+          const dfsEvents = wirelessEvents.filter(e => e.type === 'dfs_event');
+          const channelChanges = wirelessEvents.filter(e =>
+            e.type?.includes('channel') || e.type?.includes('rf') || e.type === 'sunray_auto_rf_channel_change'
+          );
+          const interferenceEvents = wirelessEvents.filter(e =>
+            e.type?.includes('interference') || e.type?.includes('noise')
+          );
+
+          predictions.metrics.dfsEvents = (predictions.metrics.dfsEvents || 0) + dfsEvents.length;
+          predictions.metrics.channelChanges = (predictions.metrics.channelChanges || 0) + channelChanges.length;
+
+          // DFS events indicate radar detection - potential channel availability issues
+          if (dfsEvents.length > 10) {
+            rfIssues.push({
+              network: network.name,
+              issue: `High DFS radar events (${dfsEvents.length})`,
+              detail: 'Frequent radar detection causing channel switches on 5GHz',
+              severity: 'medium'
+            });
+          }
+
+          // Excessive channel changes indicate instability
+          if (channelChanges.length > 100) {
+            rfIssues.push({
+              network: network.name,
+              issue: `Excessive RF channel changes (${channelChanges.length})`,
+              detail: 'RF environment is unstable, causing frequent channel optimization',
+              severity: 'high'
+            });
+          }
+
+          // Check for co-channel interference patterns
+          if (interferenceEvents.length > 20) {
+            rfIssues.push({
+              network: network.name,
+              issue: `RF interference detected (${interferenceEvents.length} events)`,
+              detail: 'External interference affecting wireless performance',
+              severity: 'high'
+            });
+          }
+        } catch (e) {
+          // Events may not be available
+        }
+      }
+    }
+
+    // Check AP density and potential congestion
+    const apCount = wirelessDevices.length;
+    const networkCount = networks.filter(n => n.productTypes?.includes('wireless')).length;
+    if (networkCount > 0 && apCount / networkCount > 50) {
+      rfIssues.push({
+        issue: 'High AP density detected',
+        detail: `${apCount} APs across ${networkCount} wireless networks may cause co-channel interference`,
+        severity: 'medium'
+      });
+    }
+
+    if (rfIssues.length > 0) {
+      const highSeverity = rfIssues.filter(i => i.severity === 'high' || i.severity === 'critical');
+      predictions.predictions.push({
+        category: 'rf_congestion',
+        title: 'RF Congestion Trend',
+        severity: highSeverity.length > 0 ? 'high' : 'medium',
+        probability: highSeverity.length > 0 ? 70 : 40,
+        timeframe: '1-7 days',
+        details: `RF environment showing signs of degradation with ${rfIssues.length} concern(s).`,
+        issues: rfIssues.slice(0, 5),
+        impact: 'Wireless performance degradation, client disconnections, poor video/voice quality'
+      });
+      predictions.riskScore += highSeverity.length > 0 ? 25 : 10;
+
+      predictions.recommendations.push({
+        title: 'RF Optimization',
+        priority: 'medium',
+        detail: 'Review channel planning, consider reducing AP power levels, and enable band steering to balance 2.4/5GHz load.'
+      });
+    }
+
+    predictions.metrics.wirelessAPs = apCount;
+
+    // ===========================================
+    // 3. POE DEGRADATION DETECTION
+    // ===========================================
+    const poeIssues = [];
+    const switchDevices = devices.filter(d => d.model?.startsWith('MS') || d.model?.startsWith('C9'));
+
+    for (const sw of switchDevices) {
+      const status = statusMap[sw.serial];
+
+      // Check if switch is alerting (could indicate PoE issues)
+      if (status?.status === 'alerting') {
+        poeIssues.push({
+          device: sw.name || sw.serial,
+          model: sw.model,
+          issue: 'Switch in alerting state - check PoE budget',
+          severity: 'medium'
+        });
+      }
+
+      // Try to get switch port statuses for PoE analysis
+      try {
+        const ports = await merakiFetch(`/devices/${sw.serial}/switch/ports/statuses`);
+        if (ports && Array.isArray(ports)) {
+          let poeEnabledPorts = 0;
+          let poeDrawingPorts = 0;
+          let totalPoePower = 0;
+
+          for (const port of ports) {
+            if (port.powerUsageInWh !== undefined || port.enabled) {
+              poeEnabledPorts++;
+              if (port.powerUsageInWh > 0) {
+                poeDrawingPorts++;
+                totalPoePower += port.powerUsageInWh || 0;
+              }
+            }
+
+            // Check for ports with errors
+            if (port.errors && port.errors.length > 0) {
+              poeIssues.push({
+                device: sw.name || sw.serial,
+                port: port.portId,
+                issue: `Port errors: ${port.errors.join(', ')}`,
+                severity: 'medium'
+              });
+            }
+          }
+
+          // High PoE utilization warning
+          if (poeDrawingPorts > poeEnabledPorts * 0.8) {
+            poeIssues.push({
+              device: sw.name || sw.serial,
+              model: sw.model,
+              issue: `High PoE port utilization (${poeDrawingPorts}/${poeEnabledPorts} ports drawing power)`,
+              severity: 'medium'
+            });
+          }
+        }
+      } catch (e) {
+        // Port status may not be available
+      }
+    }
+
+    if (poeIssues.length > 0) {
+      predictions.predictions.push({
+        category: 'poe_degradation',
+        title: 'PoE Budget Risk',
+        severity: poeIssues.some(i => i.severity === 'high') ? 'high' : 'medium',
+        probability: 55,
+        timeframe: '1-14 days',
+        details: `${poeIssues.length} PoE-related concern(s) detected on switches.`,
+        issues: poeIssues.slice(0, 5),
+        impact: 'AP power loss, phone outages, camera failures'
+      });
+      predictions.riskScore += 15;
+
+      predictions.recommendations.push({
+        title: 'PoE Capacity Planning',
+        priority: 'medium',
+        detail: 'Review PoE budget allocation, consider upgrading to higher wattage switches, or implement PoE scheduling for non-critical devices.'
+      });
+    }
+
+    predictions.metrics.switches = switchDevices.length;
+    predictions.metrics.poeIssues = poeIssues.length;
+
+    // ===========================================
+    // 4. HARDWARE AGING DETECTION
+    // ===========================================
+    const agingIssues = [];
+
+    // Known end-of-life/aging models
+    const agingModels = {
+      'MR18': { eol: true, replacement: 'MR36' },
+      'MR26': { eol: true, replacement: 'MR36' },
+      'MR32': { eol: true, replacement: 'MR36' },
+      'MR33': { aging: true, replacement: 'MR36' },
+      'MR42': { aging: true, replacement: 'MR46' },
+      'MR52': { aging: true, replacement: 'MR56' },
+      'MR62': { eol: true, replacement: 'MR46' },
+      'MR66': { eol: true, replacement: 'MR46' },
+      'MS220': { aging: true, replacement: 'MS130' },
+      'MS320': { aging: true, replacement: 'MS350' },
+      'MS350-24': { aging: true, replacement: 'MS355' },
+      'MX60': { eol: true, replacement: 'MX68' },
+      'MX64': { aging: true, replacement: 'MX68' },
+      'MX80': { eol: true, replacement: 'MX85' },
+      'MX84': { aging: true, replacement: 'MX85' },
+      'MX100': { aging: true, replacement: 'MX105' },
+      'Z1': { eol: true, replacement: 'Z4' },
+    };
+
+    for (const device of devices) {
+      // Check model against aging list
+      for (const [model, info] of Object.entries(agingModels)) {
+        if (device.model?.includes(model)) {
+          agingIssues.push({
+            device: device.name || device.serial,
+            model: device.model,
+            issue: info.eol ? 'End-of-Life hardware' : 'Aging hardware',
+            replacement: info.replacement,
+            severity: info.eol ? 'high' : 'medium'
+          });
+          break;
+        }
+      }
+
+      // Check for devices with frequent status changes (sign of hardware issues)
+      const status = statusMap[device.serial];
+      if (status?.status === 'alerting' || status?.status === 'dormant') {
+        // Check if already flagged
+        const alreadyFlagged = agingIssues.some(i => i.device === (device.name || device.serial));
+        if (!alreadyFlagged) {
+          agingIssues.push({
+            device: device.name || device.serial,
+            model: device.model,
+            issue: `Device in ${status.status} state - potential hardware degradation`,
+            severity: 'medium'
+          });
+        }
+      }
+    }
+
+    // Check for devices offline for extended periods
+    const offlineDevices = statuses.filter(s => s.status === 'offline');
+    predictions.metrics.offlineDevices = offlineDevices.length;
+
+    if (offlineDevices.length > 0) {
+      for (const offline of offlineDevices.slice(0, 3)) {
+        const device = devices.find(d => d.serial === offline.serial);
+        agingIssues.push({
+          device: device?.name || offline.serial,
+          model: device?.model || 'Unknown',
+          issue: 'Device offline - possible hardware failure',
+          severity: 'critical'
+        });
+      }
+    }
+
+    if (agingIssues.length > 0) {
+      const eolCount = agingIssues.filter(i => i.issue === 'End-of-Life hardware').length;
+      const criticalCount = agingIssues.filter(i => i.severity === 'critical').length;
+
+      predictions.predictions.push({
+        category: 'hardware_aging',
+        title: 'Hardware Lifecycle Risk',
+        severity: criticalCount > 0 ? 'critical' : (eolCount > 0 ? 'high' : 'medium'),
+        probability: criticalCount > 0 ? 90 : (eolCount > 0 ? 75 : 50),
+        timeframe: criticalCount > 0 ? 'Immediate' : '30-90 days',
+        details: `${agingIssues.length} device(s) identified with hardware concerns. ${eolCount} at end-of-life.`,
+        issues: agingIssues.slice(0, 5),
+        impact: 'Device failures, security vulnerabilities, loss of support'
+      });
+      predictions.riskScore += criticalCount > 0 ? 35 : (eolCount > 0 ? 25 : 10);
+
+      if (eolCount > 0) {
+        predictions.recommendations.push({
+          title: 'Hardware Refresh Planning',
+          priority: 'high',
+          detail: `${eolCount} end-of-life device(s) should be replaced. Consider a phased hardware refresh to maintain security and support coverage.`
+        });
+      }
+    }
+
+    predictions.metrics.agingDevices = agingIssues.length;
+
+    // ===========================================
+    // CALCULATE OVERALL RISK
+    // ===========================================
+    if (predictions.riskScore >= 60) {
+      predictions.riskLevel = 'critical';
+    } else if (predictions.riskScore >= 40) {
+      predictions.riskLevel = 'high';
+    } else if (predictions.riskScore >= 20) {
+      predictions.riskLevel = 'medium';
+    } else {
+      predictions.riskLevel = 'low';
+    }
+
+    // Sort predictions by severity
+    const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+    predictions.predictions.sort((a, b) =>
+      (severityOrder[a.severity] || 4) - (severityOrder[b.severity] || 4)
+    );
+
+    // Add general recommendations if no issues
+    if (predictions.predictions.length === 0) {
+      predictions.recommendations.push({
+        title: 'Continue Monitoring',
+        priority: 'low',
+        detail: 'No immediate risks detected. Continue regular monitoring and maintain firmware updates.'
+      });
+    }
+
+    res.json(predictions);
+
+  } catch (err) {
+    console.error("Predictive analysis error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // XIQ API: List Devices
 app.get("/api/xiq/devices", async (req, res) => {
   try {
@@ -1316,6 +1759,77 @@ app.get(UI_ROUTE, (_req, res) => {
           </div>
 
           <div id="rca-metrics" style="display:flex;gap:12px;flex-wrap:wrap">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid #FF6B35;background:linear-gradient(135deg,rgba(255,107,53,0.05),rgba(255,183,77,0.05))">
+      <div class="section-title">
+        <span class="icon" style="color:#FF6B35"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        <h2>Predictive Outage Detection</h2>
+        <span style="margin-left:auto;padding:4px 10px;background:linear-gradient(135deg,#FF6B35,#FFB74D);border-radius:12px;font-size:10px;font-weight:600;color:rgba(0,0,0,0.87);text-transform:uppercase">Predictive</span>
+      </div>
+      <div class="muted">AI-powered analysis to predict potential network outages before they occur</div>
+
+      <div style="margin-top:16px">
+        <button onclick="runPredictiveAnalysis()" id="predictive-button" style="padding:12px 24px;background:linear-gradient(135deg,#FF6B35,#FFB74D);border:none;border-radius:8px;color:rgba(0,0,0,0.87);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          Run Predictive Analysis
+        </button>
+      </div>
+
+      <div id="predictive-results" style="margin-top:20px;display:none">
+        <div id="predictive-loading" style="display:none;padding:40px;text-align:center">
+          <div style="width:40px;height:40px;border:3px solid rgba(255,107,53,0.3);border-top-color:#FF6B35;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
+          <div style="margin-top:12px;color:var(--foreground-muted)">Analyzing network trends...</div>
+        </div>
+
+        <div id="predictive-content" style="display:none">
+          <div id="predictive-risk" style="padding:20px;border-radius:12px;margin-bottom:20px;text-align:center">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6);margin-bottom:8px">Overall Risk Level</div>
+            <div id="predictive-risk-level" style="font-size:32px;font-weight:700">--</div>
+            <div id="predictive-risk-score" style="font-size:14px;color:rgba(255,255,255,0.6);margin-top:4px">Risk Score: --</div>
+          </div>
+
+          <div id="predictive-categories" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px">
+            <div class="pred-category" data-category="uplink" style="padding:16px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid rgba(255,255,255,0.2)">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 22 4-10 4 10"/></svg>
+                <span style="font-weight:600;font-size:13px">Uplink Health</span>
+              </div>
+              <div id="pred-uplink-status" style="font-size:12px;color:rgba(255,255,255,0.6)">Checking...</div>
+            </div>
+            <div class="pred-category" data-category="rf" style="padding:16px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid rgba(255,255,255,0.2)">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                <span style="font-weight:600;font-size:13px">RF Congestion</span>
+              </div>
+              <div id="pred-rf-status" style="font-size:12px;color:rgba(255,255,255,0.6)">Checking...</div>
+            </div>
+            <div class="pred-category" data-category="poe" style="padding:16px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid rgba(255,255,255,0.2)">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                <span style="font-weight:600;font-size:13px">PoE Budget</span>
+              </div>
+              <div id="pred-poe-status" style="font-size:12px;color:rgba(255,255,255,0.6)">Checking...</div>
+            </div>
+            <div class="pred-category" data-category="hardware" style="padding:16px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid rgba(255,255,255,0.2)">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+                <span style="font-weight:600;font-size:13px">Hardware Aging</span>
+              </div>
+              <div id="pred-hardware-status" style="font-size:12px;color:rgba(255,255,255,0.6)">Checking...</div>
+            </div>
+          </div>
+
+          <div id="predictive-predictions" style="margin-bottom:20px">
+          </div>
+
+          <div id="predictive-recommendations" style="margin-bottom:16px">
+          </div>
+
+          <div id="predictive-metrics" style="display:flex;gap:12px;flex-wrap:wrap">
           </div>
         </div>
       </div>
@@ -1879,6 +2393,159 @@ app.get(UI_ROUTE, (_req, res) => {
         });
       }
     });
+
+    // Predictive Outage Detection Functions
+    async function runPredictiveAnalysis() {
+      const resultsDiv = document.getElementById('predictive-results');
+      const loadingDiv = document.getElementById('predictive-loading');
+      const contentDiv = document.getElementById('predictive-content');
+      const button = document.getElementById('predictive-button');
+
+      // Show loading state
+      resultsDiv.style.display = 'block';
+      loadingDiv.style.display = 'block';
+      contentDiv.style.display = 'none';
+      button.disabled = true;
+      button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analyzing...';
+
+      try {
+        const res = await fetch('/api/predictive/analyze');
+        const data = await res.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // Hide loading, show content
+        loadingDiv.style.display = 'none';
+        contentDiv.style.display = 'block';
+
+        // Update overall risk level
+        const riskDiv = document.getElementById('predictive-risk');
+        const riskColors = {
+          critical: { bg: 'linear-gradient(135deg,rgba(207,102,121,0.3),rgba(207,102,121,0.1))', text: 'var(--destructive)' },
+          high: { bg: 'linear-gradient(135deg,rgba(255,183,77,0.3),rgba(255,183,77,0.1))', text: 'var(--warning)' },
+          medium: { bg: 'linear-gradient(135deg,rgba(187,134,252,0.3),rgba(187,134,252,0.1))', text: 'var(--primary)' },
+          low: { bg: 'linear-gradient(135deg,rgba(129,199,132,0.3),rgba(129,199,132,0.1))', text: 'var(--success)' }
+        };
+        const riskStyle = riskColors[data.overallRisk] || riskColors.low;
+        riskDiv.style.background = riskStyle.bg;
+        document.getElementById('predictive-risk-level').textContent = data.overallRisk.toUpperCase();
+        document.getElementById('predictive-risk-level').style.color = riskStyle.text;
+        document.getElementById('predictive-risk-score').textContent = 'Risk Score: ' + data.riskScore + '/100';
+
+        // Update category cards
+        const categoryStyles = {
+          critical: { border: 'var(--destructive)', text: 'At Risk' },
+          high: { border: 'var(--warning)', text: 'Warning' },
+          medium: { border: 'var(--primary)', text: 'Monitor' },
+          low: { border: 'var(--success)', text: 'Healthy' }
+        };
+
+        // Uplink
+        const uplinkCard = document.querySelector('[data-category="uplink"]');
+        const uplinkStatus = data.categories.uplink;
+        const uplinkStyle = categoryStyles[uplinkStatus.risk] || categoryStyles.low;
+        uplinkCard.style.borderLeftColor = uplinkStyle.border;
+        document.getElementById('pred-uplink-status').innerHTML = '<span style="color:' + uplinkStyle.border + '">' + uplinkStyle.text + '</span> - ' + uplinkStatus.issues.length + ' issue(s)';
+
+        // RF
+        const rfCard = document.querySelector('[data-category="rf"]');
+        const rfStatus = data.categories.rf;
+        const rfStyle = categoryStyles[rfStatus.risk] || categoryStyles.low;
+        rfCard.style.borderLeftColor = rfStyle.border;
+        document.getElementById('pred-rf-status').innerHTML = '<span style="color:' + rfStyle.border + '">' + rfStyle.text + '</span> - ' + rfStatus.issues.length + ' issue(s)';
+
+        // PoE
+        const poeCard = document.querySelector('[data-category="poe"]');
+        const poeStatus = data.categories.poe;
+        const poeStyle = categoryStyles[poeStatus.risk] || categoryStyles.low;
+        poeCard.style.borderLeftColor = poeStyle.border;
+        document.getElementById('pred-poe-status').innerHTML = '<span style="color:' + poeStyle.border + '">' + poeStyle.text + '</span> - ' + poeStatus.issues.length + ' issue(s)';
+
+        // Hardware
+        const hwCard = document.querySelector('[data-category="hardware"]');
+        const hwStatus = data.categories.hardware;
+        const hwStyle = categoryStyles[hwStatus.risk] || categoryStyles.low;
+        hwCard.style.borderLeftColor = hwStyle.border;
+        document.getElementById('pred-hardware-status').innerHTML = '<span style="color:' + hwStyle.border + '">' + hwStyle.text + '</span> - ' + hwStatus.issues.length + ' issue(s)';
+
+        // Render predictions
+        const predictionsDiv = document.getElementById('predictive-predictions');
+        if (data.predictions && data.predictions.length > 0) {
+          predictionsDiv.innerHTML = '<div style="font-weight:600;color:rgba(255,255,255,0.87);margin-bottom:12px">Predicted Outage Risks</div>' +
+            data.predictions.map(p => {
+              const predColors = {
+                critical: { bg: 'rgba(207,102,121,0.15)', border: 'var(--destructive)', text: 'var(--destructive)' },
+                high: { bg: 'rgba(255,183,77,0.15)', border: 'var(--warning)', text: 'var(--warning)' },
+                medium: { bg: 'rgba(187,134,252,0.15)', border: 'var(--primary)', text: 'var(--primary)' },
+                low: { bg: 'rgba(129,199,132,0.15)', border: 'var(--success)', text: 'var(--success)' }
+              };
+              const colors = predColors[p.severity] || predColors.low;
+              return '<div style="padding:12px;background:' + colors.bg + ';border-left:3px solid ' + colors.border + ';border-radius:6px;margin-bottom:8px">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+                '<span style="font-weight:600;color:' + colors.text + '">' + p.title + '</span>' +
+                '<div style="display:flex;gap:6px">' +
+                '<span style="padding:2px 8px;background:rgba(255,255,255,0.1);border-radius:10px;font-size:10px;color:rgba(255,255,255,0.7)">' + p.timeframe + '</span>' +
+                '<span style="padding:2px 8px;background:' + colors.border + ';border-radius:10px;font-size:10px;color:rgba(0,0,0,0.87);text-transform:uppercase">' + p.severity + '</span>' +
+                '</div></div>' +
+                '<div style="font-size:13px;color:rgba(255,255,255,0.7)">' + p.detail + '</div>' +
+                '<div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.5)">Category: ' + p.category + '</div>' +
+                '</div>';
+            }).join('');
+        } else {
+          predictionsDiv.innerHTML = '<div style="padding:20px;text-align:center;color:rgba(255,255,255,0.5)">No outage risks predicted</div>';
+        }
+
+        // Render recommendations
+        const recsDiv = document.getElementById('predictive-recommendations');
+        if (data.recommendations && data.recommendations.length > 0) {
+          recsDiv.innerHTML = '<div style="font-weight:600;color:rgba(255,255,255,0.87);margin-bottom:12px">Preventive Actions</div>' +
+            data.recommendations.map(r =>
+              '<div style="padding:12px;background:rgba(129,199,132,0.1);border-left:3px solid var(--success);border-radius:6px;margin-bottom:8px">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+              '<span style="font-weight:500;color:var(--success)">' + r.title + '</span>' +
+              '<span style="padding:2px 8px;background:rgba(255,255,255,0.1);border-radius:10px;font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase">' + r.priority + '</span>' +
+              '</div>' +
+              '<div style="font-size:13px;color:rgba(255,255,255,0.7)">' + r.action + '</div>' +
+              '</div>'
+            ).join('');
+        } else {
+          recsDiv.innerHTML = '';
+        }
+
+        // Render metrics
+        const metricsDiv = document.getElementById('predictive-metrics');
+        const metricItems = [];
+        if (data.metrics) {
+          if (data.metrics.devicesAnalyzed) {
+            metricItems.push('<div style="padding:8px 12px;background:rgba(255,255,255,0.05);border-radius:6px;font-size:12px"><span style="color:var(--primary);font-weight:600">' + data.metrics.devicesAnalyzed + '</span> Devices Analyzed</div>');
+          }
+          if (data.metrics.networksScanned) {
+            metricItems.push('<div style="padding:8px 12px;background:rgba(255,255,255,0.05);border-radius:6px;font-size:12px"><span style="color:var(--secondary);font-weight:600">' + data.metrics.networksScanned + '</span> Networks</div>');
+          }
+          if (data.metrics.criticalAlerts) {
+            metricItems.push('<div style="padding:8px 12px;background:rgba(207,102,121,0.15);border-radius:6px;font-size:12px"><span style="color:var(--destructive);font-weight:600">' + data.metrics.criticalAlerts + '</span> Critical Alerts</div>');
+          }
+          if (data.metrics.warningAlerts) {
+            metricItems.push('<div style="padding:8px 12px;background:rgba(255,183,77,0.15);border-radius:6px;font-size:12px"><span style="color:var(--warning);font-weight:600">' + data.metrics.warningAlerts + '</span> Warnings</div>');
+          }
+        }
+        metricsDiv.innerHTML = metricItems.join('');
+
+      } catch (err) {
+        loadingDiv.style.display = 'none';
+        contentDiv.style.display = 'block';
+        document.getElementById('predictive-risk').innerHTML = '<div style="color:var(--destructive)">Error: ' + err.message + '</div>';
+        document.getElementById('predictive-predictions').innerHTML = '';
+        document.getElementById('predictive-recommendations').innerHTML = '';
+        document.getElementById('predictive-metrics').innerHTML = '';
+      }
+
+      // Reset button
+      button.disabled = false;
+      button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Run Predictive Analysis';
+    }
 
     async function loadOrganizations() {
       const container = document.getElementById('orgs-container');
