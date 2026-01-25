@@ -478,6 +478,112 @@ app.put("/api/networks/:networkId/settings", express.json(), async (req, res) =>
   }
 });
 
+// Meraki API: Get LLDP/CDP Topology for Organization
+app.get("/api/organizations/:orgId/topology", async (req, res) => {
+  try {
+    // Get all devices in the organization
+    const devices = await merakiFetch(`/organizations/${req.params.orgId}/devices`);
+    const statuses = await merakiFetch(`/organizations/${req.params.orgId}/devices/statuses`);
+
+    // Create a status lookup map
+    const statusMap = {};
+    for (const s of statuses) {
+      statusMap[s.serial] = s;
+    }
+
+    // Build nodes from devices
+    const nodes = [];
+    const links = [];
+    const nodeMap = {};
+
+    for (const device of devices) {
+      const status = statusMap[device.serial] || {};
+      const nodeId = device.serial;
+      nodeMap[nodeId] = true;
+
+      nodes.push({
+        id: nodeId,
+        label: device.name || device.serial,
+        model: device.model || 'Unknown',
+        serial: device.serial,
+        type: device.model?.startsWith('MR') ? 'ap' :
+              device.model?.startsWith('MS') ? 'switch' :
+              device.model?.startsWith('MX') ? 'security' :
+              device.model?.startsWith('MG') ? 'cellular' : 'other',
+        status: status.status || 'unknown',
+        lanIp: device.lanIp || status.lanIp,
+        wan1Ip: status.wan1Ip,
+        wan2Ip: status.wan2Ip,
+        publicIp: status.publicIp,
+        gateway: status.gateway,
+        networkId: device.networkId
+      });
+    }
+
+    // Try to get LLDP/CDP data for switches to build links
+    const switchDevices = devices.filter(d => d.model?.startsWith('MS'));
+
+    for (const sw of switchDevices) {
+      try {
+        const lldpCdp = await merakiFetch(`/devices/${sw.serial}/lldpCdp`);
+        if (lldpCdp && lldpCdp.ports) {
+          for (const [portId, portData] of Object.entries(lldpCdp.ports)) {
+            // Check for LLDP neighbors
+            if (portData.lldp) {
+              const neighbor = portData.lldp;
+              const neighborSerial = neighbor.deviceId || neighbor.systemName;
+
+              // Only add link if we know both ends
+              if (neighborSerial && (nodeMap[neighborSerial] || neighbor.systemName)) {
+                links.push({
+                  source: sw.serial,
+                  target: neighborSerial,
+                  sourcePort: portId,
+                  targetPort: neighbor.portId || 'unknown',
+                  protocol: 'LLDP'
+                });
+              }
+            }
+            // Check for CDP neighbors
+            if (portData.cdp) {
+              const neighbor = portData.cdp;
+              const neighborSerial = neighbor.deviceId;
+
+              if (neighborSerial && nodeMap[neighborSerial]) {
+                links.push({
+                  source: sw.serial,
+                  target: neighborSerial,
+                  sourcePort: portId,
+                  targetPort: neighbor.portId || 'unknown',
+                  protocol: 'CDP'
+                });
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // LLDP/CDP may not be available for all devices
+        console.log(`LLDP/CDP not available for ${sw.serial}: ${e.message}`);
+      }
+    }
+
+    // Deduplicate links (A->B and B->A should be one link)
+    const linkSet = new Set();
+    const uniqueLinks = [];
+    for (const link of links) {
+      const key = [link.source, link.target].sort().join('-');
+      if (!linkSet.has(key)) {
+        linkSet.add(key);
+        uniqueLinks.push(link);
+      }
+    }
+
+    res.json({ nodes, links: uniqueLinks });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // XIQ API: List Devices
 app.get("/api/xiq/devices", async (req, res) => {
   try {
@@ -729,6 +835,7 @@ app.get(UI_ROUTE, (_req, res) => {
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
   <style>
     :root {
       --background: #121212;
@@ -1276,6 +1383,37 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
     </div>
 
+    <div class="card" style="border-left:3px solid var(--primary)">
+      <div class="section-title">
+        <span class="icon" style="color:var(--primary)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><line x1="12" y1="8" x2="12" y2="16"/><circle cx="6" cy="19" r="3"/><circle cx="18" cy="19" r="3"/><line x1="12" y1="16" x2="6" y2="16"/><line x1="12" y1="16" x2="18" y2="16"/></svg></span>
+        <h2>Network Topology</h2>
+      </div>
+      <div class="muted">LLDP/CDP discovered network connections</div>
+      <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:12px;height:12px;background:var(--primary);border-radius:50%"></span>
+          <span style="font-size:11px;color:rgba(255,255,255,0.6)">Switch</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:12px;height:12px;background:var(--secondary);border-radius:50%"></span>
+          <span style="font-size:11px;color:rgba(255,255,255,0.6)">Access Point</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:12px;height:12px;background:#FF6B35;border-radius:50%"></span>
+          <span style="font-size:11px;color:rgba(255,255,255,0.6)">Security Appliance</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:12px;height:12px;background:#FFB74D;border-radius:50%"></span>
+          <span style="font-size:11px;color:rgba(255,255,255,0.6)">Cellular Gateway</span>
+        </div>
+      </div>
+      <div id="topology-container" style="height:400px;margin-top:16px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.12);background:#1a1a1a">
+        <div class="muted" style="display:flex;align-items:center;justify-content:center;height:100%">Loading topology...</div>
+      </div>
+      <div id="topology-stats" style="margin-top:12px;display:flex;gap:16px;flex-wrap:wrap">
+      </div>
+    </div>
+
     <div class="grid-2">
       <div class="card" style="margin:0">
         <div class="section-title">
@@ -1337,6 +1475,160 @@ app.get(UI_ROUTE, (_req, res) => {
         ).join('');
       } catch (err) {
         container.innerHTML = '<div class="warn">Error loading organizations</div>';
+      }
+    }
+
+    let topologyNetwork = null;
+
+    async function loadTopology() {
+      const container = document.getElementById('topology-container');
+      const statsContainer = document.getElementById('topology-stats');
+
+      try {
+        // First get organizations to find the org ID
+        const orgsRes = await fetch('/api/organizations');
+        if (!orgsRes.ok) throw new Error('Failed to fetch organizations');
+        const orgs = await orgsRes.json();
+
+        if (!orgs || orgs.length === 0 || orgs.error) {
+          container.innerHTML = '<div class="muted" style="display:flex;align-items:center;justify-content:center;height:100%">No organizations available</div>';
+          return;
+        }
+
+        // Use first organization
+        const orgId = orgs[0].id;
+
+        const res = await fetch('/api/organizations/' + orgId + '/topology');
+        if (!res.ok) throw new Error('Failed to fetch topology');
+        const data = await res.json();
+
+        if (data.error) {
+          container.innerHTML = '<div class="warn" style="display:flex;align-items:center;justify-content:center;height:100%">' + data.error + '</div>';
+          return;
+        }
+
+        if (!data.nodes || data.nodes.length === 0) {
+          container.innerHTML = '<div class="muted" style="display:flex;align-items:center;justify-content:center;height:100%">No devices found</div>';
+          return;
+        }
+
+        // Count device types
+        const typeCounts = { switch: 0, ap: 0, security: 0, cellular: 0, other: 0 };
+        const statusCounts = { online: 0, offline: 0, alerting: 0, dormant: 0 };
+
+        // Prepare nodes for vis.js
+        const visNodes = data.nodes.map(node => {
+          typeCounts[node.type] = (typeCounts[node.type] || 0) + 1;
+          statusCounts[node.status] = (statusCounts[node.status] || 0) + 1;
+
+          let color = '#666';
+          let shape = 'dot';
+
+          if (node.type === 'switch') {
+            color = '#BB86FC';
+            shape = 'square';
+          } else if (node.type === 'ap') {
+            color = '#03DAC5';
+            shape = 'triangle';
+          } else if (node.type === 'security') {
+            color = '#FF6B35';
+            shape = 'diamond';
+          } else if (node.type === 'cellular') {
+            color = '#FFB74D';
+            shape = 'star';
+          }
+
+          // Dim offline devices
+          if (node.status === 'offline') {
+            color = '#444';
+          }
+
+          return {
+            id: node.id,
+            label: node.label,
+            title: node.label + '\\n' + node.model + '\\nSerial: ' + node.serial + '\\nStatus: ' + node.status + (node.lanIp ? '\\nIP: ' + node.lanIp : ''),
+            color: {
+              background: color,
+              border: color,
+              highlight: { background: color, border: '#fff' }
+            },
+            shape: shape,
+            size: node.type === 'security' ? 25 : 20,
+            font: { color: 'rgba(255,255,255,0.87)', size: 10 }
+          };
+        });
+
+        // Prepare edges for vis.js
+        const visEdges = data.links.map((link, idx) => ({
+          id: idx,
+          from: link.source,
+          to: link.target,
+          title: link.protocol + ': ' + link.sourcePort + ' <-> ' + link.targetPort,
+          color: { color: 'rgba(255,255,255,0.3)', highlight: 'rgba(255,255,255,0.6)' },
+          width: 2
+        }));
+
+        // Clear container
+        container.innerHTML = '';
+
+        // Create vis.js network
+        const visData = {
+          nodes: new vis.DataSet(visNodes),
+          edges: new vis.DataSet(visEdges)
+        };
+
+        const options = {
+          nodes: {
+            borderWidth: 2,
+            shadow: true
+          },
+          edges: {
+            smooth: {
+              type: 'continuous'
+            }
+          },
+          physics: {
+            enabled: true,
+            barnesHut: {
+              gravitationalConstant: -3000,
+              centralGravity: 0.3,
+              springLength: 120,
+              springConstant: 0.04
+            },
+            stabilization: {
+              iterations: 100
+            }
+          },
+          interaction: {
+            hover: true,
+            tooltipDelay: 200
+          },
+          layout: {
+            improvedLayout: true
+          }
+        };
+
+        topologyNetwork = new vis.Network(container, visData, options);
+
+        // Update stats
+        statsContainer.innerHTML =
+          '<div style="padding:8px 12px;background:rgba(187,134,252,0.15);border-radius:6px;font-size:12px">' +
+          '<span style="color:var(--primary);font-weight:600">' + typeCounts.switch + '</span> Switches</div>' +
+          '<div style="padding:8px 12px;background:rgba(3,218,197,0.15);border-radius:6px;font-size:12px">' +
+          '<span style="color:var(--secondary);font-weight:600">' + typeCounts.ap + '</span> APs</div>' +
+          '<div style="padding:8px 12px;background:rgba(255,107,53,0.15);border-radius:6px;font-size:12px">' +
+          '<span style="color:#FF6B35;font-weight:600">' + typeCounts.security + '</span> Security</div>' +
+          '<div style="padding:8px 12px;background:rgba(255,183,77,0.15);border-radius:6px;font-size:12px">' +
+          '<span style="color:#FFB74D;font-weight:600">' + typeCounts.cellular + '</span> Cellular</div>' +
+          '<div style="padding:8px 12px;background:rgba(129,199,132,0.15);border-radius:6px;font-size:12px">' +
+          '<span style="color:var(--success);font-weight:600">' + statusCounts.online + '</span> Online</div>' +
+          '<div style="padding:8px 12px;background:rgba(255,255,255,0.05);border-radius:6px;font-size:12px">' +
+          '<span style="color:rgba(255,255,255,0.5);font-weight:600">' + (statusCounts.offline || 0) + '</span> Offline</div>' +
+          '<div style="padding:8px 12px;background:rgba(255,255,255,0.05);border-radius:6px;font-size:12px">' +
+          '<span style="color:rgba(255,255,255,0.6);font-weight:600">' + data.links.length + '</span> Links</div>';
+
+      } catch (err) {
+        container.innerHTML = '<div class="warn" style="display:flex;align-items:center;justify-content:center;height:100%">Error loading topology: ' + err.message + '</div>';
       }
     }
 
@@ -1425,6 +1717,7 @@ app.get(UI_ROUTE, (_req, res) => {
     }
 
     loadOrganizations();
+    loadTopology();
     loadXiqDevices();
     loadXiqSites();
     loadXiqClients();
