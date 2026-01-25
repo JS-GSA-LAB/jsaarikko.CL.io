@@ -866,11 +866,23 @@ app.get(UI_ROUTE, (_req, res) => {
 </head>
 <body>
   <div class="wrap">
-    <div class="header">
-      <div class="logo">E</div>
-      <div class="brand">
-        <div class="brand-name">Extreme Networks MCP Exchange</div>
-        <div class="brand-sub">Meraki MCP Server (RDU)</div>
+    <div class="header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+      <div style="display:flex;align-items:center;gap:16px">
+        <div class="logo">E</div>
+        <div class="brand">
+          <div class="brand-name">Extreme Networks MCP Exchange</div>
+          <div class="brand-sub">Meraki MCP Server (RDU)</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="status-dot"></span>
+          <span style="font-weight:600;color:var(--secondary)">Service Active</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="pill" style="font-size:12px">Upstream: <b>${UPSTREAM}</b></span>
+          <span class="pill" style="font-size:12px">Route: <b>${PROXY_ROUTE}</b></span>
+        </div>
       </div>
     </div>
 
@@ -1251,17 +1263,6 @@ app.get(UI_ROUTE, (_req, res) => {
             <span style="font-size:11px;font-weight:600;color:var(--secondary);width:70px;text-align:right">$2.0M</span>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h1><span class="status-dot"></span>Service Active</h1>
-      <div class="muted">
-        This gateway provides a stable HTTPS endpoint for your Meraki MCP server with built-in health monitoring.
-      </div>
-      <div class="row">
-        <span class="pill">Upstream: <b>${UPSTREAM}</b></span>
-        <span class="pill">Route: <b>${PROXY_ROUTE}</b></span>
       </div>
     </div>
 
