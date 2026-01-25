@@ -574,7 +574,7 @@ app.post("/api/rca/analyze", express.json(), async (req, res) => {
     }
 
     const orgId = orgs[0].id;
-    const networks = await merakiFetch(\`/organizations/\${orgId}/networks\`);
+    const networks = await merakiFetch(`/organizations/${orgId}/networks`);
 
     // Use provided networkId or first network
     let targetNetwork = networkId
@@ -600,7 +600,7 @@ app.post("/api/rca/analyze", express.json(), async (req, res) => {
     let wirelessEvents = [];
     try {
       const eventsRes = await merakiFetch(
-        \`/networks/\${targetNetwork.id}/events?productType=wireless&perPage=500&timespan=\${timespan}\`
+        `/networks/${targetNetwork.id}/events?productType=wireless&perPage=500&timespan=${timespan}`
       );
       wirelessEvents = eventsRes.events || [];
       analysisData.metrics.totalEvents = wirelessEvents.length;
@@ -611,7 +611,7 @@ app.post("/api/rca/analyze", express.json(), async (req, res) => {
     // 2. Get device statuses
     let deviceStatuses = [];
     try {
-      deviceStatuses = await merakiFetch(\`/organizations/\${orgId}/devices/statuses\`);
+      deviceStatuses = await merakiFetch(`/organizations/${orgId}/devices/statuses`);
       const offlineCount = deviceStatuses.filter(d => d.status === 'offline').length;
       const alertingCount = deviceStatuses.filter(d => d.status === 'alerting').length;
       analysisData.metrics.totalDevices = deviceStatuses.length;
@@ -623,7 +623,7 @@ app.post("/api/rca/analyze", express.json(), async (req, res) => {
           type: 'device_health',
           severity: 'high',
           title: 'Offline Devices Detected',
-          detail: \`\${offlineCount} device(s) are currently offline, which may impact connectivity.\`,
+          detail: `${offlineCount} device(s) are currently offline, which may impact connectivity.`,
           devices: deviceStatuses.filter(d => d.status === 'offline').map(d => d.name || d.serial)
         });
       }
@@ -633,7 +633,7 @@ app.post("/api/rca/analyze", express.json(), async (req, res) => {
           type: 'device_health',
           severity: 'medium',
           title: 'Devices in Alerting State',
-          detail: \`\${alertingCount} device(s) are in alerting state and may need attention.\`,
+          detail: `${alertingCount} device(s) are in alerting state and may need attention.`,
           devices: deviceStatuses.filter(d => d.status === 'alerting').map(d => d.name || d.serial)
         });
       }
@@ -672,7 +672,7 @@ app.post("/api/rca/analyze", express.json(), async (req, res) => {
           type: 'authentication',
           severity: 'high',
           title: 'Authentication Failures Detected',
-          detail: \`\${authFailures.length} authentication failures in the last \${parsed.timeframe}. This could indicate RADIUS/802.1X issues or credential problems.\`,
+          detail: `${authFailures.length} authentication failures in the last ${parsed.timeframe}. This could indicate RADIUS/802.1X issues or credential problems.`,
           count: authFailures.length
         });
       }
@@ -684,7 +684,7 @@ app.post("/api/rca/analyze", express.json(), async (req, res) => {
         type: 'roaming',
         severity: 'medium',
         title: 'High Roaming Activity',
-        detail: \`\${roamingEvents.length} roaming events detected. Excessive roaming can cause brief disconnections affecting real-time applications like \${parsed.apps.map(a => a.name).join(', ') || 'video calls'}.\`,
+        detail: `${roamingEvents.length} roaming events detected. Excessive roaming can cause brief disconnections affecting real-time applications like ${parsed.apps.map(a => a.name).join(', ') || 'video calls'}.`,
         count: roamingEvents.length
       });
 
@@ -700,7 +700,7 @@ app.post("/api/rca/analyze", express.json(), async (req, res) => {
         type: 'connectivity',
         severity: 'high',
         title: 'Connection Failures',
-        detail: \`\${failureEvents.length} connection failure events detected. Clients are having trouble maintaining stable connections.\`,
+        detail: `${failureEvents.length} connection failure events detected. Clients are having trouble maintaining stable connections.`,
         count: failureEvents.length
       });
     }
@@ -713,7 +713,7 @@ app.post("/api/rca/analyze", express.json(), async (req, res) => {
           type: 'application',
           severity: 'high',
           title: 'Video Application Impact',
-          detail: \`Video applications like \${parsed.apps.filter(a => a.category === 'video').map(a => a.name).join(', ')} require stable, low-latency connections. The detected roaming (\${roamingEvents.length}) and failure events (\${failureEvents.length}) would cause video freezing, audio drops, and call disconnections.\`,
+          detail: `Video applications like ${parsed.apps.filter(a => a.category === 'video').map(a => a.name).join(', ')} require stable, low-latency connections. The detected roaming (${roamingEvents.length}) and failure events (${failureEvents.length}) would cause video freezing, audio drops, and call disconnections.`,
           impact: 'Video calls may freeze, audio may cut out, screen sharing may fail'
         });
 
@@ -739,8 +739,8 @@ app.post("/api/rca/analyze", express.json(), async (req, res) => {
           analysisData.findings.push({
             type: 'location',
             severity: 'critical',
-            title: \`Coverage Issue on \${parsed.location.type} \${parsed.location.value}\`,
-            detail: \`\${locationOffline.length} of \${locationDevices.length} access points on \${parsed.location.type} \${parsed.location.value} are offline. This would cause complete coverage gaps.\`,
+            title: `Coverage Issue on ${parsed.location.type} ${parsed.location.value}`,
+            detail: `${locationOffline.length} of ${locationDevices.length} access points on ${parsed.location.type} ${parsed.location.value} are offline. This would cause complete coverage gaps.`,
             devices: locationOffline.map(d => d.name || d.serial)
           });
         }
@@ -761,7 +761,7 @@ app.post("/api/rca/analyze", express.json(), async (req, res) => {
 
     // 10. Generate summary
     if (analysisData.findings.length === 0) {
-      analysisData.summary = \`No significant issues detected for "\${question}". Network appears to be operating normally. If problems persist, consider checking client device configurations or application-specific settings.\`;
+      analysisData.summary = `No significant issues detected for "${question}". Network appears to be operating normally. If problems persist, consider checking client device configurations or application-specific settings.`;
       analysisData.recommendations.push({
         title: 'Client-Side Troubleshooting',
         detail: 'If issues persist, check client device drivers, firewall settings, and application configurations.'
@@ -771,11 +771,11 @@ app.post("/api/rca/analyze", express.json(), async (req, res) => {
       const highFindings = analysisData.findings.filter(f => f.severity === 'high');
 
       if (criticalFindings.length > 0) {
-        analysisData.summary = \`CRITICAL: \${criticalFindings[0].title}. \${criticalFindings[0].detail}\`;
+        analysisData.summary = `CRITICAL: ${criticalFindings[0].title}. ${criticalFindings[0].detail}`;
       } else if (highFindings.length > 0) {
-        analysisData.summary = \`Root cause analysis found \${highFindings.length} significant issue(s). Primary: \${highFindings[0].title}. \${highFindings[0].detail}\`;
+        analysisData.summary = `Root cause analysis found ${highFindings.length} significant issue(s). Primary: ${highFindings[0].title}. ${highFindings[0].detail}`;
       } else {
-        analysisData.summary = \`Analysis found \${analysisData.findings.length} potential contributing factor(s) for "\${question}".\`;
+        analysisData.summary = `Analysis found ${analysisData.findings.length} potential contributing factor(s) for "${question}".`;
       }
     }
 
@@ -812,8 +812,8 @@ app.get("/api/rca/health-summary", async (req, res) => {
 
     const orgId = orgs[0].id;
     const [devices, networks] = await Promise.all([
-      merakiFetch(\`/organizations/\${orgId}/devices/statuses\`),
-      merakiFetch(\`/organizations/\${orgId}/networks\`)
+      merakiFetch(`/organizations/${orgId}/devices/statuses`),
+      merakiFetch(`/organizations/${orgId}/networks`)
     ]);
 
     const summary = {
