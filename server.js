@@ -3729,7 +3729,7 @@ app.get(UI_ROUTE, (_req, res) => {
       button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analyzing...';
 
       try {
-        const res = await fetch('/api/predictive/analyze');
+        const res = await fetchWithTimeout('/api/predictive/analyze', {}, 30000);
         const data = await res.json();
 
         if (data.error) {
@@ -3919,7 +3919,7 @@ app.get(UI_ROUTE, (_req, res) => {
       button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analyzing...';
 
       try {
-        const res = await fetch('/api/roaming/analysis?timespan=' + roamingTimespan);
+        const res = await fetchWithTimeout('/api/roaming/analysis?timespan=' + roamingTimespan, {}, 30000);
         const data = await res.json();
 
         if (data.error) {
@@ -4097,7 +4097,7 @@ app.get(UI_ROUTE, (_req, res) => {
       button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Scanning...';
 
       try {
-        const res = await fetch('/api/switch/telemetry');
+        const res = await fetchWithTimeout('/api/switch/telemetry', {}, 45000);
         const data = await res.json();
 
         if (data.error) {
@@ -4249,7 +4249,7 @@ app.get(UI_ROUTE, (_req, res) => {
       button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Streaming...';
 
       try {
-        const res = await fetch('/api/events/stream?timespan=' + eventTimespan);
+        const res = await fetchWithTimeout('/api/events/stream?timespan=' + eventTimespan, {}, 45000);
         const data = await res.json();
 
         if (data.error) {
@@ -4424,7 +4424,7 @@ app.get(UI_ROUTE, (_req, res) => {
     async function loadOrganizations() {
       const container = document.getElementById('orgs-container');
       try {
-        const res = await fetch('/api/organizations');
+        const res = await fetchWithTimeout('/api/organizations', {}, 10000);
         if (!res.ok) throw new Error('Failed to fetch');
         const orgs = await res.json();
         if (orgs.error) {
@@ -4450,7 +4450,7 @@ app.get(UI_ROUTE, (_req, res) => {
     async function loadXiqDevices() {
       const container = document.getElementById('xiq-devices-container');
       try {
-        const res = await fetch('/api/xiq/devices?limit=10');
+        const res = await fetchWithTimeout('/api/xiq/devices?limit=10', {}, 10000);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
         if (data.error) {
@@ -4480,7 +4480,7 @@ app.get(UI_ROUTE, (_req, res) => {
     async function loadXiqSites() {
       const container = document.getElementById('xiq-sites-container');
       try {
-        const res = await fetch('/api/xiq/sites?limit=10');
+        const res = await fetchWithTimeout('/api/xiq/sites?limit=10', {}, 10000);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
         if (data.error) {
@@ -4507,7 +4507,7 @@ app.get(UI_ROUTE, (_req, res) => {
     async function loadXiqClients() {
       const container = document.getElementById('xiq-clients-container');
       try {
-        const res = await fetch('/api/xiq/clients?limit=10');
+        const res = await fetchWithTimeout('/api/xiq/clients?limit=10', {}, 10000);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
         if (data.error) {
@@ -4531,13 +4531,30 @@ app.get(UI_ROUTE, (_req, res) => {
       }
     }
 
-    loadOrganizations();
-    loadXiqDevices();
-    loadXiqSites();
-    loadXiqClients();
-    loadBobStats();
-    loadNetworkHealth();
-    loadPeplinkLocations();
+    // Fetch with timeout helper
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timeoutId);
+        return res;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        throw err;
+      }
+    }
+
+    // Initialize all sections in parallel with proper error handling
+    Promise.allSettled([
+      loadOrganizations().catch(e => { console.error('loadOrganizations failed:', e); document.getElementById('orgs-container').innerHTML = '<div class="warn">Error loading organizations</div>'; }),
+      loadXiqDevices().catch(e => { console.error('loadXiqDevices failed:', e); document.getElementById('xiq-devices-container').innerHTML = '<div class="warn">Error loading XIQ devices</div>'; }),
+      loadXiqSites().catch(e => { console.error('loadXiqSites failed:', e); document.getElementById('xiq-sites-container').innerHTML = '<div class="warn">Error loading XIQ sites</div>'; }),
+      loadXiqClients().catch(e => { console.error('loadXiqClients failed:', e); document.getElementById('xiq-clients-container').innerHTML = '<div class="warn">Error loading XIQ clients</div>'; }),
+      loadBobStats().catch(e => { console.error('loadBobStats failed:', e); document.getElementById('bob-stats-container').innerHTML = '<div class="warn">Error loading BOB stats</div>'; }),
+      loadNetworkHealth().catch(e => { console.error('loadNetworkHealth failed:', e); document.getElementById('network-health-container').innerHTML = '<div class="warn">Error loading network health</div>'; }),
+      loadPeplinkLocations().catch(e => { console.error('loadPeplinkLocations failed:', e); document.getElementById('peplink-summary-container').innerHTML = '<div class="warn">Error loading PepLink data</div>'; })
+    ]).then(() => console.log('Dashboard initialized'));
 
     let peplinkMap = null;
 
@@ -4597,7 +4614,7 @@ app.get(UI_ROUTE, (_req, res) => {
 
       let apiLocations = [];
       try {
-        const res = await fetch('/api/peplink/locations');
+        const res = await fetchWithTimeout('/api/peplink/locations', {}, 30000);
         if (res.ok) {
           const data = await res.json();
           if (!data.error) {
@@ -4732,7 +4749,7 @@ app.get(UI_ROUTE, (_req, res) => {
       const typesContainer = document.getElementById('bob-types-container');
       const ownersContainer = document.getElementById('bob-owners-container');
       try {
-        const res = await fetch('/api/assets/stats');
+        const res = await fetchWithTimeout('/api/assets/stats', {}, 10000);
         if (!res.ok) throw new Error('Failed to fetch');
         const stats = await res.json();
 
@@ -4806,7 +4823,7 @@ app.get(UI_ROUTE, (_req, res) => {
         const container = document.getElementById('bob-search-results');
         container.innerHTML = '<div class="muted">Searching...</div>';
         try {
-          const res = await fetch('/api/assets?search=' + encodeURIComponent(query) + '&limit=25');
+          const res = await fetchWithTimeout('/api/assets?search=' + encodeURIComponent(query) + '&limit=25', {}, 10000);
           if (!res.ok) throw new Error('Failed to fetch');
           const data = await res.json();
           if (data.data.length === 0) {
@@ -4858,7 +4875,7 @@ app.get(UI_ROUTE, (_req, res) => {
 
       for (const net of networks) {
         try {
-          const res = await fetch('/api/networks/' + net.id + '/wireless-health');
+          const res = await fetchWithTimeout('/api/networks/' + net.id + '/wireless-health', {}, 15000);
           if (res.ok) {
             const data = await res.json();
             allDfs = allDfs.concat((data.dfs?.events || []).map(e => ({...e, network: net.name})));
@@ -4980,7 +4997,7 @@ app.get(UI_ROUTE, (_req, res) => {
 
       for (const net of networks) {
         try {
-          const res = await fetch('/api/networks/' + net.id + '/wireless-health?timespan=' + timespan);
+          const res = await fetchWithTimeout('/api/networks/' + net.id + '/wireless-health?timespan=' + timespan, {}, 15000);
           if (res.ok) {
             const data = await res.json();
             allRoaming = allRoaming.concat((data.roaming?.events || []).map(e => ({...e, network: net.name})));
