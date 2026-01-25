@@ -962,21 +962,6 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
     </div>
 
-    <div class="card" style="border-left:3px solid #FF6B35">
-      <div class="section-title">
-        <span class="icon" style="color:#FF6B35"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/></svg></span>
-        <h2>PepLink Locations</h2>
-      </div>
-      <div class="muted">SD-WAN device locations from InControl2</div>
-      <div id="peplink-summary-container" style="margin-top:12px">
-        <div class="muted">Loading...</div>
-      </div>
-      <div id="peplink-map" style="height:300px;margin-top:16px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.12)">
-      </div>
-      <div id="peplink-locations-container" style="margin-top:12px;max-height:300px;overflow-y:auto">
-      </div>
-    </div>
-
     <div class="card">
       <div class="section-title">
         <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
@@ -1020,6 +1005,21 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
       <div id="bob-search-results" style="margin-top:12px;max-height:400px;overflow-y:auto">
         <div class="muted">Enter a search term above</div>
+      </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid #FF6B35">
+      <div class="section-title">
+        <span class="icon" style="color:#FF6B35"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/></svg></span>
+        <h2>PepLink Locations</h2>
+      </div>
+      <div class="muted">SD-WAN device locations from InControl2</div>
+      <div id="peplink-summary-container" style="margin-top:12px">
+        <div class="muted">Loading...</div>
+      </div>
+      <div id="peplink-map" style="height:300px;margin-top:16px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.12)">
+      </div>
+      <div id="peplink-locations-container" style="margin-top:12px;max-height:300px;overflow-y:auto">
       </div>
     </div>
 
