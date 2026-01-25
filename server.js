@@ -478,6 +478,370 @@ app.put("/api/networks/:networkId/settings", express.json(), async (req, res) =>
   }
 });
 
+// =============================================================================
+// AI ROOT CAUSE ANALYSIS ENGINE
+// =============================================================================
+
+// Helper: Parse natural language query to extract parameters
+function parseRcaQuery(query) {
+  const lowerQuery = query.toLowerCase();
+
+  // Extract application mentions
+  const apps = [];
+  const appPatterns = [
+    { pattern: /zoom/i, name: 'Zoom', category: 'video' },
+    { pattern: /teams|microsoft teams/i, name: 'Microsoft Teams', category: 'video' },
+    { pattern: /webex/i, name: 'Webex', category: 'video' },
+    { pattern: /slack/i, name: 'Slack', category: 'collaboration' },
+    { pattern: /youtube/i, name: 'YouTube', category: 'streaming' },
+    { pattern: /netflix/i, name: 'Netflix', category: 'streaming' },
+    { pattern: /wifi|wireless|network/i, name: 'WiFi', category: 'connectivity' },
+    { pattern: /internet/i, name: 'Internet', category: 'connectivity' },
+    { pattern: /voip|voice|calling/i, name: 'VoIP', category: 'voice' },
+  ];
+
+  for (const app of appPatterns) {
+    if (app.pattern.test(query)) {
+      apps.push(app);
+    }
+  }
+
+  // Extract location mentions
+  let location = null;
+  const locationPatterns = [
+    /floor\s*(\d+)/i,
+    /building\s*(\w+)/i,
+    /room\s*(\w+)/i,
+    /(\w+)\s*floor/i,
+    /level\s*(\d+)/i,
+  ];
+
+  for (const pattern of locationPatterns) {
+    const match = query.match(pattern);
+    if (match) {
+      location = { type: pattern.source.includes('floor') ? 'floor' : 'area', value: match[1] };
+      break;
+    }
+  }
+
+  // Extract time references
+  let timeframe = 'recent'; // default
+  if (/today/i.test(query)) timeframe = 'today';
+  else if (/yesterday/i.test(query)) timeframe = 'yesterday';
+  else if (/this week/i.test(query)) timeframe = 'week';
+  else if (/last hour/i.test(query)) timeframe = 'hour';
+  else if (/now|current/i.test(query)) timeframe = 'now';
+
+  // Extract problem type
+  let problemType = 'general';
+  if (/fail|failing|doesn't work|not working|broken|down/i.test(query)) problemType = 'failure';
+  else if (/slow|lag|latency|delay/i.test(query)) problemType = 'performance';
+  else if (/disconnect|dropping|drops|intermittent/i.test(query)) problemType = 'intermittent';
+  else if (/can't connect|unable to connect|connection/i.test(query)) problemType = 'connectivity';
+
+  return { apps, location, timeframe, problemType, originalQuery: query };
+}
+
+// Helper: Calculate timespan in seconds based on timeframe
+function getTimespanSeconds(timeframe) {
+  switch (timeframe) {
+    case 'hour': return 3600;
+    case 'now': return 1800; // 30 minutes
+    case 'today': return 86400;
+    case 'yesterday': return 172800;
+    case 'week': return 604800;
+    default: return 86400; // 1 day default
+  }
+}
+
+// RCA API: Analyze network issue
+app.post("/api/rca/analyze", express.json(), async (req, res) => {
+  try {
+    const { question, networkId } = req.body;
+
+    if (!question) {
+      return res.status(400).json({ error: "Question is required" });
+    }
+
+    // Parse the question
+    const parsed = parseRcaQuery(question);
+    const timespan = getTimespanSeconds(parsed.timeframe);
+
+    // Get organization and network info
+    const orgs = await merakiFetch("/organizations");
+    if (!orgs || orgs.length === 0) {
+      return res.status(500).json({ error: "No organizations found" });
+    }
+
+    const orgId = orgs[0].id;
+    const networks = await merakiFetch(\`/organizations/\${orgId}/networks\`);
+
+    // Use provided networkId or first network
+    let targetNetwork = networkId
+      ? networks.find(n => n.id === networkId)
+      : networks[0];
+
+    if (!targetNetwork) {
+      return res.status(500).json({ error: "No networks found" });
+    }
+
+    // Gather data from multiple sources
+    const analysisData = {
+      parsed,
+      network: targetNetwork,
+      findings: [],
+      metrics: {},
+      recommendations: [],
+      confidence: 0,
+      summary: ""
+    };
+
+    // 1. Get wireless events
+    let wirelessEvents = [];
+    try {
+      const eventsRes = await merakiFetch(
+        \`/networks/\${targetNetwork.id}/events?productType=wireless&perPage=500&timespan=\${timespan}\`
+      );
+      wirelessEvents = eventsRes.events || [];
+      analysisData.metrics.totalEvents = wirelessEvents.length;
+    } catch (e) {
+      console.log("Could not fetch wireless events:", e.message);
+    }
+
+    // 2. Get device statuses
+    let deviceStatuses = [];
+    try {
+      deviceStatuses = await merakiFetch(\`/organizations/\${orgId}/devices/statuses\`);
+      const offlineCount = deviceStatuses.filter(d => d.status === 'offline').length;
+      const alertingCount = deviceStatuses.filter(d => d.status === 'alerting').length;
+      analysisData.metrics.totalDevices = deviceStatuses.length;
+      analysisData.metrics.offlineDevices = offlineCount;
+      analysisData.metrics.alertingDevices = alertingCount;
+
+      if (offlineCount > 0) {
+        analysisData.findings.push({
+          type: 'device_health',
+          severity: 'high',
+          title: 'Offline Devices Detected',
+          detail: \`\${offlineCount} device(s) are currently offline, which may impact connectivity.\`,
+          devices: deviceStatuses.filter(d => d.status === 'offline').map(d => d.name || d.serial)
+        });
+      }
+
+      if (alertingCount > 0) {
+        analysisData.findings.push({
+          type: 'device_health',
+          severity: 'medium',
+          title: 'Devices in Alerting State',
+          detail: \`\${alertingCount} device(s) are in alerting state and may need attention.\`,
+          devices: deviceStatuses.filter(d => d.status === 'alerting').map(d => d.name || d.serial)
+        });
+      }
+    } catch (e) {
+      console.log("Could not fetch device statuses:", e.message);
+    }
+
+    // 3. Analyze events for patterns
+    const eventCounts = {};
+    const failureEvents = [];
+    const roamingEvents = [];
+    const authEvents = [];
+
+    for (const event of wirelessEvents) {
+      eventCounts[event.type] = (eventCounts[event.type] || 0) + 1;
+
+      // Categorize events
+      if (/disassoc|deauth|fail|reject/i.test(event.type)) {
+        failureEvents.push(event);
+      }
+      if (/roam/i.test(event.type)) {
+        roamingEvents.push(event);
+      }
+      if (/auth|8021x|radius/i.test(event.type)) {
+        authEvents.push(event);
+      }
+    }
+
+    analysisData.metrics.eventBreakdown = eventCounts;
+
+    // 4. Check for authentication issues
+    if (authEvents.length > 10) {
+      const authFailures = authEvents.filter(e => /fail|reject/i.test(e.type));
+      if (authFailures.length > 5) {
+        analysisData.findings.push({
+          type: 'authentication',
+          severity: 'high',
+          title: 'Authentication Failures Detected',
+          detail: \`\${authFailures.length} authentication failures in the last \${parsed.timeframe}. This could indicate RADIUS/802.1X issues or credential problems.\`,
+          count: authFailures.length
+        });
+      }
+    }
+
+    // 5. Check for excessive roaming
+    if (roamingEvents.length > 50) {
+      analysisData.findings.push({
+        type: 'roaming',
+        severity: 'medium',
+        title: 'High Roaming Activity',
+        detail: \`\${roamingEvents.length} roaming events detected. Excessive roaming can cause brief disconnections affecting real-time applications like \${parsed.apps.map(a => a.name).join(', ') || 'video calls'}.\`,
+        count: roamingEvents.length
+      });
+
+      analysisData.recommendations.push({
+        title: 'Optimize Roaming Settings',
+        detail: 'Consider adjusting minimum bitrate settings and enabling band steering to reduce unnecessary roaming.'
+      });
+    }
+
+    // 6. Check for connection failures
+    if (failureEvents.length > 20) {
+      analysisData.findings.push({
+        type: 'connectivity',
+        severity: 'high',
+        title: 'Connection Failures',
+        detail: \`\${failureEvents.length} connection failure events detected. Clients are having trouble maintaining stable connections.\`,
+        count: failureEvents.length
+      });
+    }
+
+    // 7. Application-specific analysis
+    if (parsed.apps.some(a => a.category === 'video')) {
+      // Video apps need low latency and consistent connectivity
+      if (roamingEvents.length > 20 || failureEvents.length > 10) {
+        analysisData.findings.push({
+          type: 'application',
+          severity: 'high',
+          title: 'Video Application Impact',
+          detail: \`Video applications like \${parsed.apps.filter(a => a.category === 'video').map(a => a.name).join(', ')} require stable, low-latency connections. The detected roaming (\${roamingEvents.length}) and failure events (\${failureEvents.length}) would cause video freezing, audio drops, and call disconnections.\`,
+          impact: 'Video calls may freeze, audio may cut out, screen sharing may fail'
+        });
+
+        analysisData.recommendations.push({
+          title: 'Prioritize Video Traffic',
+          detail: 'Enable QoS policies to prioritize video conferencing traffic. Consider creating a dedicated SSID with traffic shaping for video applications.'
+        });
+      }
+    }
+
+    // 8. Location-specific analysis
+    if (parsed.location) {
+      // Filter events/devices by location if device names contain floor info
+      const locationPattern = new RegExp(parsed.location.value, 'i');
+      const locationDevices = deviceStatuses.filter(d =>
+        (d.name && locationPattern.test(d.name)) ||
+        (d.tags && d.tags.some(t => locationPattern.test(t)))
+      );
+
+      if (locationDevices.length > 0) {
+        const locationOffline = locationDevices.filter(d => d.status === 'offline');
+        if (locationOffline.length > 0) {
+          analysisData.findings.push({
+            type: 'location',
+            severity: 'critical',
+            title: \`Coverage Issue on \${parsed.location.type} \${parsed.location.value}\`,
+            detail: \`\${locationOffline.length} of \${locationDevices.length} access points on \${parsed.location.type} \${parsed.location.value} are offline. This would cause complete coverage gaps.\`,
+            devices: locationOffline.map(d => d.name || d.serial)
+          });
+        }
+
+        analysisData.metrics.locationDevices = locationDevices.length;
+        analysisData.metrics.locationOffline = locationOffline.length;
+      }
+    }
+
+    // 9. Calculate confidence score
+    let confidence = 30; // Base confidence
+    if (analysisData.findings.length > 0) confidence += 20;
+    if (analysisData.findings.some(f => f.severity === 'critical')) confidence += 30;
+    if (analysisData.findings.some(f => f.severity === 'high')) confidence += 15;
+    if (wirelessEvents.length > 100) confidence += 5;
+    confidence = Math.min(confidence, 95);
+    analysisData.confidence = confidence;
+
+    // 10. Generate summary
+    if (analysisData.findings.length === 0) {
+      analysisData.summary = \`No significant issues detected for "\${question}". Network appears to be operating normally. If problems persist, consider checking client device configurations or application-specific settings.\`;
+      analysisData.recommendations.push({
+        title: 'Client-Side Troubleshooting',
+        detail: 'If issues persist, check client device drivers, firewall settings, and application configurations.'
+      });
+    } else {
+      const criticalFindings = analysisData.findings.filter(f => f.severity === 'critical');
+      const highFindings = analysisData.findings.filter(f => f.severity === 'high');
+
+      if (criticalFindings.length > 0) {
+        analysisData.summary = \`CRITICAL: \${criticalFindings[0].title}. \${criticalFindings[0].detail}\`;
+      } else if (highFindings.length > 0) {
+        analysisData.summary = \`Root cause analysis found \${highFindings.length} significant issue(s). Primary: \${highFindings[0].title}. \${highFindings[0].detail}\`;
+      } else {
+        analysisData.summary = \`Analysis found \${analysisData.findings.length} potential contributing factor(s) for "\${question}".\`;
+      }
+    }
+
+    // Add general recommendations based on problem type
+    if (parsed.problemType === 'performance') {
+      analysisData.recommendations.push({
+        title: 'Check Channel Utilization',
+        detail: 'High channel utilization can cause slowdowns. Consider enabling auto-channel selection or manually optimizing channel assignments.'
+      });
+    }
+
+    if (parsed.problemType === 'connectivity') {
+      analysisData.recommendations.push({
+        title: 'Verify DHCP and DNS',
+        detail: 'Connectivity issues often stem from DHCP pool exhaustion or DNS failures. Check DHCP lease availability and DNS server reachability.'
+      });
+    }
+
+    res.json(analysisData);
+
+  } catch (err) {
+    console.error("RCA Analysis error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// RCA API: Get quick health summary
+app.get("/api/rca/health-summary", async (req, res) => {
+  try {
+    const orgs = await merakiFetch("/organizations");
+    if (!orgs || orgs.length === 0) {
+      return res.status(500).json({ error: "No organizations found" });
+    }
+
+    const orgId = orgs[0].id;
+    const [devices, networks] = await Promise.all([
+      merakiFetch(\`/organizations/\${orgId}/devices/statuses\`),
+      merakiFetch(\`/organizations/\${orgId}/networks\`)
+    ]);
+
+    const summary = {
+      totalDevices: devices.length,
+      online: devices.filter(d => d.status === 'online').length,
+      offline: devices.filter(d => d.status === 'offline').length,
+      alerting: devices.filter(d => d.status === 'alerting').length,
+      dormant: devices.filter(d => d.status === 'dormant').length,
+      networks: networks.length,
+      healthScore: 0,
+      status: 'unknown'
+    };
+
+    // Calculate health score
+    if (summary.totalDevices > 0) {
+      summary.healthScore = Math.round((summary.online / summary.totalDevices) * 100);
+    }
+
+    if (summary.healthScore >= 95) summary.status = 'healthy';
+    else if (summary.healthScore >= 80) summary.status = 'warning';
+    else summary.status = 'critical';
+
+    res.json(summary);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // XIQ API: List Devices
 app.get("/api/xiq/devices", async (req, res) => {
   try {
@@ -847,6 +1211,12 @@ app.get(UI_ROUTE, (_req, res) => {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
     }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .rca-example:hover {
+      filter: brightness(1.2);
+    }
     .section-title {
       display: flex;
       align-items: center;
@@ -893,6 +1263,61 @@ app.get(UI_ROUTE, (_req, res) => {
       <div>
         <h2 style="margin:0;font-size:1.25rem;font-weight:600;color:var(--foreground)">Meraki Dynamic Troubleshooting</h2>
         <div style="font-size:0.875rem;color:var(--foreground-muted);margin-top:4px">Real-time wireless diagnostics and event analysis</div>
+      </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--primary);background:linear-gradient(135deg,rgba(187,134,252,0.05),rgba(3,218,197,0.05))">
+      <div class="section-title">
+        <span class="icon" style="color:var(--primary)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        <h2>AI Root Cause Analysis</h2>
+        <span style="margin-left:auto;padding:4px 10px;background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:12px;font-size:10px;font-weight:600;color:rgba(0,0,0,0.87);text-transform:uppercase">AI Powered</span>
+      </div>
+      <div class="muted">Ask natural language questions about network issues</div>
+
+      <div style="margin-top:16px">
+        <div style="display:flex;gap:8px">
+          <input type="text" id="rca-question" placeholder="Why is Zoom failing on floor 3?" style="flex:1;padding:12px 16px;background:linear-gradient(rgba(255,255,255,0.07),rgba(255,255,255,0.07)),#121212;border:1px solid rgba(187,134,252,0.3);border-radius:8px;color:rgba(255,255,255,0.87);font-family:var(--font-sans);font-size:14px;outline:none;" />
+          <button onclick="analyzeRca()" id="rca-button" style="padding:12px 20px;background:linear-gradient(135deg,var(--primary),#9966CC);border:none;border-radius:8px;color:rgba(0,0,0,0.87);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Analyze
+          </button>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button onclick="setRcaQuestion('Why is Zoom failing on floor 3?')" class="rca-example" style="padding:6px 12px;background:rgba(187,134,252,0.15);border:1px solid rgba(187,134,252,0.3);border-radius:16px;color:var(--primary);font-size:12px;cursor:pointer">Why is Zoom failing on floor 3?</button>
+          <button onclick="setRcaQuestion('What is causing slow WiFi in the building?')" class="rca-example" style="padding:6px 12px;background:rgba(3,218,197,0.15);border:1px solid rgba(3,218,197,0.3);border-radius:16px;color:var(--secondary);font-size:12px;cursor:pointer">What is causing slow WiFi?</button>
+          <button onclick="setRcaQuestion('Why are clients disconnecting frequently?')" class="rca-example" style="padding:6px 12px;background:rgba(255,183,77,0.15);border:1px solid rgba(255,183,77,0.3);border-radius:16px;color:#FFB74D;font-size:12px;cursor:pointer">Why are clients disconnecting?</button>
+          <button onclick="setRcaQuestion('Teams calls are dropping today')" class="rca-example" style="padding:6px 12px;background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.3);border-radius:16px;color:#FF6B35;font-size:12px;cursor:pointer">Teams calls dropping</button>
+        </div>
+      </div>
+
+      <div id="rca-results" style="margin-top:20px;display:none">
+        <div id="rca-loading" style="display:none;padding:40px;text-align:center">
+          <div style="width:40px;height:40px;border:3px solid rgba(187,134,252,0.3);border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
+          <div style="margin-top:12px;color:var(--foreground-muted)">Analyzing network data...</div>
+        </div>
+
+        <div id="rca-content" style="display:none">
+          <div id="rca-summary" style="padding:16px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid var(--primary);margin-bottom:16px">
+          </div>
+
+          <div id="rca-confidence" style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <span style="font-size:12px;color:rgba(255,255,255,0.6)">Confidence:</span>
+            <div style="flex:1;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden">
+              <div id="rca-confidence-bar" style="height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:4px;transition:width 0.5s"></div>
+            </div>
+            <span id="rca-confidence-value" style="font-size:12px;font-weight:600;color:var(--primary)">0%</span>
+          </div>
+
+          <div id="rca-findings" style="margin-bottom:16px">
+          </div>
+
+          <div id="rca-recommendations" style="margin-bottom:16px">
+          </div>
+
+          <div id="rca-metrics" style="display:flex;gap:12px;flex-wrap:wrap">
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1314,6 +1739,147 @@ app.get(UI_ROUTE, (_req, res) => {
     </div>
 
   <script>
+    // RCA Functions
+    function setRcaQuestion(question) {
+      document.getElementById('rca-question').value = question;
+    }
+
+    async function analyzeRca() {
+      const question = document.getElementById('rca-question').value.trim();
+      if (!question) {
+        alert('Please enter a question');
+        return;
+      }
+
+      const resultsDiv = document.getElementById('rca-results');
+      const loadingDiv = document.getElementById('rca-loading');
+      const contentDiv = document.getElementById('rca-content');
+      const button = document.getElementById('rca-button');
+
+      // Show loading state
+      resultsDiv.style.display = 'block';
+      loadingDiv.style.display = 'block';
+      contentDiv.style.display = 'none';
+      button.disabled = true;
+      button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analyzing...';
+
+      try {
+        const res = await fetch('/api/rca/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // Hide loading, show content
+        loadingDiv.style.display = 'none';
+        contentDiv.style.display = 'block';
+
+        // Update summary
+        const summaryDiv = document.getElementById('rca-summary');
+        const summaryColor = data.findings.some(f => f.severity === 'critical') ? 'var(--destructive)' :
+                           data.findings.some(f => f.severity === 'high') ? 'var(--warning)' :
+                           data.findings.length > 0 ? 'var(--secondary)' : 'var(--success)';
+        summaryDiv.style.borderLeftColor = summaryColor;
+        summaryDiv.innerHTML = '<div style="font-weight:600;color:' + summaryColor + ';margin-bottom:8px">Analysis Summary</div>' +
+                              '<div style="color:rgba(255,255,255,0.87)">' + data.summary + '</div>';
+
+        // Update confidence
+        document.getElementById('rca-confidence-bar').style.width = data.confidence + '%';
+        document.getElementById('rca-confidence-value').textContent = data.confidence + '%';
+
+        // Update findings
+        const findingsDiv = document.getElementById('rca-findings');
+        if (data.findings && data.findings.length > 0) {
+          findingsDiv.innerHTML = '<div style="font-weight:600;color:rgba(255,255,255,0.87);margin-bottom:12px">Findings</div>' +
+            data.findings.map(f => {
+              const severityColors = {
+                critical: { bg: 'rgba(207,102,121,0.15)', border: 'var(--destructive)', text: 'var(--destructive)' },
+                high: { bg: 'rgba(255,183,77,0.15)', border: 'var(--warning)', text: 'var(--warning)' },
+                medium: { bg: 'rgba(187,134,252,0.15)', border: 'var(--primary)', text: 'var(--primary)' },
+                low: { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.3)', text: 'rgba(255,255,255,0.6)' }
+              };
+              const colors = severityColors[f.severity] || severityColors.low;
+              return '<div style="padding:12px;background:' + colors.bg + ';border-left:3px solid ' + colors.border + ';border-radius:6px;margin-bottom:8px">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+                '<span style="font-weight:600;color:' + colors.text + '">' + f.title + '</span>' +
+                '<span style="padding:2px 8px;background:' + colors.border + ';border-radius:10px;font-size:10px;color:rgba(0,0,0,0.87);text-transform:uppercase">' + f.severity + '</span>' +
+                '</div>' +
+                '<div style="font-size:13px;color:rgba(255,255,255,0.7)">' + f.detail + '</div>' +
+                (f.devices ? '<div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.5)">Affected: ' + f.devices.slice(0, 5).join(', ') + (f.devices.length > 5 ? '...' : '') + '</div>' : '') +
+                '</div>';
+            }).join('');
+        } else {
+          findingsDiv.innerHTML = '';
+        }
+
+        // Update recommendations
+        const recsDiv = document.getElementById('rca-recommendations');
+        if (data.recommendations && data.recommendations.length > 0) {
+          recsDiv.innerHTML = '<div style="font-weight:600;color:rgba(255,255,255,0.87);margin-bottom:12px">Recommendations</div>' +
+            data.recommendations.map(r =>
+              '<div style="padding:12px;background:rgba(129,199,132,0.1);border-left:3px solid var(--success);border-radius:6px;margin-bottom:8px">' +
+              '<div style="font-weight:500;color:var(--success);margin-bottom:4px">' + r.title + '</div>' +
+              '<div style="font-size:13px;color:rgba(255,255,255,0.7)">' + r.detail + '</div>' +
+              '</div>'
+            ).join('');
+        } else {
+          recsDiv.innerHTML = '';
+        }
+
+        // Update metrics
+        const metricsDiv = document.getElementById('rca-metrics');
+        if (data.metrics) {
+          const metricItems = [];
+          if (data.metrics.totalEvents !== undefined) {
+            metricItems.push('<div style="padding:8px 12px;background:rgba(255,255,255,0.05);border-radius:6px;font-size:12px"><span style="color:var(--primary);font-weight:600">' + data.metrics.totalEvents + '</span> Events Analyzed</div>');
+          }
+          if (data.metrics.totalDevices !== undefined) {
+            metricItems.push('<div style="padding:8px 12px;background:rgba(255,255,255,0.05);border-radius:6px;font-size:12px"><span style="color:var(--secondary);font-weight:600">' + data.metrics.totalDevices + '</span> Devices</div>');
+          }
+          if (data.metrics.offlineDevices !== undefined && data.metrics.offlineDevices > 0) {
+            metricItems.push('<div style="padding:8px 12px;background:rgba(207,102,121,0.15);border-radius:6px;font-size:12px"><span style="color:var(--destructive);font-weight:600">' + data.metrics.offlineDevices + '</span> Offline</div>');
+          }
+          if (data.metrics.eventBreakdown) {
+            const topEvents = Object.entries(data.metrics.eventBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 3);
+            for (const [event, count] of topEvents) {
+              metricItems.push('<div style="padding:8px 12px;background:rgba(255,255,255,0.05);border-radius:6px;font-size:11px"><span style="color:rgba(255,255,255,0.6)">' + event + ':</span> <span style="font-weight:600">' + count + '</span></div>');
+            }
+          }
+          metricsDiv.innerHTML = metricItems.join('');
+        }
+
+      } catch (err) {
+        loadingDiv.style.display = 'none';
+        contentDiv.style.display = 'block';
+        document.getElementById('rca-summary').innerHTML = '<div style="color:var(--destructive)">Error: ' + err.message + '</div>';
+        document.getElementById('rca-findings').innerHTML = '';
+        document.getElementById('rca-recommendations').innerHTML = '';
+        document.getElementById('rca-metrics').innerHTML = '';
+      }
+
+      // Reset button
+      button.disabled = false;
+      button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Analyze';
+    }
+
+    // Allow Enter key to trigger analysis
+    document.addEventListener('DOMContentLoaded', function() {
+      const rcaInput = document.getElementById('rca-question');
+      if (rcaInput) {
+        rcaInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            analyzeRca();
+          }
+        });
+      }
+    });
+
     async function loadOrganizations() {
       const container = document.getElementById('orgs-container');
       try {
