@@ -2429,6 +2429,17 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
     </div>
 
+    <div class="card">
+      <div class="section-title">
+        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+        <h2>Meraki Organizations</h2>
+      </div>
+      <div class="muted">Connected Meraki Dashboard organizations:</div>
+      <div id="orgs-container" style="margin-top:12px">
+        <div class="muted">Loading...</div>
+      </div>
+    </div>
+
     <div class="card" style="border-left:3px solid var(--primary);background:linear-gradient(135deg,rgba(187,134,252,0.05),rgba(3,218,197,0.05))">
       <div class="section-title">
         <span class="icon" style="color:var(--primary)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
@@ -2742,17 +2753,6 @@ app.get(UI_ROUTE, (_req, res) => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="section-title">
-        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
-        <h2>Meraki Organizations</h2>
-      </div>
-      <div class="muted">Connected Meraki Dashboard organizations:</div>
-      <div id="orgs-container" style="margin-top:12px">
-        <div class="muted">Loading...</div>
       </div>
     </div>
 
