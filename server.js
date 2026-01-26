@@ -2006,6 +2006,195 @@ app.get("/api/switch/telemetry", async (req, res) => {
 });
 
 // ===========================================
+// LIVE NETWORK HEALTH RADAR API
+// ===========================================
+const FAIL_CONN_WINDOW_S = 900;  // 15 minutes
+const CHAN_UTIL_WINDOW_S = 900;  // 15 minutes
+
+function clampScore(n, a = 0, b = 100) {
+  return Math.max(a, Math.min(b, n));
+}
+
+function isoFromNow(secondsAgo) {
+  return new Date(Date.now() - secondsAgo * 1000).toISOString();
+}
+
+// Scoring functions (0-100, higher is better)
+function scoreWifi({ mrOnlinePct, chanUtilPct, failedPerMin }) {
+  const avail = clampScore(mrOnlinePct);
+  const utilPenalty = clampScore((chanUtilPct - 30) * 1.2, 0, 60);
+  const failPenalty = clampScore(failedPerMin * 8, 0, 60);
+  return clampScore(avail - (0.55 * utilPenalty + 0.45 * failPenalty));
+}
+
+function scoreWan({ lossPct, latencyMs, jitterMs }) {
+  const lossPenalty = clampScore(lossPct * 3.0, 0, 100);
+  const latPenalty = clampScore((latencyMs - 20) * 0.6, 0, 100);
+  const jitPenalty = clampScore((jitterMs - 5) * 1.5, 0, 100);
+  return clampScore(100 - (0.55 * lossPenalty + 0.30 * latPenalty + 0.15 * jitPenalty));
+}
+
+function scoreSwitching({ msOnlinePct }) {
+  return clampScore(msOnlinePct);
+}
+
+function scoreAvailability(onlinePct) {
+  return clampScore(onlinePct);
+}
+
+app.get("/api/network/health-radar", async (req, res) => {
+  try {
+    const networkId = req.query.networkId;
+    if (!networkId) {
+      return res.status(400).json({ error: "Missing networkId query param" });
+    }
+
+    const orgs = await merakiFetch("/organizations");
+    if (!orgs || orgs.length === 0) {
+      return res.status(500).json({ error: "No organizations found" });
+    }
+    const orgId = orgs[0].id;
+
+    // Get network info
+    const networks = await merakiFetch(`/organizations/${orgId}/networks?perPage=1000`);
+    const network = networks.find(n => n.id === networkId);
+    if (!network) {
+      return res.status(404).json({ error: "Network not found" });
+    }
+
+    // 1) Device statuses filtered to this network
+    const statuses = await merakiFetch(`/organizations/${orgId}/devices/statuses?perPage=1000`);
+    const netDevices = (Array.isArray(statuses) ? statuses : []).filter(d => d.networkId === networkId);
+
+    const total = netDevices.length;
+    const online = netDevices.filter(d => d.status === "online").length;
+    const onlinePct = total ? (online / total) * 100 : 100;
+
+    const isSwitch = (d) => d.productType === "switch" || (d.model || "").startsWith("MS");
+    const isWireless = (d) => d.productType === "wireless" || (d.model || "").startsWith("MR") || (d.model || "").startsWith("CW");
+    const isAppliance = (d) => d.productType === "appliance" || (d.model || "").startsWith("MX") || (d.model || "").startsWith("Z");
+
+    const ms = netDevices.filter(isSwitch);
+    const mr = netDevices.filter(isWireless);
+    const mx = netDevices.filter(isAppliance);
+
+    const msOnline = ms.filter(d => d.status === "online").length;
+    const mrOnline = mr.filter(d => d.status === "online").length;
+
+    const msOnlinePct = ms.length ? (msOnline / ms.length) * 100 : 100;
+    const mrOnlinePct = mr.length ? (mrOnline / mr.length) * 100 : 100;
+
+    // 2) WAN metrics from MX uplink loss/latency
+    let wan = { lossPct: 0, latencyMs: 0, jitterMs: 0, mxCount: mx.length };
+    try {
+      if (mx.length > 0) {
+        const ll = await merakiFetch(`/organizations/${orgId}/devices/uplinksLossAndLatency?timespan=300`);
+        const mxSerials = new Set(mx.map(d => d.serial).filter(Boolean));
+        const rows = Array.isArray(ll) ? ll.filter(r => mxSerials.has(r.serial)) : [];
+
+        let loss = 0, lat = 0, jit = 0;
+        for (const r of rows) {
+          const ts = r.timeSeries || [];
+          for (const t of ts) {
+            loss = Math.max(loss, Number(t.lossPercent || 0));
+            lat = Math.max(lat, Number(t.latencyMs || 0));
+          }
+        }
+        wan = { lossPct: loss, latencyMs: lat, jitterMs: jit, mxCount: mx.length };
+      }
+    } catch (e) {
+      wan.note = e.message;
+    }
+
+    // 3) Wireless failed connections rate
+    let failed = { count: 0, perMin: 0, windowS: FAIL_CONN_WINDOW_S };
+    try {
+      if (mr.length > 0) {
+        const t0 = isoFromNow(FAIL_CONN_WINDOW_S);
+        const t1 = new Date().toISOString();
+        const fc = await merakiFetch(`/networks/${networkId}/wireless/failedConnections?t0=${encodeURIComponent(t0)}&t1=${encodeURIComponent(t1)}&perPage=1000`);
+        const count = Array.isArray(fc) ? fc.length : 0;
+        failed = { count, perMin: count / (FAIL_CONN_WINDOW_S / 60), windowS: FAIL_CONN_WINDOW_S };
+      }
+    } catch (e) {
+      failed.note = e.message;
+    }
+
+    // 4) Channel utilization
+    let chan = { utilPct: 0, windowS: CHAN_UTIL_WINDOW_S };
+    try {
+      if (mr.length > 0) {
+        const t0 = isoFromNow(CHAN_UTIL_WINDOW_S);
+        const t1 = new Date().toISOString();
+        const cu = await merakiFetch(`/networks/${networkId}/wireless/channelUtilizationHistory?t0=${encodeURIComponent(t0)}&t1=${encodeURIComponent(t1)}&resolution=600`);
+        const rows = Array.isArray(cu) ? cu : [];
+        let acc = 0, n = 0;
+        for (const r of rows) {
+          const v = Number(r.utilizationTotal ?? r.utilization ?? NaN);
+          if (!Number.isNaN(v)) { acc += v; n++; }
+        }
+        chan = { utilPct: n ? (acc / n) : 0, windowS: CHAN_UTIL_WINDOW_S };
+      }
+    } catch (e) {
+      chan.note = e.message;
+    }
+
+    // Calculate scores
+    const scores = {
+      wifi: Math.round(scoreWifi({ mrOnlinePct, chanUtilPct: chan.utilPct, failedPerMin: failed.perMin })),
+      wan: Math.round(scoreWan(wan)),
+      switching: Math.round(scoreSwitching({ msOnlinePct })),
+      availability: Math.round(scoreAvailability(onlinePct))
+    };
+
+    // Overall health score (weighted average)
+    const hasWireless = mr.length > 0;
+    const hasSwitching = ms.length > 0;
+    const hasWan = mx.length > 0;
+
+    let weightedSum = scores.availability * 0.25;
+    let totalWeight = 0.25;
+    if (hasWireless) { weightedSum += scores.wifi * 0.35; totalWeight += 0.35; }
+    if (hasSwitching) { weightedSum += scores.switching * 0.20; totalWeight += 0.20; }
+    if (hasWan) { weightedSum += scores.wan * 0.20; totalWeight += 0.20; }
+
+    const overallScore = Math.round(weightedSum / totalWeight);
+
+    res.json({
+      network: { id: network.id, name: network.name },
+      ts: Date.now(),
+      counts: {
+        totalDevices: total,
+        online,
+        mr: mr.length,
+        ms: ms.length,
+        mx: mx.length
+      },
+      kpis: {
+        mrOnlinePct: Math.round(mrOnlinePct * 10) / 10,
+        msOnlinePct: Math.round(msOnlinePct * 10) / 10,
+        onlinePct: Math.round(onlinePct * 10) / 10,
+        failedConnectionsPerMin: Math.round(failed.perMin * 100) / 100,
+        channelUtilPct: Math.round(chan.utilPct * 10) / 10
+      },
+      failed,
+      chan,
+      wan,
+      scores,
+      overallScore,
+      radar: {
+        labels: ["Wi-Fi", "WAN", "Switching", "Availability"],
+        values: [scores.wifi, scores.wan, scores.switching, scores.availability]
+      }
+    });
+
+  } catch (err) {
+    console.error("Health radar error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===========================================
 // XIQ API: List Devices
 app.get("/api/xiq/devices", async (req, res) => {
   try {
@@ -2257,6 +2446,7 @@ app.get(UI_ROUTE, (_req, res) => {
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
     :root {
       --background: #121212;
@@ -2521,6 +2711,10 @@ app.get(UI_ROUTE, (_req, res) => {
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
           Telemetry
         </button>
+        <button onclick="switchAnalysisTab('radar')" id="tab-radar" class="ai-tab" style="padding:10px 20px;background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;color:#4CAF50;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Health Radar
+        </button>
       </div>
 
       <!-- Predictive Tab Content -->
@@ -2754,6 +2948,89 @@ app.get(UI_ROUTE, (_req, res) => {
                 Switches by Organization
               </div>
               <div id="telemetry-switches-list"><div class="muted">No switches found</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Health Radar Tab Content -->
+      <div id="panel-radar" class="ai-panel" style="margin-top:20px;display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <div>
+            <div style="font-size:16px;font-weight:600;color:rgba(255,255,255,0.87)">Live Network Health Radar</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.5)">Per-network health scores across Wi-Fi, WAN, Switching, and Availability</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="radar-network-select" style="padding:8px 12px;background:#0b1220;color:#e8eefc;border:1px solid rgba(76,175,80,0.3);border-radius:8px;font-size:13px;min-width:200px">
+              <option value="">Select Network...</option>
+            </select>
+            <button onclick="runHealthRadar()" id="radar-button" style="padding:10px 20px;background:linear-gradient(135deg,#4CAF50,#8BC34A);border:none;border-radius:8px;color:rgba(0,0,0,0.87);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Analyze
+            </button>
+          </div>
+        </div>
+
+        <div id="radar-results" style="display:none">
+          <div id="radar-loading" style="display:none;padding:40px;text-align:center">
+            <div style="width:40px;height:40px;border:3px solid rgba(76,175,80,0.3);border-top-color:#4CAF50;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
+            <div style="margin-top:12px;color:var(--foreground-muted)">Analyzing network health...</div>
+          </div>
+
+          <div id="radar-content" style="display:none">
+            <div style="display:flex;gap:20px;flex-wrap:wrap">
+              <!-- Radar Chart -->
+              <div style="flex:1;min-width:320px;max-width:480px">
+                <div style="padding:20px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(76,175,80,0.2)">
+                  <canvas id="health-radar-chart" style="width:100%;height:300px"></canvas>
+                </div>
+                <div style="margin-top:12px;text-align:center">
+                  <div style="font-size:11px;color:rgba(255,255,255,0.5)">Network: <span id="radar-network-name" style="color:#4CAF50">—</span></div>
+                  <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:4px">Updated: <span id="radar-timestamp">—</span></div>
+                </div>
+              </div>
+
+              <!-- KPIs and Details -->
+              <div style="flex:1;min-width:280px">
+                <!-- Overall Score -->
+                <div style="padding:20px;background:linear-gradient(135deg,rgba(76,175,80,0.15),rgba(139,195,74,0.1));border-radius:12px;border:1px solid rgba(76,175,80,0.3);text-align:center;margin-bottom:16px">
+                  <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6)">Overall Health Score</div>
+                  <div id="radar-overall-score" style="font-size:48px;font-weight:700;color:#4CAF50;margin:8px 0">—</div>
+                  <div id="radar-overall-grade" style="display:inline-block;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;background:rgba(76,175,80,0.3);color:#4CAF50">—</div>
+                </div>
+
+                <!-- Individual Scores -->
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px">
+                  <div style="padding:14px;background:rgba(255,255,255,0.05);border-radius:10px;border-left:3px solid #00BCD4">
+                    <div style="font-size:11px;color:rgba(255,255,255,0.5)">Wi-Fi Health</div>
+                    <div id="radar-score-wifi" style="font-size:24px;font-weight:700;color:#00BCD4;margin-top:4px">—</div>
+                  </div>
+                  <div style="padding:14px;background:rgba(255,255,255,0.05);border-radius:10px;border-left:3px solid #FF6B35">
+                    <div style="font-size:11px;color:rgba(255,255,255,0.5)">WAN Health</div>
+                    <div id="radar-score-wan" style="font-size:24px;font-weight:700;color:#FF6B35;margin-top:4px">—</div>
+                  </div>
+                  <div style="padding:14px;background:rgba(255,255,255,0.05);border-radius:10px;border-left:3px solid #2196F3">
+                    <div style="font-size:11px;color:rgba(255,255,255,0.5)">Switching</div>
+                    <div id="radar-score-switching" style="font-size:24px;font-weight:700;color:#2196F3;margin-top:4px">—</div>
+                  </div>
+                  <div style="padding:14px;background:rgba(255,255,255,0.05);border-radius:10px;border-left:3px solid #9C27B0">
+                    <div style="font-size:11px;color:rgba(255,255,255,0.5)">Availability</div>
+                    <div id="radar-score-availability" style="font-size:24px;font-weight:700;color:#9C27B0;margin-top:4px">—</div>
+                  </div>
+                </div>
+
+                <!-- Device Counts -->
+                <div style="padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.6)">
+                  <div style="font-weight:600;color:rgba(255,255,255,0.8);margin-bottom:8px">Device Counts</div>
+                  <div id="radar-device-counts" style="line-height:1.6">—</div>
+                </div>
+
+                <!-- KPI Details -->
+                <div style="margin-top:12px;padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.5)">
+                  <div style="font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:8px">Metrics Detail</div>
+                  <div id="radar-kpi-details" style="line-height:1.8">—</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -3328,11 +3605,12 @@ app.get(UI_ROUTE, (_req, res) => {
     // AI Network Intelligence Tab Switching
     function switchAnalysisTab(tab) {
       // Update tab buttons
-      const tabs = ['predictive', 'roaming', 'telemetry'];
+      const tabs = ['predictive', 'roaming', 'telemetry', 'radar'];
       const colors = {
         predictive: { active: 'linear-gradient(135deg,#FF6B35,#FFB74D)', inactive: 'rgba(255,107,53,0.15)', border: 'rgba(255,107,53,0.3)', text: '#FF6B35', activeText: 'rgba(0,0,0,0.87)' },
         roaming: { active: 'linear-gradient(135deg,#00BCD4,#009688)', inactive: 'rgba(0,188,212,0.15)', border: 'rgba(0,188,212,0.3)', text: '#00BCD4', activeText: 'rgba(0,0,0,0.87)' },
-        telemetry: { active: 'linear-gradient(135deg,#2196F3,#03A9F4)', inactive: 'rgba(33,150,243,0.15)', border: 'rgba(33,150,243,0.3)', text: '#2196F3', activeText: 'rgba(255,255,255,0.95)' }
+        telemetry: { active: 'linear-gradient(135deg,#2196F3,#03A9F4)', inactive: 'rgba(33,150,243,0.15)', border: 'rgba(33,150,243,0.3)', text: '#2196F3', activeText: 'rgba(255,255,255,0.95)' },
+        radar: { active: 'linear-gradient(135deg,#4CAF50,#8BC34A)', inactive: 'rgba(76,175,80,0.15)', border: 'rgba(76,175,80,0.3)', text: '#4CAF50', activeText: 'rgba(0,0,0,0.87)' }
       };
 
       tabs.forEach(t => {
@@ -3858,6 +4136,208 @@ app.get(UI_ROUTE, (_req, res) => {
       button.disabled = false;
       button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg> Load Telemetry';
     }
+
+    // ===========================================
+    // HEALTH RADAR FUNCTIONS
+    // ===========================================
+    let healthRadarChart = null;
+
+    async function loadRadarNetworks() {
+      const select = document.getElementById('radar-network-select');
+      try {
+        const res = await fetchWithTimeout('/api/networks', {}, 10000);
+        if (!res.ok) throw new Error('Failed to fetch networks');
+        const data = await res.json();
+
+        select.innerHTML = '<option value="">Select Network...</option>';
+        const networks = data.networks || data;
+        if (Array.isArray(networks)) {
+          networks.forEach(n => {
+            const opt = document.createElement('option');
+            opt.value = n.id;
+            opt.textContent = n.name;
+            select.appendChild(opt);
+          });
+        }
+      } catch (err) {
+        console.error('Error loading networks for radar:', err);
+      }
+    }
+
+    function initHealthRadarChart() {
+      const ctx = document.getElementById('health-radar-chart');
+      if (!ctx) return;
+
+      if (healthRadarChart) {
+        healthRadarChart.destroy();
+      }
+
+      healthRadarChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: ['Wi-Fi', 'WAN', 'Switching', 'Availability'],
+          datasets: [{
+            label: 'Health Score',
+            data: [0, 0, 0, 0],
+            fill: true,
+            backgroundColor: 'rgba(76, 175, 80, 0.2)',
+            borderColor: '#4CAF50',
+            borderWidth: 2,
+            pointBackgroundColor: '#4CAF50',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: '#4CAF50'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              suggestedMin: 0,
+              suggestedMax: 100,
+              ticks: {
+                stepSize: 20,
+                color: 'rgba(255,255,255,0.5)',
+                backdropColor: 'transparent'
+              },
+              grid: {
+                color: 'rgba(255,255,255,0.1)'
+              },
+              angleLines: {
+                color: 'rgba(255,255,255,0.1)'
+              },
+              pointLabels: {
+                color: 'rgba(255,255,255,0.8)',
+                font: { size: 12, weight: '500' }
+              }
+            }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    async function runHealthRadar() {
+      const resultsDiv = document.getElementById('radar-results');
+      const loadingDiv = document.getElementById('radar-loading');
+      const contentDiv = document.getElementById('radar-content');
+      const button = document.getElementById('radar-button');
+      const networkId = document.getElementById('radar-network-select').value;
+
+      if (!networkId) {
+        alert('Please select a network first');
+        return;
+      }
+
+      // Show loading state
+      resultsDiv.style.display = 'block';
+      loadingDiv.style.display = 'block';
+      contentDiv.style.display = 'none';
+      button.disabled = true;
+      button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analyzing...';
+
+      try {
+        const res = await fetchWithTimeout('/api/network/health-radar?networkId=' + encodeURIComponent(networkId), {}, 30000);
+        const data = await res.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // Hide loading, show content
+        loadingDiv.style.display = 'none';
+        contentDiv.style.display = 'block';
+
+        // Initialize chart if needed
+        if (!healthRadarChart) {
+          initHealthRadarChart();
+        }
+
+        // Update chart
+        if (healthRadarChart) {
+          healthRadarChart.data.datasets[0].data = data.radar.values;
+          healthRadarChart.update();
+        }
+
+        // Update network info
+        document.getElementById('radar-network-name').textContent = data.network?.name || networkId;
+        document.getElementById('radar-timestamp').textContent = new Date(data.ts).toLocaleString();
+
+        // Update overall score
+        const overall = data.overallScore || 0;
+        document.getElementById('radar-overall-score').textContent = overall;
+        document.getElementById('radar-overall-score').style.color = overall >= 80 ? '#4CAF50' : overall >= 60 ? '#FF9800' : '#F44336';
+
+        const grade = overall >= 90 ? 'A' : overall >= 80 ? 'B' : overall >= 70 ? 'C' : overall >= 60 ? 'D' : 'F';
+        const gradeEl = document.getElementById('radar-overall-grade');
+        gradeEl.textContent = grade;
+        gradeEl.style.background = overall >= 80 ? 'rgba(76,175,80,0.3)' : overall >= 60 ? 'rgba(255,152,0,0.3)' : 'rgba(244,67,54,0.3)';
+        gradeEl.style.color = overall >= 80 ? '#4CAF50' : overall >= 60 ? '#FF9800' : '#F44336';
+
+        // Update individual scores
+        const scores = data.scores || {};
+        document.getElementById('radar-score-wifi').textContent = scores.wifi ?? '--';
+        document.getElementById('radar-score-wan').textContent = scores.wan ?? '--';
+        document.getElementById('radar-score-switching').textContent = scores.switching ?? '--';
+        document.getElementById('radar-score-availability').textContent = scores.availability ?? '--';
+
+        // Color individual scores
+        ['wifi', 'wan', 'switching', 'availability'].forEach(key => {
+          const el = document.getElementById('radar-score-' + key);
+          const val = scores[key] || 0;
+          if (val < 60) el.style.opacity = '0.6';
+          else el.style.opacity = '1';
+        });
+
+        // Update device counts
+        const counts = data.counts || {};
+        document.getElementById('radar-device-counts').innerHTML =
+          'Total: <strong>' + (counts.totalDevices || 0) + '</strong> · ' +
+          'Online: <strong style="color:#4CAF50">' + (counts.online || 0) + '</strong><br>' +
+          'MR (Wireless): <strong>' + (counts.mr || 0) + '</strong> · ' +
+          'MS (Switch): <strong>' + (counts.ms || 0) + '</strong> · ' +
+          'MX (Appliance): <strong>' + (counts.mx || 0) + '</strong>';
+
+        // Update KPI details
+        const kpis = data.kpis || {};
+        const wan = data.wan || {};
+        const failed = data.failed || {};
+        const chan = data.chan || {};
+
+        let kpiHtml = '';
+        if (counts.mr > 0) {
+          kpiHtml += '<div>Wi-Fi: Channel Util <strong>' + (chan.utilPct || 0).toFixed(1) + '%</strong> · Failed Conn <strong>' + (failed.perMin || 0).toFixed(2) + '/min</strong> · MR Online <strong>' + (kpis.mrOnlinePct || 0) + '%</strong></div>';
+        }
+        if (counts.mx > 0) {
+          kpiHtml += '<div>WAN: Loss <strong>' + (wan.lossPct || 0) + '%</strong> · Latency <strong>' + (wan.latencyMs || 0) + 'ms</strong>' + (wan.jitterMs ? ' · Jitter <strong>' + wan.jitterMs + 'ms</strong>' : '') + '</div>';
+        }
+        if (counts.ms > 0) {
+          kpiHtml += '<div>Switching: MS Online <strong>' + (kpis.msOnlinePct || 0) + '%</strong></div>';
+        }
+        kpiHtml += '<div>Availability: All Devices Online <strong>' + (kpis.onlinePct || 0) + '%</strong></div>';
+
+        document.getElementById('radar-kpi-details').innerHTML = kpiHtml || '--';
+
+      } catch (err) {
+        loadingDiv.style.display = 'none';
+        contentDiv.style.display = 'block';
+        document.getElementById('radar-kpi-details').innerHTML = '<div style="color:var(--destructive)">Error: ' + err.message + '</div>';
+      }
+
+      // Reset button
+      button.disabled = false;
+      button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Analyze';
+    }
+
+    // Load networks for radar on tab switch
+    document.getElementById('tab-radar')?.addEventListener('click', () => {
+      if (document.getElementById('radar-network-select').options.length <= 1) {
+        loadRadarNetworks();
+      }
+    });
 
     async function loadOrganizations() {
       const container = document.getElementById('orgs-container');
