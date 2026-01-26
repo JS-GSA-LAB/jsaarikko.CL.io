@@ -2484,261 +2484,261 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
     </div>
 
-    <div class="card" style="border-left:3px solid #FF6B35;background:linear-gradient(135deg,rgba(255,107,53,0.05),rgba(255,183,77,0.05))">
+    <div class="card" style="border-left:3px solid #9C27B0;background:linear-gradient(135deg,rgba(156,39,176,0.05),rgba(103,58,183,0.05))">
       <div class="section-title">
-        <span class="icon" style="color:#FF6B35"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-        <h2>Predictive Outage Detection</h2>
-        <span style="margin-left:auto;padding:4px 10px;background:linear-gradient(135deg,#FF6B35,#FFB74D);border-radius:12px;font-size:10px;font-weight:600;color:rgba(0,0,0,0.87);text-transform:uppercase">Predictive</span>
+        <span class="icon" style="color:#9C27B0"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 12l8.5-8.5"/></svg></span>
+        <h2>AI Network Intelligence</h2>
+        <span style="margin-left:auto;padding:4px 10px;background:linear-gradient(135deg,#9C27B0,#673AB7);border-radius:12px;font-size:10px;font-weight:600;color:rgba(255,255,255,0.95);text-transform:uppercase">AI-Powered</span>
       </div>
-      <div class="muted">AI-powered analysis to predict potential network outages before they occur</div>
+      <div class="muted">Predictive analysis, roaming optimization, and switch telemetry in one unified view</div>
 
-      <div style="margin-top:16px">
-        <button onclick="runPredictiveAnalysis()" id="predictive-button" style="padding:12px 24px;background:linear-gradient(135deg,#FF6B35,#FFB74D);border:none;border-radius:8px;color:rgba(0,0,0,0.87);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          Run Predictive Analysis
+      <!-- Tab Navigation -->
+      <div id="ai-analysis-tabs" style="display:flex;gap:8px;margin-top:16px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px">
+        <button onclick="switchAnalysisTab('predictive')" id="tab-predictive" class="ai-tab active" style="padding:10px 20px;background:linear-gradient(135deg,#FF6B35,#FFB74D);border:none;border-radius:8px;color:rgba(0,0,0,0.87);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Predictive
+        </button>
+        <button onclick="switchAnalysisTab('roaming')" id="tab-roaming" class="ai-tab" style="padding:10px 20px;background:rgba(0,188,212,0.15);border:1px solid rgba(0,188,212,0.3);border-radius:8px;color:#00BCD4;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49"/></svg>
+          Roaming
+        </button>
+        <button onclick="switchAnalysisTab('telemetry')" id="tab-telemetry" class="ai-tab" style="padding:10px 20px;background:rgba(33,150,243,0.15);border:1px solid rgba(33,150,243,0.3);border-radius:8px;color:#2196F3;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          Telemetry
         </button>
       </div>
 
-      <div id="predictive-results" style="margin-top:20px;display:none">
-        <div id="predictive-loading" style="display:none;padding:40px;text-align:center">
-          <div style="width:40px;height:40px;border:3px solid rgba(255,107,53,0.3);border-top-color:#FF6B35;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
-          <div style="margin-top:12px;color:var(--foreground-muted)">Analyzing network trends...</div>
+      <!-- Predictive Tab Content -->
+      <div id="panel-predictive" class="ai-panel" style="margin-top:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <div>
+            <div style="font-size:16px;font-weight:600;color:rgba(255,255,255,0.87)">Predictive Outage Detection</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.5)">AI-powered analysis to predict potential network outages</div>
+          </div>
+          <button onclick="runPredictiveAnalysis()" id="predictive-button" style="padding:10px 20px;background:linear-gradient(135deg,#FF6B35,#FFB74D);border:none;border-radius:8px;color:rgba(0,0,0,0.87);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            Run Analysis
+          </button>
         </div>
 
-        <div id="predictive-content" style="display:none">
-          <div id="predictive-risk" style="padding:20px;border-radius:12px;margin-bottom:20px;text-align:center">
-            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6);margin-bottom:8px">Overall Risk Level</div>
-            <div id="predictive-risk-level" style="font-size:32px;font-weight:700">--</div>
-            <div id="predictive-risk-score" style="font-size:14px;color:rgba(255,255,255,0.6);margin-top:4px">Risk Score: --</div>
+        <div id="predictive-results" style="display:none">
+          <div id="predictive-loading" style="display:none;padding:40px;text-align:center">
+            <div style="width:40px;height:40px;border:3px solid rgba(255,107,53,0.3);border-top-color:#FF6B35;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
+            <div style="margin-top:12px;color:var(--foreground-muted)">Analyzing network trends...</div>
           </div>
 
-          <div id="predictive-categories" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px">
-            <div class="pred-category" data-category="uplink" style="padding:16px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid rgba(255,255,255,0.2)">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 22 4-10 4 10"/></svg>
-                <span style="font-weight:600;font-size:13px">Uplink Health</span>
-              </div>
-              <div id="pred-uplink-status" style="font-size:12px;color:rgba(255,255,255,0.6)">Checking...</div>
+          <div id="predictive-content" style="display:none">
+            <div id="predictive-risk" style="padding:20px;border-radius:12px;margin-bottom:20px;text-align:center">
+              <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6);margin-bottom:8px">Overall Risk Level</div>
+              <div id="predictive-risk-level" style="font-size:32px;font-weight:700">--</div>
+              <div id="predictive-risk-score" style="font-size:14px;color:rgba(255,255,255,0.6);margin-top:4px">Risk Score: --</div>
             </div>
-            <div class="pred-category" data-category="rf" style="padding:16px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid rgba(255,255,255,0.2)">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-                <span style="font-weight:600;font-size:13px">RF Congestion</span>
-              </div>
-              <div id="pred-rf-status" style="font-size:12px;color:rgba(255,255,255,0.6)">Checking...</div>
-            </div>
-            <div class="pred-category" data-category="poe" style="padding:16px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid rgba(255,255,255,0.2)">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                <span style="font-weight:600;font-size:13px">PoE Budget</span>
-              </div>
-              <div id="pred-poe-status" style="font-size:12px;color:rgba(255,255,255,0.6)">Checking...</div>
-            </div>
-            <div class="pred-category" data-category="hardware" style="padding:16px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid rgba(255,255,255,0.2)">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
-                <span style="font-weight:600;font-size:13px">Hardware Aging</span>
-              </div>
-              <div id="pred-hardware-status" style="font-size:12px;color:rgba(255,255,255,0.6)">Checking...</div>
-            </div>
-          </div>
 
-          <div id="predictive-predictions" style="margin-bottom:20px">
-          </div>
-
-          <div id="predictive-recommendations" style="margin-bottom:16px">
-          </div>
-
-          <div id="predictive-metrics" style="display:flex;gap:12px;flex-wrap:wrap">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" style="border-left:3px solid #00BCD4;background:linear-gradient(135deg,rgba(0,188,212,0.05),rgba(0,150,136,0.05))">
-      <div class="section-title">
-        <span class="icon" style="color:#00BCD4"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg></span>
-        <h2>Roaming Path Tracking</h2>
-        <span style="margin-left:auto;padding:4px 10px;background:linear-gradient(135deg,#00BCD4,#009688);border-radius:12px;font-size:10px;font-weight:600;color:rgba(0,0,0,0.87);text-transform:uppercase">AI-Optimized</span>
-      </div>
-      <div class="muted">Track client movement, detect roaming failures, and identify sticky clients</div>
-
-      <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <button onclick="runRoamingAnalysis()" id="roaming-button" style="padding:12px 24px;background:linear-gradient(135deg,#00BCD4,#009688);border:none;border-radius:8px;color:rgba(0,0,0,0.87);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49"/></svg>
-          Analyze Roaming
-        </button>
-        <div id="roaming-timespan-selector" style="display:flex;gap:4px">
-          <button onclick="setRoamingTimespan(3600)" data-timespan="3600" style="padding:4px 12px;font-size:11px;border:1px solid rgba(255,255,255,0.12);border-radius:6px;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;font-family:var(--font-sans)">1 Hour</button>
-          <button onclick="setRoamingTimespan(86400)" data-timespan="86400" style="padding:4px 12px;font-size:11px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;background:rgba(0,188,212,0.2);color:#00BCD4;cursor:pointer;font-family:var(--font-sans)">24 Hours</button>
-          <button onclick="setRoamingTimespan(604800)" data-timespan="604800" style="padding:4px 12px;font-size:11px;border:1px solid rgba(255,255,255,0.12);border-radius:6px;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;font-family:var(--font-sans)">7 Days</button>
-        </div>
-      </div>
-
-      <div id="roaming-results" style="margin-top:20px;display:none">
-        <div id="roaming-loading" style="display:none;padding:40px;text-align:center">
-          <div style="width:40px;height:40px;border:3px solid rgba(0,188,212,0.3);border-top-color:#00BCD4;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
-          <div style="margin-top:12px;color:var(--foreground-muted)">Analyzing client roaming patterns...</div>
-        </div>
-
-        <div id="roaming-content" style="display:none">
-          <div id="roaming-optimization" style="padding:20px;border-radius:12px;margin-bottom:20px;background:linear-gradient(135deg,rgba(0,188,212,0.2),rgba(0,150,136,0.1))">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
-              <div>
-                <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6);margin-bottom:4px">Optimization Score</div>
-                <div style="display:flex;align-items:baseline;gap:8px">
-                  <span id="roaming-score" style="font-size:48px;font-weight:700;color:#00BCD4">--</span>
-                  <span id="roaming-grade" style="font-size:24px;font-weight:600;padding:4px 12px;background:rgba(0,188,212,0.3);border-radius:8px">-</span>
+            <div id="predictive-categories" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px">
+              <div class="pred-category" data-category="uplink" style="padding:14px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid rgba(255,255,255,0.2)">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 22 4-10 4 10"/></svg>
+                  <span style="font-weight:600;font-size:12px">Uplink Health</span>
                 </div>
+                <div id="pred-uplink-status" style="font-size:11px;color:rgba(255,255,255,0.6)">Checking...</div>
               </div>
-              <div id="roaming-summary" style="flex:1;min-width:200px;max-width:400px;font-size:14px;color:rgba(255,255,255,0.7);padding-left:20px;border-left:2px solid rgba(255,255,255,0.1)">
-                --
+              <div class="pred-category" data-category="rf" style="padding:14px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid rgba(255,255,255,0.2)">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                  <span style="font-weight:600;font-size:12px">RF Congestion</span>
+                </div>
+                <div id="pred-rf-status" style="font-size:11px;color:rgba(255,255,255,0.6)">Checking...</div>
+              </div>
+              <div class="pred-category" data-category="poe" style="padding:14px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid rgba(255,255,255,0.2)">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                  <span style="font-weight:600;font-size:12px">PoE Budget</span>
+                </div>
+                <div id="pred-poe-status" style="font-size:11px;color:rgba(255,255,255,0.6)">Checking...</div>
+              </div>
+              <div class="pred-category" data-category="hardware" style="padding:14px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid rgba(255,255,255,0.2)">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+                  <span style="font-weight:600;font-size:12px">Hardware Aging</span>
+                </div>
+                <div id="pred-hardware-status" style="font-size:11px;color:rgba(255,255,255,0.6)">Checking...</div>
               </div>
             </div>
+
+            <div id="predictive-predictions" style="margin-bottom:20px"></div>
+            <div id="predictive-recommendations" style="margin-bottom:16px"></div>
+            <div id="predictive-metrics" style="display:flex;gap:12px;flex-wrap:wrap"></div>
           </div>
-
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">
-            <div style="padding:16px;background:rgba(255,255,255,0.05);border-radius:8px;text-align:center">
-              <div style="font-size:24px;font-weight:700;color:#00BCD4" id="roaming-metric-clients">--</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">Roaming Clients</div>
-            </div>
-            <div style="padding:16px;background:rgba(255,255,255,0.05);border-radius:8px;text-align:center">
-              <div style="font-size:24px;font-weight:700;color:var(--success)" id="roaming-metric-roams">--</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">Total Roams</div>
-            </div>
-            <div style="padding:16px;background:rgba(255,255,255,0.05);border-radius:8px;text-align:center">
-              <div style="font-size:24px;font-weight:700;color:var(--destructive)" id="roaming-metric-failures">--</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">Failures</div>
-            </div>
-            <div style="padding:16px;background:rgba(255,255,255,0.05);border-radius:8px;text-align:center">
-              <div style="font-size:24px;font-weight:700;color:var(--warning)" id="roaming-metric-sticky">--</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">Sticky Clients</div>
-            </div>
-          </div>
-
-          <div id="roaming-recommendations" style="margin-bottom:20px"></div>
-
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:16px">
-            <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:16px">
-              <div style="font-weight:600;color:rgba(255,255,255,0.87);margin-bottom:12px;display:flex;align-items:center;gap:8px">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00BCD4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                Top Roaming Clients
-              </div>
-              <div id="roaming-clients-list" style="max-height:250px;overflow-y:auto">
-                <div class="muted">No data</div>
-              </div>
-            </div>
-
-            <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:16px">
-              <div style="font-weight:600;color:rgba(255,255,255,0.87);margin-bottom:12px;display:flex;align-items:center;gap:8px">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--destructive)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                Roaming Failures
-              </div>
-              <div id="roaming-failures-list" style="max-height:250px;overflow-y:auto">
-                <div class="muted">No failures detected</div>
-              </div>
-            </div>
-
-            <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:16px">
-              <div style="font-weight:600;color:rgba(255,255,255,0.87);margin-bottom:12px;display:flex;align-items:center;gap:8px">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                Sticky Clients
-              </div>
-              <div id="roaming-sticky-list" style="max-height:250px;overflow-y:auto">
-                <div class="muted">No sticky clients detected</div>
-              </div>
-            </div>
-          </div>
-
-          <div id="roaming-transitions" style="margin-top:20px;background:rgba(255,255,255,0.03);border-radius:8px;padding:16px">
-            <div style="font-weight:600;color:rgba(255,255,255,0.87);margin-bottom:12px;display:flex;align-items:center;gap:8px">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-              Top AP Transitions
-            </div>
-            <div id="roaming-transitions-list" style="display:flex;flex-wrap:wrap;gap:8px">
-              <div class="muted">No data</div>
-            </div>
-          </div>
-
-          <div id="roaming-insights" style="margin-top:20px"></div>
         </div>
       </div>
-    </div>
 
-    <div class="card" style="border-left:3px solid #2196F3;background:linear-gradient(135deg,rgba(33,150,243,0.05),rgba(3,169,244,0.05))">
-      <div class="section-title">
-        <span class="icon" style="color:#2196F3"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></span>
-        <h2>Switch Port Telemetry</h2>
-        <span style="margin-left:auto;padding:4px 10px;background:linear-gradient(135deg,#2196F3,#03A9F4);border-radius:12px;font-size:10px;font-weight:600;color:rgba(255,255,255,0.95);text-transform:uppercase">All Orgs</span>
-      </div>
-      <div class="muted">Real-time port status, errors, CRC, drops, PoE, and negotiation issues across all switches</div>
-
-      <div style="margin-top:16px">
-        <button onclick="loadSwitchTelemetry()" id="switch-telemetry-button" style="padding:12px 24px;background:linear-gradient(135deg,#2196F3,#03A9F4);border:none;border-radius:8px;color:rgba(255,255,255,0.95);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
-          Load Switch Telemetry
-        </button>
-      </div>
-
-      <div id="switch-telemetry-results" style="margin-top:20px;display:none">
-        <div id="switch-telemetry-loading" style="display:none;padding:40px;text-align:center">
-          <div style="width:40px;height:40px;border:3px solid rgba(33,150,243,0.3);border-top-color:#2196F3;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
-          <div style="margin-top:12px;color:var(--foreground-muted)">Scanning all switches across organizations...</div>
+      <!-- Roaming Tab Content -->
+      <div id="panel-roaming" class="ai-panel" style="margin-top:20px;display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <div>
+            <div style="font-size:16px;font-weight:600;color:rgba(255,255,255,0.87)">Roaming Path Tracking</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.5)">Track client movement, detect failures, identify sticky clients</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div id="roaming-timespan-selector" style="display:flex;gap:4px">
+              <button onclick="setRoamingTimespan(3600)" data-timespan="3600" style="padding:4px 10px;font-size:11px;border:1px solid rgba(255,255,255,0.12);border-radius:6px;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;font-family:var(--font-sans)">1h</button>
+              <button onclick="setRoamingTimespan(86400)" data-timespan="86400" style="padding:4px 10px;font-size:11px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;background:rgba(0,188,212,0.2);color:#00BCD4;cursor:pointer;font-family:var(--font-sans)">24h</button>
+              <button onclick="setRoamingTimespan(604800)" data-timespan="604800" style="padding:4px 10px;font-size:11px;border:1px solid rgba(255,255,255,0.12);border-radius:6px;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;font-family:var(--font-sans)">7d</button>
+            </div>
+            <button onclick="runRoamingAnalysis()" id="roaming-button" style="padding:10px 20px;background:linear-gradient(135deg,#00BCD4,#009688);border:none;border-radius:8px;color:rgba(0,0,0,0.87);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49"/></svg>
+              Analyze
+            </button>
+          </div>
         </div>
 
-        <div id="switch-telemetry-content" style="display:none">
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px">
-            <div style="padding:16px;background:rgba(33,150,243,0.1);border-radius:8px;text-align:center">
-              <div style="font-size:24px;font-weight:700;color:#2196F3" id="telemetry-total-switches">--</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">Switches</div>
-            </div>
-            <div style="padding:16px;background:rgba(255,255,255,0.05);border-radius:8px;text-align:center">
-              <div style="font-size:24px;font-weight:700;color:var(--foreground)" id="telemetry-total-ports">--</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">Total Ports</div>
-            </div>
-            <div style="padding:16px;background:rgba(207,102,121,0.15);border-radius:8px;text-align:center">
-              <div style="font-size:24px;font-weight:700;color:var(--destructive)" id="telemetry-errors">--</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">Errors</div>
-            </div>
-            <div style="padding:16px;background:rgba(255,152,0,0.15);border-radius:8px;text-align:center">
-              <div style="font-size:24px;font-weight:700;color:#FF9800" id="telemetry-crc">--</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">CRC</div>
-            </div>
-            <div style="padding:16px;background:rgba(156,39,176,0.15);border-radius:8px;text-align:center">
-              <div style="font-size:24px;font-weight:700;color:#9C27B0" id="telemetry-drops">--</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">Drops</div>
-            </div>
-            <div style="padding:16px;background:rgba(255,183,77,0.15);border-radius:8px;text-align:center">
-              <div style="font-size:24px;font-weight:700;color:var(--warning)" id="telemetry-poe">--</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">PoE Issues</div>
-            </div>
-            <div style="padding:16px;background:rgba(121,85,72,0.15);border-radius:8px;text-align:center">
-              <div style="font-size:24px;font-weight:700;color:#795548" id="telemetry-negotiation">--</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">Negotiation</div>
-            </div>
-            <div style="padding:16px;background:rgba(96,125,139,0.15);border-radius:8px;text-align:center">
-              <div style="font-size:24px;font-weight:700;color:#607D8B" id="telemetry-offline">--</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">Offline</div>
-            </div>
+        <div id="roaming-results" style="display:none">
+          <div id="roaming-loading" style="display:none;padding:40px;text-align:center">
+            <div style="width:40px;height:40px;border:3px solid rgba(0,188,212,0.3);border-top-color:#00BCD4;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
+            <div style="margin-top:12px;color:var(--foreground-muted)">Analyzing client roaming patterns...</div>
           </div>
 
-          <div id="telemetry-issues-container" style="margin-bottom:20px">
-            <div style="font-weight:600;color:rgba(255,255,255,0.87);margin-bottom:12px;display:flex;align-items:center;gap:8px">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--destructive)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              Port Issues
+          <div id="roaming-content" style="display:none">
+            <div id="roaming-optimization" style="padding:16px;border-radius:12px;margin-bottom:20px;background:linear-gradient(135deg,rgba(0,188,212,0.2),rgba(0,150,136,0.1))">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+                <div>
+                  <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6);margin-bottom:4px">Optimization Score</div>
+                  <div style="display:flex;align-items:baseline;gap:8px">
+                    <span id="roaming-score" style="font-size:40px;font-weight:700;color:#00BCD4">--</span>
+                    <span id="roaming-grade" style="font-size:20px;font-weight:600;padding:4px 10px;background:rgba(0,188,212,0.3);border-radius:8px">-</span>
+                  </div>
+                </div>
+                <div id="roaming-summary" style="flex:1;min-width:180px;max-width:350px;font-size:13px;color:rgba(255,255,255,0.7);padding-left:16px;border-left:2px solid rgba(255,255,255,0.1)">--</div>
+              </div>
             </div>
-            <div id="telemetry-issues-list" style="max-height:300px;overflow-y:auto">
-              <div class="muted">No issues detected</div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:20px">
+              <div style="padding:14px;background:rgba(255,255,255,0.05);border-radius:8px;text-align:center">
+                <div style="font-size:22px;font-weight:700;color:#00BCD4" id="roaming-metric-clients">--</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px">Roaming Clients</div>
+              </div>
+              <div style="padding:14px;background:rgba(255,255,255,0.05);border-radius:8px;text-align:center">
+                <div style="font-size:22px;font-weight:700;color:var(--success)" id="roaming-metric-roams">--</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px">Total Roams</div>
+              </div>
+              <div style="padding:14px;background:rgba(255,255,255,0.05);border-radius:8px;text-align:center">
+                <div style="font-size:22px;font-weight:700;color:var(--destructive)" id="roaming-metric-failures">--</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px">Failures</div>
+              </div>
+              <div style="padding:14px;background:rgba(255,255,255,0.05);border-radius:8px;text-align:center">
+                <div style="font-size:22px;font-weight:700;color:var(--warning)" id="roaming-metric-sticky">--</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px">Sticky Clients</div>
+              </div>
             </div>
+
+            <div id="roaming-recommendations" style="margin-bottom:20px"></div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
+              <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:14px">
+                <div style="font-weight:600;font-size:13px;color:rgba(255,255,255,0.87);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00BCD4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Top Roaming Clients
+                </div>
+                <div id="roaming-clients-list" style="max-height:200px;overflow-y:auto"><div class="muted">No data</div></div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:14px">
+                <div style="font-weight:600;font-size:13px;color:rgba(255,255,255,0.87);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--destructive)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  Roaming Failures
+                </div>
+                <div id="roaming-failures-list" style="max-height:200px;overflow-y:auto"><div class="muted">No failures</div></div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:14px">
+                <div style="font-weight:600;font-size:13px;color:rgba(255,255,255,0.87);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Sticky Clients
+                </div>
+                <div id="roaming-sticky-list" style="max-height:200px;overflow-y:auto"><div class="muted">No sticky clients</div></div>
+              </div>
+            </div>
+
+            <div id="roaming-transitions" style="margin-top:16px;background:rgba(255,255,255,0.03);border-radius:8px;padding:14px">
+              <div style="font-weight:600;font-size:13px;color:rgba(255,255,255,0.87);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Top AP Transitions
+              </div>
+              <div id="roaming-transitions-list" style="display:flex;flex-wrap:wrap;gap:8px"><div class="muted">No data</div></div>
+            </div>
+
+            <div id="roaming-insights" style="margin-top:16px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Telemetry Tab Content -->
+      <div id="panel-telemetry" class="ai-panel" style="margin-top:20px;display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <div>
+            <div style="font-size:16px;font-weight:600;color:rgba(255,255,255,0.87)">Switch Port Telemetry</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.5)">Real-time port status, errors, CRC, drops, PoE across all switches</div>
+          </div>
+          <button onclick="loadSwitchTelemetry()" id="switch-telemetry-button" style="padding:10px 20px;background:linear-gradient(135deg,#2196F3,#03A9F4);border:none;border-radius:8px;color:rgba(255,255,255,0.95);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+            Load Telemetry
+          </button>
+        </div>
+
+        <div id="switch-telemetry-results" style="display:none">
+          <div id="switch-telemetry-loading" style="display:none;padding:40px;text-align:center">
+            <div style="width:40px;height:40px;border:3px solid rgba(33,150,243,0.3);border-top-color:#2196F3;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
+            <div style="margin-top:12px;color:var(--foreground-muted)">Scanning all switches...</div>
           </div>
 
-          <div id="telemetry-switches-container">
-            <div style="font-weight:600;color:rgba(255,255,255,0.87);margin-bottom:12px;display:flex;align-items:center;gap:8px">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2196F3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
-              Switches by Organization
+          <div id="switch-telemetry-content" style="display:none">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:20px">
+              <div style="padding:14px;background:rgba(33,150,243,0.1);border-radius:8px;text-align:center">
+                <div style="font-size:22px;font-weight:700;color:#2196F3" id="telemetry-total-switches">--</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px">Switches</div>
+              </div>
+              <div style="padding:14px;background:rgba(255,255,255,0.05);border-radius:8px;text-align:center">
+                <div style="font-size:22px;font-weight:700;color:var(--foreground)" id="telemetry-total-ports">--</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px">Ports</div>
+              </div>
+              <div style="padding:14px;background:rgba(207,102,121,0.15);border-radius:8px;text-align:center">
+                <div style="font-size:22px;font-weight:700;color:var(--destructive)" id="telemetry-errors">--</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px">Errors</div>
+              </div>
+              <div style="padding:14px;background:rgba(255,152,0,0.15);border-radius:8px;text-align:center">
+                <div style="font-size:22px;font-weight:700;color:#FF9800" id="telemetry-crc">--</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px">CRC</div>
+              </div>
+              <div style="padding:14px;background:rgba(156,39,176,0.15);border-radius:8px;text-align:center">
+                <div style="font-size:22px;font-weight:700;color:#9C27B0" id="telemetry-drops">--</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px">Drops</div>
+              </div>
+              <div style="padding:14px;background:rgba(255,183,77,0.15);border-radius:8px;text-align:center">
+                <div style="font-size:22px;font-weight:700;color:var(--warning)" id="telemetry-poe">--</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px">PoE</div>
+              </div>
+              <div style="padding:14px;background:rgba(121,85,72,0.15);border-radius:8px;text-align:center">
+                <div style="font-size:22px;font-weight:700;color:#795548" id="telemetry-negotiation">--</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px">Negotiation</div>
+              </div>
+              <div style="padding:14px;background:rgba(96,125,139,0.15);border-radius:8px;text-align:center">
+                <div style="font-size:22px;font-weight:700;color:#607D8B" id="telemetry-offline">--</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px">Offline</div>
+              </div>
             </div>
-            <div id="telemetry-switches-list">
-              <div class="muted">No switches found</div>
+
+            <div id="telemetry-issues-container" style="margin-bottom:20px">
+              <div style="font-weight:600;font-size:13px;color:rgba(255,255,255,0.87);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--destructive)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                Port Issues
+              </div>
+              <div id="telemetry-issues-list" style="max-height:250px;overflow-y:auto"><div class="muted">No issues detected</div></div>
+            </div>
+
+            <div id="telemetry-switches-container">
+              <div style="font-weight:600;font-size:13px;color:rgba(255,255,255,0.87);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2196F3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                Switches by Organization
+              </div>
+              <div id="telemetry-switches-list"><div class="muted">No switches found</div></div>
             </div>
           </div>
         </div>
@@ -3321,6 +3321,37 @@ app.get(UI_ROUTE, (_req, res) => {
       }
     });
 
+    // AI Network Intelligence Tab Switching
+    function switchAnalysisTab(tab) {
+      // Update tab buttons
+      const tabs = ['predictive', 'roaming', 'telemetry'];
+      const colors = {
+        predictive: { active: 'linear-gradient(135deg,#FF6B35,#FFB74D)', inactive: 'rgba(255,107,53,0.15)', border: 'rgba(255,107,53,0.3)', text: '#FF6B35', activeText: 'rgba(0,0,0,0.87)' },
+        roaming: { active: 'linear-gradient(135deg,#00BCD4,#009688)', inactive: 'rgba(0,188,212,0.15)', border: 'rgba(0,188,212,0.3)', text: '#00BCD4', activeText: 'rgba(0,0,0,0.87)' },
+        telemetry: { active: 'linear-gradient(135deg,#2196F3,#03A9F4)', inactive: 'rgba(33,150,243,0.15)', border: 'rgba(33,150,243,0.3)', text: '#2196F3', activeText: 'rgba(255,255,255,0.95)' }
+      };
+
+      tabs.forEach(t => {
+        const tabBtn = document.getElementById('tab-' + t);
+        const panel = document.getElementById('panel-' + t);
+        const c = colors[t];
+
+        if (t === tab) {
+          tabBtn.style.background = c.active;
+          tabBtn.style.border = 'none';
+          tabBtn.style.color = c.activeText;
+          tabBtn.style.fontWeight = '600';
+          panel.style.display = 'block';
+        } else {
+          tabBtn.style.background = c.inactive;
+          tabBtn.style.border = '1px solid ' + c.border;
+          tabBtn.style.color = c.text;
+          tabBtn.style.fontWeight = '500';
+          panel.style.display = 'none';
+        }
+      });
+    }
+
     // Predictive Outage Detection Functions
     async function runPredictiveAnalysis() {
       const resultsDiv = document.getElementById('predictive-results');
@@ -3490,7 +3521,7 @@ app.get(UI_ROUTE, (_req, res) => {
 
       // Reset button
       button.disabled = false;
-      button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Run Predictive Analysis';
+      button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Run Analysis';
     }
 
     // Roaming Path Tracking Functions
@@ -3686,7 +3717,7 @@ app.get(UI_ROUTE, (_req, res) => {
 
       // Reset button
       button.disabled = false;
-      button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49"/></svg> Analyze Roaming';
+      button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49"/></svg> Analyze';
     }
 
     // Switch Port Telemetry Functions
@@ -3813,7 +3844,7 @@ app.get(UI_ROUTE, (_req, res) => {
 
       // Reset button
       button.disabled = false;
-      button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg> Load Switch Telemetry';
+      button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg> Load Telemetry';
     }
 
     async function loadOrganizations() {
