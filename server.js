@@ -2628,27 +2628,21 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
     </div>
 
-    <div style="margin:0 0 24px;padding:20px 24px;background:linear-gradient(135deg,rgba(108,179,63,0.15),rgba(129,199,132,0.1));border:1px solid rgba(108,179,63,0.3);border-radius:12px;display:flex;align-items:center;gap:16px">
-      <div style="flex-shrink:0">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 56" width="64" height="45">
-          <path fill="#9dbe40" d="M40,4 C23,4 16,12 14,18 C6,20 0,28 0,36 C0,46 8,52 18,52 L62,52 C72,52 80,46 80,36 C80,28 74,20 66,18 C64,12 57,4 40,4 Z"/>
-          <text x="40" y="38" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="28" font-weight="bold">M</text>
-        </svg>
+    <div style="margin:0 0 24px;padding:20px 24px;background:linear-gradient(135deg,rgba(108,179,63,0.15),rgba(129,199,132,0.1));border:1px solid rgba(108,179,63,0.3);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="flex-shrink:0">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 56" width="64" height="45">
+            <path fill="#9dbe40" d="M40,4 C23,4 16,12 14,18 C6,20 0,28 0,36 C0,46 8,52 18,52 L62,52 C72,52 80,46 80,36 C80,28 74,20 66,18 C64,12 57,4 40,4 Z"/>
+            <text x="40" y="38" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="28" font-weight="bold">M</text>
+          </svg>
+        </div>
+        <div>
+          <h2 style="margin:0;font-size:1.25rem;font-weight:600;color:var(--foreground)">Meraki Dynamic Troubleshooting</h2>
+          <div style="font-size:0.875rem;color:var(--foreground-muted);margin-top:4px">Real-time wireless diagnostics and event analysis</div>
+        </div>
       </div>
-      <div>
-        <h2 style="margin:0;font-size:1.25rem;font-weight:600;color:var(--foreground)">Meraki Dynamic Troubleshooting</h2>
-        <div style="font-size:0.875rem;color:var(--foreground-muted);margin-top:4px">Real-time wireless diagnostics and event analysis</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="section-title">
-        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
-        <h2>Meraki Organizations</h2>
-      </div>
-      <div class="muted">Connected Meraki Dashboard organizations:</div>
-      <div id="orgs-container" style="margin-top:12px">
-        <div class="muted">Loading...</div>
+      <div id="orgs-container" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <div class="muted" style="font-size:12px">Loading orgs...</div>
       </div>
     </div>
 
@@ -4372,22 +4366,21 @@ app.get(UI_ROUTE, (_req, res) => {
         if (!res.ok) throw new Error('Failed to fetch');
         const orgs = await res.json();
         if (orgs.error) {
-          container.innerHTML = '<div class="warn">' + orgs.error + '</div>';
+          container.innerHTML = '<div class="warn" style="font-size:12px">' + orgs.error + '</div>';
           return;
         }
         if (orgs.length === 0) {
-          container.innerHTML = '<div class="muted">No organizations found</div>';
+          container.innerHTML = '<div class="muted" style="font-size:12px">No organizations</div>';
           return;
         }
         container.innerHTML = orgs.map(org =>
-          '<div style="padding:10px;margin:6px 0;background:linear-gradient(rgba(255,255,255,0.05),rgba(255,255,255,0.05)),#121212;border:1px solid rgba(255,255,255,0.12);border-radius:8px">' +
-          '<div style="font-weight:500;color:rgba(255,255,255,0.87)">' + org.name + '</div>' +
-          '<div style="font-size:12px;color:rgba(255,255,255,0.6);font-family:var(--font-mono)">ID: ' + org.id + '</div>' +
-          (org.url ? '<a href="' + org.url + '" target="_blank" style="font-size:12px">Dashboard</a>' : '') +
-          '</div>'
+          '<a href="' + (org.url || 'https://dashboard.meraki.com') + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(157,190,64,0.2);border:1px solid rgba(157,190,64,0.4);border-radius:20px;text-decoration:none;transition:all 0.2s">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9dbe40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
+          '<span style="font-size:13px;font-weight:500;color:#9dbe40">' + org.name + '</span>' +
+          '</a>'
         ).join('');
       } catch (err) {
-        container.innerHTML = '<div class="warn">Error loading organizations</div>';
+        container.innerHTML = '<div class="warn" style="font-size:12px">Error loading orgs</div>';
       }
     }
 
