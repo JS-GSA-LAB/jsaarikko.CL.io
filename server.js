@@ -258,6 +258,24 @@ app.delete("/api/organizations/:orgId", async (req, res) => {
   }
 });
 
+// Meraki API: List all Networks (from first org)
+app.get("/api/networks", async (req, res) => {
+  try {
+    const orgs = await merakiFetch("/organizations");
+    if (!orgs || orgs.length === 0) {
+      return res.status(500).json({ error: "No organizations found" });
+    }
+    const orgId = orgs[0].id;
+    const networks = await merakiFetch(`/organizations/${orgId}/networks?perPage=1000`);
+    res.json({
+      orgId,
+      networks: (networks || []).map(n => ({ id: n.id, name: n.name, productTypes: n.productTypes }))
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Meraki API: List Networks for an Organization
 app.get("/api/organizations/:orgId/networks", async (req, res) => {
   try {
@@ -3632,6 +3650,14 @@ app.get(UI_ROUTE, (_req, res) => {
           panel.style.display = 'none';
         }
       });
+
+      // Load networks when radar tab is activated
+      if (tab === 'radar') {
+        const select = document.getElementById('radar-network-select');
+        if (select && select.options.length <= 1) {
+          loadRadarNetworks();
+        }
+      }
     }
 
     // Predictive Outage Detection Functions
