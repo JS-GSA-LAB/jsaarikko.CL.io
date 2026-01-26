@@ -2641,8 +2641,11 @@ app.get(UI_ROUTE, (_req, res) => {
           <div style="font-size:0.875rem;color:var(--foreground-muted);margin-top:4px">Real-time wireless diagnostics and event analysis</div>
         </div>
       </div>
-      <div id="orgs-container" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <div class="muted" style="font-size:12px">Loading orgs...</div>
+      <div style="text-align:right">
+        <div style="font-size:11px;font-weight:600;color:rgba(157,190,64,0.8);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Meraki Organizations</div>
+        <div id="orgs-container" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+          <div class="muted" style="font-size:12px">Loading...</div>
+        </div>
       </div>
     </div>
 
