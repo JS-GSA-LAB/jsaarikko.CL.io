@@ -381,6 +381,10 @@ app.get("/api/networks/:networkId/wireless-health", async (req, res) => {
       console.error('Error fetching WIPS events:', wipsErr.message);
     }
 
+    // Filter WIPS events by timespan (Meraki API doesn't always respect timespan with includedEventTypes)
+    const cutoffTime = new Date(Date.now() - (timespan * 1000));
+    wipsEvents = wipsEvents.filter(e => new Date(e.occurredAt) >= cutoffTime);
+
     // Categorize events
     const dfsEvents = allEvents.filter(e => e.type === 'dfs_event');
     const floodEvents = wipsEvents.filter(e => e.type === 'packet_flood' || e.type === 'device_packet_flood' || e.type === 'bcast_deauth' || e.type === 'bcast_disassoc');
