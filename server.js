@@ -366,12 +366,24 @@ app.get("/api/networks/:networkId/wireless-health", async (req, res) => {
   try {
     // Support timespan in seconds (default 1 day = 86400)
     const timespan = req.query.timespan || 86400;
+
+    // Fetch general wireless events
     const events = await merakiFetch(`/networks/${req.params.networkId}/events?productType=wireless&perPage=1000&timespan=${timespan}`);
     const allEvents = events.events || [];
 
+    // Fetch Air Marshal/WIPS events separately (they're rare and get lost in general events)
+    const wipsEventTypes = ['packet_flood', 'device_packet_flood', 'bcast_deauth', 'bcast_disassoc', 'rogue_ap_association'].join('&includedEventTypes[]=');
+    let wipsEvents = [];
+    try {
+      const wipsResponse = await merakiFetch(`/networks/${req.params.networkId}/events?productType=wireless&perPage=500&timespan=${timespan}&includedEventTypes[]=${wipsEventTypes}`);
+      wipsEvents = wipsResponse.events || [];
+    } catch (wipsErr) {
+      console.error('Error fetching WIPS events:', wipsErr.message);
+    }
+
     // Categorize events
     const dfsEvents = allEvents.filter(e => e.type === 'dfs_event');
-    const floodEvents = allEvents.filter(e => e.type === 'packet_flood');
+    const floodEvents = wipsEvents.filter(e => e.type === 'packet_flood' || e.type === 'device_packet_flood' || e.type === 'bcast_deauth' || e.type === 'bcast_disassoc');
     const rfChanges = allEvents.filter(e => e.type === 'sunray_auto_rf_channel_change');
     const roamEvents = allEvents.filter(e =>
       e.type === 'association' ||
