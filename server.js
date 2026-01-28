@@ -3012,7 +3012,15 @@ app.get(UI_ROUTE, (_req, res) => {
           <span class="icon" style="color:var(--primary)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></span>
           <h2>Packet Floods (WIPS)</h2>
         </div>
-        <div class="muted">Wireless intrusion alerts</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div class="muted">Wireless intrusion alerts</div>
+          <div id="wips-timespan-selector" style="display:flex;gap:4px">
+            <button onclick="loadFloodEvents(3600)" data-timespan="3600" style="padding:4px 10px;font-size:11px;border:1px solid rgba(255,255,255,0.12);border-radius:6px;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;font-family:var(--font-sans)">1h</button>
+            <button onclick="loadFloodEvents(86400)" data-timespan="86400" style="padding:4px 10px;font-size:11px;border:1px solid rgba(187,134,252,0.3);border-radius:6px;background:rgba(187,134,252,0.2);color:var(--primary);cursor:pointer;font-family:var(--font-sans)">24h</button>
+            <button onclick="loadFloodEvents(604800)" data-timespan="604800" style="padding:4px 10px;font-size:11px;border:1px solid rgba(255,255,255,0.12);border-radius:6px;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;font-family:var(--font-sans)">7d</button>
+            <button onclick="loadFloodEvents(2592000)" data-timespan="2592000" style="padding:4px 10px;font-size:11px;border:1px solid rgba(255,255,255,0.12);border-radius:6px;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;font-family:var(--font-sans)">30d</button>
+          </div>
+        </div>
         <div id="flood-events-container" style="margin-top:12px">
           <div class="muted">Loading...</div>
         </div>
@@ -4489,9 +4497,60 @@ app.get(UI_ROUTE, (_req, res) => {
         ).join('');
       }
 
-      // Flood Events
+      // Flood Events - handled by loadFloodEvents() with timespan selector
+
+      // Load roaming events with default 1 day
+      loadRoamingEvents(1);
+      // Load flood events with default 24h
+      loadFloodEvents(86400);
+    }
+
+    // WIPS/Flood events loader with timespan selector
+    async function loadFloodEvents(timespan) {
+      const floodContainer = document.getElementById('flood-events-container');
+
+      // Update button styles
+      const buttons = document.querySelectorAll('#wips-timespan-selector button');
+      buttons.forEach(btn => {
+        if (parseInt(btn.dataset.timespan) === timespan) {
+          btn.style.background = 'rgba(187,134,252,0.2)';
+          btn.style.borderColor = 'rgba(187,134,252,0.3)';
+          btn.style.color = 'var(--primary)';
+        } else {
+          btn.style.background = 'transparent';
+          btn.style.borderColor = 'rgba(255,255,255,0.12)';
+          btn.style.color = 'rgba(255,255,255,0.6)';
+        }
+      });
+
+      // Format timespan for display
+      const timespanLabel = timespan === 3600 ? '1 hour' : timespan === 86400 ? '24 hours' : timespan === 604800 ? '7 days' : '30 days';
+
+      // Show loading state
+      floodContainer.innerHTML = '<div class="muted">Loading ' + timespanLabel + ' of WIPS events...</div>';
+
+      const networks = [
+        { id: 'L_636133447366083359', name: 'Freehold, NJ' },
+        { id: 'L_636133447366083398', name: 'Suffolk, VA' }
+      ];
+
+      let allFloods = [];
+
+      for (const net of networks) {
+        try {
+          const res = await fetchWithTimeout('/api/networks/' + net.id + '/wireless-health?timespan=' + timespan, {}, 15000);
+          if (res.ok) {
+            const data = await res.json();
+            allFloods = allFloods.concat((data.floods?.events || []).map(e => ({...e, network: net.name})));
+          }
+        } catch (err) {
+          console.error('Error loading flood events for', net.name, err);
+        }
+      }
+
+      // Render flood events
       if (allFloods.length === 0) {
-        floodContainer.innerHTML = '<div class="success" style="font-size:13px">No intrusion alerts</div>';
+        floodContainer.innerHTML = '<div class="success" style="font-size:13px">No intrusion alerts in the last ' + timespanLabel + '</div>';
       } else {
         const byDevice = {};
         allFloods.forEach(e => {
@@ -4507,11 +4566,8 @@ app.get(UI_ROUTE, (_req, res) => {
           '<div style="font-size:11px;color:rgba(255,255,255,0.5)">' + info.bssids.size + ' sources · ' + info.network + '</div></div>'
         ).join('') +
         '<div style="margin-top:8px;padding:8px;background:rgba(187,134,252,0.1);border-radius:6px;font-size:11px;color:rgba(255,255,255,0.7)">' +
-        '<strong>Analysis:</strong> Packet floods from neighboring APs (eero, NETGEAR, Apple). No security threat - dense RF environment.</div>';
+        '<strong>Analysis:</strong> ' + allFloods.length + ' packet flood events detected in the last ' + timespanLabel + '.</div>';
       }
-
-      // Load roaming events with default 1 day
-      loadRoamingEvents(1);
     }
 
     // Roaming events loader with duration selector
