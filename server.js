@@ -365,7 +365,7 @@ app.get("/api/networks/:networkId/dfs-events", async (req, res) => {
 app.get("/api/networks/:networkId/wireless-health", async (req, res) => {
   try {
     // Support timespan in seconds (default 1 day = 86400)
-    const timespan = req.query.timespan || 86400;
+    const timespan = parseInt(req.query.timespan) || 86400;
 
     // Fetch general wireless events
     const events = await merakiFetch(`/networks/${req.params.networkId}/events?productType=wireless&perPage=1000&timespan=${timespan}`);
