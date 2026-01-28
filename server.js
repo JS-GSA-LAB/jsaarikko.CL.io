@@ -385,6 +385,19 @@ app.get("/api/networks/:networkId/wireless-health", async (req, res) => {
     const cutoffTime = new Date(Date.now() - (timespan * 1000));
     wipsEvents = wipsEvents.filter(e => new Date(e.occurredAt) >= cutoffTime);
 
+    // Fetch 6 GHz clients to identify LPI-capable devices
+    let sixGhzClientMacs = new Set();
+    try {
+      const sixGhzStats = await merakiFetch(`/networks/${req.params.networkId}/wireless/clients/connectionStats?band=6&timespan=${Math.min(timespan, 604800)}`);
+      if (Array.isArray(sixGhzStats)) {
+        sixGhzStats.forEach(client => {
+          if (client.mac) sixGhzClientMacs.add(client.mac.toLowerCase());
+        });
+      }
+    } catch (sixGhzErr) {
+      console.error('Error fetching 6 GHz clients:', sixGhzErr.message);
+    }
+
     // Categorize events
     const dfsEvents = allEvents.filter(e => e.type === 'dfs_event');
     const floodEvents = wipsEvents.filter(e => e.type === 'packet_flood' || e.type === 'device_packet_flood' || e.type === 'bcast_deauth' || e.type === 'bcast_disassoc');
@@ -460,7 +473,13 @@ app.get("/api/networks/:networkId/wireless-health", async (req, res) => {
           channel: e.eventData?.channel
         })),
         topClients: Object.entries(clientRoams)
-          .map(([mac, data]) => ({ mac, hostname: data.hostname, count: data.events.length, aps: [...data.devices] }))
+          .map(([mac, data]) => ({
+            mac,
+            hostname: data.hostname,
+            count: data.events.length,
+            aps: [...data.devices],
+            lpi: sixGhzClientMacs.has(mac.toLowerCase())
+          }))
           .sort((a, b) => b.count - a.count)
           .slice(0, 10)
       }
@@ -4697,10 +4716,11 @@ app.get(UI_ROUTE, (_req, res) => {
         if (allTopClients.length > 0) {
           const merged = {};
           allTopClients.forEach(c => {
-            if (!merged[c.mac]) merged[c.mac] = { count: 0, aps: new Set(), hostname: null };
+            if (!merged[c.mac]) merged[c.mac] = { count: 0, aps: new Set(), hostname: null, lpi: false };
             merged[c.mac].count += c.count;
             c.aps.forEach(ap => merged[c.mac].aps.add(ap));
             if (c.hostname && !merged[c.mac].hostname) merged[c.mac].hostname = c.hostname;
+            if (c.lpi) merged[c.mac].lpi = true;
           });
 
           const topClients = Object.entries(merged)
@@ -4713,8 +4733,8 @@ app.get(UI_ROUTE, (_req, res) => {
               '<div style="padding:8px 10px;margin:4px 0;background:linear-gradient(rgba(255,255,255,0.03),rgba(255,255,255,0.03)),#121212;border-radius:6px">' +
               '<div style="display:flex;justify-content:space-between;align-items:center">' +
               '<div>' +
-              (info.hostname ? '<div style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.95)">' + info.hostname + '</div>' : '') +
-              '<span style="font-size:11px;font-family:var(--font-mono);color:rgba(255,255,255,0.6)">' + mac + '</span>' +
+              (info.hostname ? '<div style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.95)">' + info.hostname + (info.lpi ? ' <span style="font-size:9px;padding:1px 4px;border-radius:3px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-weight:600;vertical-align:middle">6E</span>' : '') + '</div>' : '') +
+              '<div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;font-family:var(--font-mono);color:rgba(255,255,255,0.6)">' + mac + '</span>' + (!info.hostname && info.lpi ? '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-weight:600">6E</span>' : '') + '</div>' +
               '</div>' +
               '<span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--success);color:#000">' + info.count + ' events</span></div>' +
               '<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">Seen on: ' + [...info.aps].join(', ') + '</div></div>'
