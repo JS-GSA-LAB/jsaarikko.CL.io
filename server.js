@@ -408,9 +408,13 @@ app.get("/api/networks/:networkId/wireless-health", async (req, res) => {
     const clientRoams = {};
     roamEvents.forEach(e => {
       const client = e.clientMac || e.clientDescription || 'unknown';
-      if (!clientRoams[client]) clientRoams[client] = { events: [], devices: new Set() };
+      if (!clientRoams[client]) clientRoams[client] = { events: [], devices: new Set(), hostname: null };
       clientRoams[client].events.push(e);
       if (e.deviceName) clientRoams[client].devices.add(e.deviceName);
+      // Capture hostname/clientDescription if available
+      if (e.clientDescription && !clientRoams[client].hostname) {
+        clientRoams[client].hostname = e.clientDescription;
+      }
     });
 
     res.json({
@@ -456,7 +460,7 @@ app.get("/api/networks/:networkId/wireless-health", async (req, res) => {
           channel: e.eventData?.channel
         })),
         topClients: Object.entries(clientRoams)
-          .map(([mac, data]) => ({ mac, count: data.events.length, aps: [...data.devices] }))
+          .map(([mac, data]) => ({ mac, hostname: data.hostname, count: data.events.length, aps: [...data.devices] }))
           .sort((a, b) => b.count - a.count)
           .slice(0, 10)
       }
@@ -4693,9 +4697,10 @@ app.get(UI_ROUTE, (_req, res) => {
         if (allTopClients.length > 0) {
           const merged = {};
           allTopClients.forEach(c => {
-            if (!merged[c.mac]) merged[c.mac] = { count: 0, aps: new Set() };
+            if (!merged[c.mac]) merged[c.mac] = { count: 0, aps: new Set(), hostname: null };
             merged[c.mac].count += c.count;
             c.aps.forEach(ap => merged[c.mac].aps.add(ap));
+            if (c.hostname && !merged[c.mac].hostname) merged[c.mac].hostname = c.hostname;
           });
 
           const topClients = Object.entries(merged)
@@ -4707,9 +4712,12 @@ app.get(UI_ROUTE, (_req, res) => {
             topClients.map(([mac, info]) =>
               '<div style="padding:8px 10px;margin:4px 0;background:linear-gradient(rgba(255,255,255,0.03),rgba(255,255,255,0.03)),#121212;border-radius:6px">' +
               '<div style="display:flex;justify-content:space-between;align-items:center">' +
-              '<span style="font-size:12px;font-family:var(--font-mono);color:rgba(255,255,255,0.87)">' + mac + '</span>' +
+              '<div>' +
+              (info.hostname ? '<div style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.95)">' + info.hostname + '</div>' : '') +
+              '<span style="font-size:11px;font-family:var(--font-mono);color:rgba(255,255,255,0.6)">' + mac + '</span>' +
+              '</div>' +
               '<span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--success);color:#000">' + info.count + ' events</span></div>' +
-              '<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px">Seen on: ' + [...info.aps].join(', ') + '</div></div>'
+              '<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">Seen on: ' + [...info.aps].join(', ') + '</div></div>'
             ).join('');
         }
       }
