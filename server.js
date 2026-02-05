@@ -321,6 +321,17 @@ app.get("/api/networks/:networkId/events", async (req, res) => {
   }
 });
 
+// Meraki API: Get Network Traffic Analysis
+app.get("/api/networks/:networkId/traffic", async (req, res) => {
+  try {
+    const timespan = req.query.timespan || 86400;
+    const traffic = await merakiFetch(`/networks/${req.params.networkId}/traffic?timespan=${timespan}`);
+    res.json(traffic);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Meraki API: Get Device Events by Serial
 app.get("/api/devices/:serial/events", async (req, res) => {
   try {
