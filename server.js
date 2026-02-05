@@ -5148,6 +5148,10 @@ app.get(UI_ROUTE, (_req, res) => {
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
             Reset Layout
           </button>
+          <button id="topology-lock-btn" class="header-btn" onclick="toggleTopologyLock()" style="margin-right:8px">
+            <svg id="topology-lock-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z"/><path d="M17 11V7a5 5 0 0 0-9.58-2"/></svg>
+            <span id="topology-lock-text">Unlocked</span>
+          </button>
           <button class="header-btn" onclick="loadTopologyMap()">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             Refresh
@@ -5157,7 +5161,7 @@ app.get(UI_ROUTE, (_req, res) => {
       <div class="page-content">
         <div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2h-5m-3 3v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-5"/><path d="m3 3 18 18"/><path d="m9 9 6 6"/></svg>
-          <span style="color:#93c5fd;font-size:13px"><strong>Tip:</strong> Drag devices to rearrange the topology. Click a device or link for details. Use "Reset Layout" to restore default positions.</span>
+          <span style="color:#93c5fd;font-size:13px"><strong>Tip:</strong> Drag devices to rearrange the topology. Click "Lock" to prevent accidental moves. Use "Reset Layout" to restore defaults.</span>
         </div>
         <!-- Topology Stats -->
         <div class="stat-cards" id="topology-stats">
@@ -6181,6 +6185,7 @@ app.get(UI_ROUTE, (_req, res) => {
     // Topology Map Functions
     let topologyData = null;
     let customPositions = {}; // Store user-dragged positions
+    let topologyLocked = false; // Lock state to prevent dragging
     let dragState = {
       isDragging: false,
       nodeId: null,
@@ -6189,6 +6194,36 @@ app.get(UI_ROUTE, (_req, res) => {
       offsetX: 0,
       offsetY: 0
     };
+
+    function toggleTopologyLock() {
+      topologyLocked = !topologyLocked;
+      const lockBtn = document.getElementById('topology-lock-btn');
+      const lockIcon = document.getElementById('topology-lock-icon');
+      const lockText = document.getElementById('topology-lock-text');
+      const svg = document.getElementById('topology-svg');
+
+      if (topologyLocked) {
+        lockBtn.style.background = 'rgba(34, 197, 94, 0.2)';
+        lockBtn.style.borderColor = '#22c55e';
+        lockBtn.style.color = '#22c55e';
+        lockIcon.innerHTML = '<path d="M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>';
+        lockText.textContent = 'Locked';
+        // Update all node cursors
+        document.querySelectorAll('[id^="topo-node-"]').forEach(node => {
+          node.style.cursor = 'pointer';
+        });
+      } else {
+        lockBtn.style.background = '';
+        lockBtn.style.borderColor = '';
+        lockBtn.style.color = '';
+        lockIcon.innerHTML = '<path d="M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z"/><path d="M17 11V7a5 5 0 0 0-9.58-2"/>';
+        lockText.textContent = 'Unlocked';
+        // Update all node cursors
+        document.querySelectorAll('[id^="topo-node-"]').forEach(node => {
+          node.style.cursor = 'grab';
+        });
+      }
+    }
 
     // Initialize drag handlers on the SVG
     function initTopologyDrag() {
@@ -6211,6 +6246,9 @@ app.get(UI_ROUTE, (_req, res) => {
     }
 
     function handleTopologyDragStart(e, nodeId) {
+      // Don't allow dragging if topology is locked
+      if (topologyLocked) return;
+
       e.stopPropagation();
       const svg = document.getElementById('topology-svg');
       const pt = svg.createSVGPoint();
@@ -6361,6 +6399,10 @@ app.get(UI_ROUTE, (_req, res) => {
 
     function resetTopologyLayout() {
       customPositions = {};
+      // Unlock if locked
+      if (topologyLocked) {
+        toggleTopologyLock();
+      }
       if (topologyData) {
         renderTopology(topologyData);
       }
@@ -6706,7 +6748,7 @@ app.get(UI_ROUTE, (_req, res) => {
         const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         group.setAttribute('id', 'topo-node-' + nodeId);
         group.setAttribute('transform', 'translate(' + pos.x + ',' + pos.y + ')');
-        group.style.cursor = 'grab';
+        group.style.cursor = topologyLocked ? 'pointer' : 'grab';
 
         // Add drag handlers
         group.onmousedown = (e) => {
