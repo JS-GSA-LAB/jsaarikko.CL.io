@@ -5144,6 +5144,10 @@ app.get(UI_ROUTE, (_req, res) => {
             <input type="checkbox" id="topology-include-clients" style="width:16px;height:16px;accent-color:var(--primary)">
             <span style="font-size:13px;color:var(--foreground-muted)">Show Clients</span>
           </label>
+          <button class="header-btn" onclick="resetTopologyLayout()" style="margin-right:8px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Reset Layout
+          </button>
           <button class="header-btn" onclick="loadTopologyMap()">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             Refresh
@@ -5151,6 +5155,10 @@ app.get(UI_ROUTE, (_req, res) => {
         </div>
       </div>
       <div class="page-content">
+        <div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2h-5m-3 3v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-5"/><path d="m3 3 18 18"/><path d="m9 9 6 6"/></svg>
+          <span style="color:#93c5fd;font-size:13px"><strong>Tip:</strong> Drag devices to rearrange the topology. Click a device or link for details. Use "Reset Layout" to restore default positions.</span>
+        </div>
         <!-- Topology Stats -->
         <div class="stat-cards" id="topology-stats">
           <div class="stat-card">
@@ -6172,6 +6180,191 @@ app.get(UI_ROUTE, (_req, res) => {
 
     // Topology Map Functions
     let topologyData = null;
+    let customPositions = {}; // Store user-dragged positions
+    let dragState = {
+      isDragging: false,
+      nodeId: null,
+      startX: 0,
+      startY: 0,
+      offsetX: 0,
+      offsetY: 0
+    };
+
+    // Initialize drag handlers on the SVG
+    function initTopologyDrag() {
+      const svg = document.getElementById('topology-svg');
+      if (!svg) return;
+
+      svg.addEventListener('mousemove', handleTopologyDrag);
+      svg.addEventListener('mouseup', handleTopologyDragEnd);
+      svg.addEventListener('mouseleave', handleTopologyDragEnd);
+
+      // Touch support
+      svg.addEventListener('touchmove', (e) => {
+        if (dragState.isDragging) {
+          e.preventDefault();
+          const touch = e.touches[0];
+          handleTopologyDrag({ clientX: touch.clientX, clientY: touch.clientY });
+        }
+      }, { passive: false });
+      svg.addEventListener('touchend', handleTopologyDragEnd);
+    }
+
+    function handleTopologyDragStart(e, nodeId) {
+      e.stopPropagation();
+      const svg = document.getElementById('topology-svg');
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX || (e.touches && e.touches[0].clientX);
+      pt.y = e.clientY || (e.touches && e.touches[0].clientY);
+      const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+
+      dragState.isDragging = true;
+      dragState.nodeId = nodeId;
+      dragState.startX = svgP.x;
+      dragState.startY = svgP.y;
+
+      const pos = window.topoNodePositions[nodeId];
+      if (pos) {
+        dragState.offsetX = svgP.x - pos.x;
+        dragState.offsetY = svgP.y - pos.y;
+      }
+
+      document.body.style.cursor = 'grabbing';
+    }
+
+    function handleTopologyDrag(e) {
+      if (!dragState.isDragging || !dragState.nodeId) return;
+
+      const svg = document.getElementById('topology-svg');
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+
+      const newX = svgP.x - dragState.offsetX;
+      const newY = svgP.y - dragState.offsetY;
+
+      // Update position
+      if (window.topoNodePositions[dragState.nodeId]) {
+        window.topoNodePositions[dragState.nodeId].x = newX;
+        window.topoNodePositions[dragState.nodeId].y = newY;
+        customPositions[dragState.nodeId] = { x: newX, y: newY };
+      }
+
+      // Update node visual position
+      const nodeGroup = document.getElementById('topo-node-' + dragState.nodeId.replace(/[^a-zA-Z0-9]/g, '_'));
+      if (nodeGroup) {
+        nodeGroup.setAttribute('transform', 'translate(' + newX + ',' + newY + ')');
+      }
+
+      // Update connected edges
+      updateTopologyEdges();
+    }
+
+    function handleTopologyDragEnd() {
+      if (dragState.isDragging) {
+        dragState.isDragging = false;
+        dragState.nodeId = null;
+        document.body.style.cursor = '';
+      }
+    }
+
+    function updateTopologyEdges() {
+      const edgesGroup = document.getElementById('topo-edges-group');
+      if (!edgesGroup || !window.topoEdgesData) return;
+
+      // Clear existing edges
+      edgesGroup.innerHTML = '';
+
+      // Redraw all edges with current positions
+      window.topoEdgesData.forEach(edge => {
+        if (edge.type === 'network-device') return;
+
+        const source = window.topoNodePositions[edge.from];
+        const target = window.topoNodePositions[edge.to];
+        if (!source || !target) return;
+
+        // Curved bezier path
+        const dx = target.x - source.x;
+        const cx1 = source.x + dx * 0.4;
+        const cy1 = source.y;
+        const cx2 = source.x + dx * 0.6;
+        const cy2 = target.y;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M ' + source.x + ' ' + source.y + ' C ' + cx1 + ' ' + cy1 + ', ' + cx2 + ' ' + cy2 + ', ' + target.x + ' ' + target.y);
+        path.setAttribute('fill', 'none');
+
+        let strokeColor = '#475569';
+        if (edge.type === 'lldp' || edge.protocol === 'LLDP') strokeColor = '#22c55e';
+        else if (edge.type === 'cdp' || edge.protocol === 'CDP') strokeColor = '#3b82f6';
+        if (edge.isWireless) {
+          path.setAttribute('stroke-dasharray', '6,4');
+        }
+
+        path.setAttribute('stroke', strokeColor);
+        path.setAttribute('stroke-width', '2');
+        edgesGroup.appendChild(path);
+
+        // Port label
+        if (edge.fromPort || edge.toPort) {
+          const midX = (source.x + target.x) / 2;
+          const midY = (source.y + target.y) / 2;
+
+          const labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          labelBg.setAttribute('x', midX - 25);
+          labelBg.setAttribute('y', midY - 8);
+          labelBg.setAttribute('width', '50');
+          labelBg.setAttribute('height', '16');
+          labelBg.setAttribute('rx', '3');
+          labelBg.setAttribute('fill', '#0f172a');
+          labelBg.setAttribute('opacity', '0.9');
+          edgesGroup.appendChild(labelBg);
+
+          const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          label.setAttribute('x', midX);
+          label.setAttribute('y', midY + 4);
+          label.setAttribute('text-anchor', 'middle');
+          label.setAttribute('fill', strokeColor);
+          label.setAttribute('font-size', '9');
+          label.textContent = (edge.fromPort || '') + '↔' + (edge.toPort || '');
+          edgesGroup.appendChild(label);
+        }
+      });
+
+      // Draw wireless client connections
+      Object.entries(window.topoNodePositions).forEach(([id, pos]) => {
+        if (!pos.isClient) return;
+
+        const client = pos.node;
+        const apPos = Object.values(window.topoNodePositions).find(p =>
+          p.node && (p.node.serial === client.apSerial || p.node.id === client.apSerial)
+        );
+
+        if (apPos) {
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          const dx = pos.x - apPos.x;
+          const cx1 = apPos.x + dx * 0.5;
+          const cy1 = apPos.y;
+          const cx2 = apPos.x + dx * 0.5;
+          const cy2 = pos.y;
+
+          path.setAttribute('d', 'M ' + apPos.x + ' ' + apPos.y + ' C ' + cx1 + ' ' + cy1 + ', ' + cx2 + ' ' + cy2 + ', ' + pos.x + ' ' + pos.y);
+          path.setAttribute('fill', 'none');
+          path.setAttribute('stroke', '#22c55e');
+          path.setAttribute('stroke-width', '2');
+          path.setAttribute('stroke-dasharray', '6,4');
+          edgesGroup.appendChild(path);
+        }
+      });
+    }
+
+    function resetTopologyLayout() {
+      customPositions = {};
+      if (topologyData) {
+        renderTopology(topologyData);
+      }
+    }
 
     async function loadTopologyMap() {
       const loadingDiv = document.getElementById('topology-loading');
@@ -6390,8 +6583,21 @@ app.get(UI_ROUTE, (_req, res) => {
       const yOffset = minY < 50 ? 50 - minY : 0;
       Object.values(nodePositions).forEach(pos => pos.y += yOffset);
 
+      // Apply custom positions from user dragging
+      Object.keys(customPositions).forEach(nodeId => {
+        if (nodePositions[nodeId]) {
+          nodePositions[nodeId].x = customPositions[nodeId].x;
+          nodePositions[nodeId].y = customPositions[nodeId].y;
+        }
+      });
+
+      // Store positions globally for drag updates
+      window.topoNodePositions = nodePositions;
+      window.topoEdgesData = data.edges || [];
+
       // Draw curved connections
       const edgesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      edgesGroup.setAttribute('id', 'topo-edges-group');
       const lldpEdges = [];
 
       if (data.edges) {
@@ -6496,10 +6702,26 @@ app.get(UI_ROUTE, (_req, res) => {
 
       Object.entries(nodePositions).forEach(([id, pos]) => {
         const node = pos.node;
+        const nodeId = id.replace(/[^a-zA-Z0-9]/g, '_');
         const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('id', 'topo-node-' + nodeId);
         group.setAttribute('transform', 'translate(' + pos.x + ',' + pos.y + ')');
-        group.style.cursor = 'pointer';
-        group.onclick = () => showDeviceDetails(node);
+        group.style.cursor = 'grab';
+
+        // Add drag handlers
+        group.onmousedown = (e) => {
+          e.preventDefault();
+          handleTopologyDragStart(e, id);
+        };
+        group.ontouchstart = (e) => {
+          handleTopologyDragStart(e, id);
+        };
+        group.onclick = (e) => {
+          // Only show details if not dragging
+          if (!dragState.isDragging) {
+            showDeviceDetails(node);
+          }
+        };
 
         // Draw device icon based on type
         const iconType = pos.deviceType || 'router';
@@ -6561,6 +6783,9 @@ app.get(UI_ROUTE, (_req, res) => {
       });
 
       svg.appendChild(nodesGroup);
+
+      // Initialize drag handlers
+      initTopologyDrag();
     }
 
     function showDeviceDetails(node) {
