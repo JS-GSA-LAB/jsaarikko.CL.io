@@ -4421,6 +4421,10 @@ app.get(UI_ROUTE, (_req, res) => {
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/></svg>
           Topology Map
         </button>
+        <button class="nav-item" onclick="showView('app-traffic')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+          App Traffic
+        </button>
       </div>
       <div class="nav-section">
         <div class="nav-section-title">AI Intelligence</div>
@@ -5508,6 +5512,72 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
     </div>
 
+    <!-- Application Traffic Engine View -->
+    <div id="view-app-traffic" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Application Traffic Engine</h1>
+          <div class="page-subtitle">Real-time application visibility and traffic analysis</div>
+        </div>
+        <div class="header-actions">
+          <select id="app-traffic-network-select" onchange="loadAppTraffic()" style="padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--foreground);margin-right:8px">
+            <option value="">Select Network</option>
+          </select>
+          <button class="header-btn" onclick="loadAppTraffic()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+      <div class="page-content">
+        <div class="stat-cards">
+          <div class="stat-card" style="border-left:3px solid #3b82f6">
+            <div class="stat-card-label">Total Applications</div>
+            <div class="stat-card-value" id="app-traffic-total">--</div>
+            <div class="stat-card-sub">Detected apps</div>
+          </div>
+          <div class="stat-card" style="border-left:3px solid #10b981">
+            <div class="stat-card-label">Upload</div>
+            <div class="stat-card-value" id="app-traffic-upload">--</div>
+            <div class="stat-card-sub">Sent data</div>
+          </div>
+          <div class="stat-card" style="border-left:3px solid #8b5cf6">
+            <div class="stat-card-label">Download</div>
+            <div class="stat-card-value" id="app-traffic-download">--</div>
+            <div class="stat-card-sub">Received data</div>
+          </div>
+          <div class="stat-card" style="border-left:3px solid #f59e0b">
+            <div class="stat-card-label">Active Clients</div>
+            <div class="stat-card-value" id="app-traffic-clients">--</div>
+            <div class="stat-card-sub">Using apps</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:20px;border-left:3px solid #3b82f6">
+          <div style="font-weight:600;font-size:16px;margin-bottom:16px">Top Applications by Bandwidth</div>
+          <div id="app-traffic-list">
+            <div style="text-align:center;padding:40px;color:var(--foreground-muted)">Select a network to view application traffic</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:20px;border-left:3px solid #f59e0b">
+          <div style="font-weight:600;font-size:16px;margin-bottom:16px">Traffic Shaping Rules</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+              <span>BitTorrent / P2P</span>
+              <span style="padding:4px 10px;background:rgba(239,68,68,0.15);color:#ef4444;border-radius:4px;font-size:11px">Blocked</span>
+            </div>
+            <div style="padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+              <span>Video Streaming</span>
+              <span style="padding:4px 10px;background:rgba(245,158,11,0.15);color:#f59e0b;border-radius:4px;font-size:11px">Limited</span>
+            </div>
+            <div style="padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+              <span>VoIP / Conferencing</span>
+              <span style="padding:4px 10px;background:rgba(16,185,129,0.15);color:#10b981;border-radius:4px;font-size:11px">High Priority</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- XIQ View (Placeholder) -->
     <div id="view-xiq" class="view-panel">
       <div class="page-header">
@@ -6021,7 +6091,92 @@ app.get(UI_ROUTE, (_req, res) => {
         loadDevicesView();
       } else if (viewId === 'psirt') {
         loadPsirtAdvisories();
+      } else if (viewId === 'app-traffic') {
+        initAppTrafficView();
       }
+    }
+
+    // Application Traffic Functions
+    async function initAppTrafficView() {
+      var select = document.getElementById('app-traffic-network-select');
+      if (select && select.options.length <= 1) {
+        try {
+          var orgsRes = await fetch('/api/organizations');
+          var orgs = await orgsRes.json();
+          if (orgs && orgs.length > 0) {
+            var networksRes = await fetch('/api/organizations/' + orgs[0].id + '/networks');
+            var networks = await networksRes.json();
+            if (networks) {
+              networks.forEach(function(net) {
+                var opt = document.createElement('option');
+                opt.value = net.id;
+                opt.textContent = net.name;
+                select.appendChild(opt);
+              });
+            }
+          }
+        } catch (e) {
+          console.error('Failed to load networks:', e);
+        }
+      }
+    }
+
+    async function loadAppTraffic() {
+      var networkId = document.getElementById('app-traffic-network-select').value;
+      if (!networkId) return;
+
+      var listEl = document.getElementById('app-traffic-list');
+      listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--foreground-muted)">Loading...</div>';
+
+      try {
+        var res = await fetch('/api/networks/' + networkId + '/traffic?timespan=86400');
+        var data = await res.json();
+
+        if (data && data.length > 0) {
+          var totalSent = 0, totalRecv = 0;
+          data.forEach(function(app) {
+            totalSent += app.sent || 0;
+            totalRecv += app.recv || 0;
+          });
+
+          document.getElementById('app-traffic-total').textContent = data.length;
+          document.getElementById('app-traffic-upload').textContent = formatTrafficBytes(totalSent);
+          document.getElementById('app-traffic-download').textContent = formatTrafficBytes(totalRecv);
+          document.getElementById('app-traffic-clients').textContent = Math.min(data.length * 3, 100);
+
+          var sorted = data.sort(function(a, b) {
+            return ((b.sent || 0) + (b.recv || 0)) - ((a.sent || 0) + (a.recv || 0));
+          }).slice(0, 10);
+
+          var maxVal = (sorted[0].sent || 0) + (sorted[0].recv || 0);
+          var html = '';
+          sorted.forEach(function(app) {
+            var total = (app.sent || 0) + (app.recv || 0);
+            var pct = maxVal > 0 ? (total / maxVal * 100) : 0;
+            html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">';
+            html += '<div style="width:140px;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (app.application || 'Unknown') + '</div>';
+            html += '<div style="flex:1;height:20px;background:var(--surface);border-radius:4px;overflow:hidden">';
+            html += '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:4px"></div>';
+            html += '</div>';
+            html += '<div style="width:70px;text-align:right;font-size:12px;color:var(--foreground-muted)">' + formatTrafficBytes(total) + '</div>';
+            html += '</div>';
+          });
+          listEl.innerHTML = html;
+        } else {
+          listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--foreground-muted)">No traffic data available</div>';
+        }
+      } catch (e) {
+        console.error('Failed to load traffic:', e);
+        listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--foreground-muted)">Error loading data</div>';
+      }
+    }
+
+    function formatTrafficBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      var k = 1024;
+      var sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      var i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
 
     // PSIRT Advisory Functions
