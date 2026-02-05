@@ -2358,6 +2358,426 @@ app.get("/api/peplink/locations", async (req, res) => {
   }
 });
 
+// ===========================================
+// AI CHANGE RISK PREDICTION API
+// ===========================================
+app.post("/api/change-risk/analyze", async (req, res) => {
+  try {
+    const {
+      changeType = "ssid_update",  // ssid_update, firmware_upgrade, vlan_change, security_policy, rf_profile, qos_rules
+      targetNetwork = null,
+      targetDevice = null,
+      changeDescription = ""
+    } = req.body;
+
+    const orgs = await merakiFetch("/organizations");
+    if (!orgs || orgs.length === 0) {
+      return res.status(500).json({ error: "No organizations found" });
+    }
+
+    // Data collection containers
+    let totalClients = 0;
+    let totalAPs = 0;
+    let totalSwitches = 0;
+    let totalAppliances = 0;
+    let onlineDevices = 0;
+    let alertingDevices = 0;
+    let offlineDevices = 0;
+    let recentIncidents = 0;
+    let highUtilizationAPs = 0;
+    let clientLoadByHour = new Array(24).fill(0);
+    let incidentsByHour = new Array(24).fill(0);
+    let affectedNetworks = [];
+    let affectedDevices = [];
+    let rfDensityScore = 0;
+    let wanUtilization = 0;
+    let historicalFailures = [];
+
+    // Analyze each organization
+    for (const org of orgs) {
+      const orgId = org.id;
+      const orgName = org.name;
+
+      // Get networks
+      let networks = [];
+      try {
+        networks = await merakiFetch(`/organizations/${orgId}/networks?perPage=1000`);
+      } catch (e) {
+        console.warn(`Failed to get networks for org ${orgName}:`, e.message);
+        continue;
+      }
+
+      // Filter to target network if specified
+      const networksToAnalyze = targetNetwork
+        ? networks.filter(n => n.id === targetNetwork || n.name.toLowerCase().includes(targetNetwork.toLowerCase()))
+        : networks;
+
+      // Get device statuses
+      let statuses = [];
+      try {
+        statuses = await merakiFetch(`/organizations/${orgId}/devices/statuses?perPage=1000`);
+      } catch (e) {
+        console.warn(`Failed to get statuses for org ${orgName}:`, e.message);
+      }
+
+      // Count devices by type and status
+      for (const device of (statuses || [])) {
+        const model = device.model || "";
+        const isAP = model.startsWith("MR") || model.startsWith("CW");
+        const isSwitch = model.startsWith("MS");
+        const isAppliance = model.startsWith("MX") || model.startsWith("Z");
+
+        if (isAP) totalAPs++;
+        else if (isSwitch) totalSwitches++;
+        else if (isAppliance) totalAppliances++;
+
+        if (device.status === "online") onlineDevices++;
+        else if (device.status === "alerting") alertingDevices++;
+        else if (device.status === "offline") offlineDevices++;
+
+        // Track affected devices based on change type
+        if (networksToAnalyze.some(n => n.id === device.networkId)) {
+          affectedDevices.push({
+            name: device.name || device.mac,
+            serial: device.serial,
+            model: device.model,
+            status: device.status,
+            type: isAP ? "wireless" : isSwitch ? "switch" : isAppliance ? "appliance" : "other"
+          });
+        }
+      }
+
+      // Analyze events for historical incidents (last 7 days)
+      for (const network of networksToAnalyze.slice(0, 5)) { // Limit to 5 networks for performance
+        affectedNetworks.push({ id: network.id, name: network.name });
+
+        try {
+          // Get recent events
+          const events = await merakiFetch(`/networks/${network.id}/events?perPage=500&productType=wireless&includedEventTypes[]=association&includedEventTypes[]=disassociation&includedEventTypes[]=wpa_auth&includedEventTypes[]=wpa_deauth`);
+
+          if (events && events.events) {
+            for (const event of events.events) {
+              const eventTime = new Date(event.occurredAt);
+              const hour = eventTime.getHours();
+              clientLoadByHour[hour]++;
+
+              // Track failures
+              if (event.type.includes("fail") || event.type.includes("deauth") || event.type.includes("timeout")) {
+                incidentsByHour[hour]++;
+                recentIncidents++;
+                historicalFailures.push({
+                  type: event.type,
+                  time: event.occurredAt,
+                  device: event.deviceName || event.deviceSerial,
+                  detail: event.description
+                });
+              }
+            }
+          }
+        } catch (e) {
+          // Events endpoint may fail for some network types
+        }
+
+        // Get wireless health/RF data
+        try {
+          const health = await merakiFetch(`/networks/${network.id}/wireless/connectionStats?timespan=3600`);
+          if (health) {
+            const successRate = health.assoc && health.assoc > 0
+              ? ((health.assoc - (health.authFail || 0)) / health.assoc) * 100
+              : 100;
+            if (successRate < 95) highUtilizationAPs++;
+          }
+        } catch (e) {
+          // May not have wireless
+        }
+
+        // Get channel utilization for RF density
+        try {
+          const channelUtil = await merakiFetch(`/networks/${network.id}/wireless/channelUtilizationHistory?timespan=3600`);
+          if (channelUtil && channelUtil.length > 0) {
+            const avgUtil = channelUtil.reduce((sum, c) => sum + (c.utilization80211 || 0), 0) / channelUtil.length;
+            rfDensityScore = Math.max(rfDensityScore, avgUtil);
+          }
+        } catch (e) {
+          // May not have data
+        }
+
+        // Get uplink/WAN data
+        try {
+          const uplinks = await merakiFetch(`/networks/${network.id}/appliance/uplinks/usageHistory?timespan=3600`);
+          if (uplinks && uplinks.length > 0) {
+            const avgUsage = uplinks.reduce((sum, u) => sum + (u.sent || 0) + (u.received || 0), 0) / uplinks.length;
+            wanUtilization = Math.max(wanUtilization, avgUsage / 1000000); // Convert to Mbps
+          }
+        } catch (e) {
+          // May not have appliance
+        }
+
+        // Get client count
+        try {
+          const clients = await merakiFetch(`/networks/${network.id}/clients?timespan=3600&perPage=1000`);
+          if (clients) {
+            totalClients += clients.length;
+          }
+        } catch (e) {
+          // May fail
+        }
+      }
+    }
+
+    // Calculate risk factors (0-100 scale each)
+    const factors = {
+      historicalIncidents: Math.min(100, (recentIncidents / Math.max(1, totalAPs)) * 10),
+      clientLoad: Math.min(100, (totalClients / Math.max(1, totalAPs)) * 2),
+      rfDensity: Math.min(100, rfDensityScore),
+      wanUtilization: Math.min(100, wanUtilization / 10 * 100),
+      deviceHealth: alertingDevices > 0 ? Math.min(100, (alertingDevices / Math.max(1, onlineDevices + alertingDevices)) * 200) : 0,
+      changeComplexity: getChangeComplexity(changeType)
+    };
+
+    // Calculate weighted risk score
+    const weights = {
+      historicalIncidents: 0.20,
+      clientLoad: 0.25,
+      rfDensity: 0.15,
+      wanUtilization: 0.10,
+      deviceHealth: 0.15,
+      changeComplexity: 0.15
+    };
+
+    let riskScore = 0;
+    for (const [factor, value] of Object.entries(factors)) {
+      riskScore += value * weights[factor];
+    }
+    riskScore = Math.round(riskScore) / 100; // Normalize to 0-1
+
+    // Calculate blast radius
+    const blastRadius = {
+      aps: affectedDevices.filter(d => d.type === "wireless").length || totalAPs,
+      switches: affectedDevices.filter(d => d.type === "switch").length,
+      appliances: affectedDevices.filter(d => d.type === "appliance").length,
+      clients: totalClients,
+      networks: affectedNetworks.length
+    };
+
+    // Determine optimal change window based on usage patterns
+    const suggestedWindow = calculateOptimalWindow(clientLoadByHour, incidentsByHour);
+
+    // Generate recommendations
+    const recommendations = generateChangeRecommendations(riskScore, factors, changeType, blastRadius);
+
+    // Determine risk level
+    let riskLevel = "low";
+    if (riskScore >= 0.7) riskLevel = "critical";
+    else if (riskScore >= 0.5) riskLevel = "high";
+    else if (riskScore >= 0.3) riskLevel = "medium";
+
+    res.json({
+      riskScore: riskScore.toFixed(2),
+      riskLevel,
+      blastRadius,
+      suggestedWindow,
+      factors: {
+        historicalIncidents: { score: Math.round(factors.historicalIncidents), weight: weights.historicalIncidents, detail: `${recentIncidents} incidents detected in analysis period` },
+        clientLoad: { score: Math.round(factors.clientLoad), weight: weights.clientLoad, detail: `${totalClients} active clients across ${totalAPs} APs` },
+        rfDensity: { score: Math.round(factors.rfDensity), weight: weights.rfDensity, detail: `Channel utilization at ${Math.round(rfDensityScore)}%` },
+        wanUtilization: { score: Math.round(factors.wanUtilization), weight: weights.wanUtilization, detail: `WAN throughput ~${Math.round(wanUtilization)} Mbps` },
+        deviceHealth: { score: Math.round(factors.deviceHealth), weight: weights.deviceHealth, detail: `${alertingDevices} alerting, ${offlineDevices} offline devices` },
+        changeComplexity: { score: Math.round(factors.changeComplexity), weight: weights.changeComplexity, detail: `${changeType.replace(/_/g, " ")} - ${getChangeDescription(changeType)}` }
+      },
+      recommendations,
+      summary: {
+        totalDevices: totalAPs + totalSwitches + totalAppliances,
+        totalClients,
+        networksAffected: affectedNetworks.length,
+        recentIncidents,
+        currentTime: new Date().toISOString()
+      },
+      historicalFailures: historicalFailures.slice(0, 10) // Last 10 failures
+    });
+
+  } catch (err) {
+    console.error("Change risk analysis error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Helper: Get change complexity score
+function getChangeComplexity(changeType) {
+  const complexityMap = {
+    ssid_update: 40,
+    security_policy: 60,
+    vlan_change: 65,
+    qos_rules: 50,
+    rf_profile: 55,
+    firmware_upgrade: 85,
+    network_settings: 70,
+    switching_config: 60,
+    wan_config: 75
+  };
+  return complexityMap[changeType] || 50;
+}
+
+// Helper: Get change type description
+function getChangeDescription(changeType) {
+  const descriptions = {
+    ssid_update: "SSID name/settings modification",
+    security_policy: "Authentication or encryption changes",
+    vlan_change: "VLAN assignment or tagging changes",
+    qos_rules: "Traffic shaping and priority rules",
+    rf_profile: "Radio frequency and channel settings",
+    firmware_upgrade: "Device firmware update",
+    network_settings: "Network-wide configuration",
+    switching_config: "Switch port or VLAN config",
+    wan_config: "Uplink or routing changes"
+  };
+  return descriptions[changeType] || "Configuration change";
+}
+
+// Helper: Calculate optimal change window
+function calculateOptimalWindow(clientLoad, incidents) {
+  // Find hours with lowest combined client load and incidents
+  const hourScores = clientLoad.map((load, hour) => ({
+    hour,
+    score: load + (incidents[hour] * 2), // Weight incidents higher
+    load,
+    incidents: incidents[hour]
+  }));
+
+  hourScores.sort((a, b) => a.score - b.score);
+
+  // Find best window (prefer night/early morning)
+  const preferredHours = [22, 23, 0, 1, 2, 3, 4, 5, 6];
+  let bestHour = hourScores[0].hour;
+
+  for (const hour of preferredHours) {
+    const hourData = hourScores.find(h => h.hour === hour);
+    if (hourData && hourData.score <= hourScores[0].score * 1.5) {
+      bestHour = hour;
+      break;
+    }
+  }
+
+  // Format window suggestion
+  const formatHour = (h) => {
+    const ampm = h >= 12 ? "PM" : "AM";
+    const hour12 = h % 12 || 12;
+    return `${hour12}:00 ${ampm}`;
+  };
+
+  const windowStart = bestHour;
+  const windowEnd = (bestHour + 2) % 24;
+
+  return {
+    recommended: `${formatHour(windowStart)} - ${formatHour(windowEnd)}`,
+    startHour: windowStart,
+    endHour: windowEnd,
+    reason: windowStart >= 22 || windowStart <= 5
+      ? "Low client activity and minimal historical incidents"
+      : "Lowest activity period based on usage patterns",
+    clientLoadAtWindow: clientLoad[windowStart],
+    peakHour: clientLoad.indexOf(Math.max(...clientLoad)),
+    peakClients: Math.max(...clientLoad)
+  };
+}
+
+// Helper: Generate recommendations based on analysis
+function generateChangeRecommendations(riskScore, factors, changeType, blastRadius) {
+  const recommendations = [];
+
+  if (riskScore >= 0.6) {
+    recommendations.push({
+      priority: "critical",
+      title: "Consider Staging the Change",
+      detail: "Risk score is high. Consider deploying to a pilot network first before full rollout.",
+      icon: "shield"
+    });
+  }
+
+  if (factors.clientLoad > 60) {
+    recommendations.push({
+      priority: "high",
+      title: "High Client Load Detected",
+      detail: `${blastRadius.clients} clients may be affected. Schedule during low-usage window.`,
+      icon: "users"
+    });
+  }
+
+  if (factors.deviceHealth > 30) {
+    recommendations.push({
+      priority: "high",
+      title: "Device Health Issues Present",
+      detail: "Some devices are alerting or offline. Resolve these before making changes.",
+      icon: "alert"
+    });
+  }
+
+  if (factors.rfDensity > 50) {
+    recommendations.push({
+      priority: "medium",
+      title: "High RF Density",
+      detail: "Channel utilization is elevated. RF changes may cause temporary disruption.",
+      icon: "radio"
+    });
+  }
+
+  if (changeType === "firmware_upgrade") {
+    recommendations.push({
+      priority: "high",
+      title: "Firmware Upgrade Requires Reboot",
+      detail: "Devices will reboot during upgrade. Expect 2-5 minute downtime per device.",
+      icon: "download"
+    });
+  }
+
+  if (blastRadius.aps > 20) {
+    recommendations.push({
+      priority: "medium",
+      title: "Large Blast Radius",
+      detail: `${blastRadius.aps} APs affected. Consider phased rollout by network or location.`,
+      icon: "network"
+    });
+  }
+
+  // Add rollback recommendation
+  recommendations.push({
+    priority: "info",
+    title: "Prepare Rollback Plan",
+    detail: "Document current settings before changes. Enable configuration backup if available.",
+    icon: "history"
+  });
+
+  return recommendations;
+}
+
+// Get available networks for change risk dropdown
+app.get("/api/change-risk/networks", async (req, res) => {
+  try {
+    const orgs = await merakiFetch("/organizations");
+    const allNetworks = [];
+
+    for (const org of orgs) {
+      try {
+        const networks = await merakiFetch(`/organizations/${org.id}/networks?perPage=1000`);
+        for (const network of (networks || [])) {
+          allNetworks.push({
+            id: network.id,
+            name: network.name,
+            org: org.name,
+            productTypes: network.productTypes
+          });
+        }
+      } catch (e) {
+        console.warn(`Failed to get networks for org ${org.name}:`, e.message);
+      }
+    }
+
+    res.json(allNetworks);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // BOB Asset Tracker API
 app.get("/api/assets", (req, res) => {
   const { owner, type, region, search, page = 1, limit = 50 } = req.query;
@@ -2910,6 +3330,10 @@ app.get(UI_ROUTE, (_req, res) => {
         <button class="nav-item" onclick="showView('predictive')">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           Predictive Alerts
+        </button>
+        <button class="nav-item" onclick="showView('change-risk')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          Change Risk
         </button>
       </div>
       <div class="nav-section">
@@ -3782,6 +4206,134 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
     </div>
 
+    <!-- Change Risk Prediction View -->
+    <div id="view-change-risk" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">AI Change Risk Prediction</h1>
+          <div class="page-subtitle">Simulate configuration impact before pushing changes</div>
+        </div>
+      </div>
+      <div class="page-content">
+        <div class="card" style="border-left:3px solid #E91E63;background:linear-gradient(135deg,rgba(233,30,99,0.08),rgba(156,39,176,0.05))">
+          <div class="section-title">
+            <span class="icon" style="color:#E91E63"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></span>
+            <h2>Change Risk Analysis</h2>
+            <span style="margin-left:auto;padding:4px 10px;background:linear-gradient(135deg,#E91E63,#9C27B0);border-radius:12px;font-size:10px;font-weight:600;color:rgba(255,255,255,0.95);text-transform:uppercase">AI-Powered</span>
+          </div>
+          <div class="muted">Analyze risk before pushing configuration changes to your network</div>
+
+          <div style="margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+            <!-- Change Type Selector -->
+            <div>
+              <label style="display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px">Change Type</label>
+              <select id="change-type-select" style="width:100%;padding:12px;background:#0b1220;color:#e8eefc;border:1px solid rgba(233,30,99,0.3);border-radius:8px;font-size:13px">
+                <option value="ssid_update">SSID Update</option>
+                <option value="security_policy">Security Policy Change</option>
+                <option value="vlan_change">VLAN Configuration</option>
+                <option value="rf_profile">RF Profile Change</option>
+                <option value="qos_rules">QoS Rules Update</option>
+                <option value="firmware_upgrade">Firmware Upgrade</option>
+                <option value="switching_config">Switching Configuration</option>
+                <option value="wan_config">WAN/Uplink Configuration</option>
+                <option value="network_settings">Network Settings</option>
+              </select>
+            </div>
+
+            <!-- Target Network -->
+            <div>
+              <label style="display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px">Target Network (Optional)</label>
+              <select id="change-network-select" style="width:100%;padding:12px;background:#0b1220;color:#e8eefc;border:1px solid rgba(233,30,99,0.3);border-radius:8px;font-size:13px">
+                <option value="">All Networks</option>
+              </select>
+            </div>
+
+            <!-- Description -->
+            <div style="grid-column:span 2">
+              <label style="display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px">Change Description (Optional)</label>
+              <input type="text" id="change-description" placeholder="e.g., Updating guest SSID password..." style="width:100%;padding:12px;background:#0b1220;color:#e8eefc;border:1px solid rgba(233,30,99,0.3);border-radius:8px;font-size:13px;box-sizing:border-box" />
+            </div>
+          </div>
+
+          <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap">
+            <button onclick="analyzeChangeRisk()" id="change-risk-button" style="padding:12px 24px;background:linear-gradient(135deg,#E91E63,#9C27B0);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Analyze Risk
+            </button>
+            <button onclick="loadChangeNetworks()" style="padding:12px 20px;background:transparent;border:1px solid rgba(233,30,99,0.3);border-radius:8px;color:#E91E63;font-weight:500;cursor:pointer;font-size:13px">
+              Refresh Networks
+            </button>
+          </div>
+
+          <!-- Results Section -->
+          <div id="change-risk-results" style="margin-top:24px;display:none">
+            <div id="change-risk-loading" style="display:none;padding:40px;text-align:center">
+              <div style="width:40px;height:40px;border:3px solid rgba(233,30,99,0.3);border-top-color:#E91E63;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
+              <div style="margin-top:12px;color:var(--foreground-muted)">Analyzing historical data, client patterns, RF density...</div>
+            </div>
+
+            <div id="change-risk-content" style="display:none">
+              <!-- Risk Score Banner -->
+              <div id="change-risk-banner" style="padding:24px;border-radius:12px;margin-bottom:20px;background:linear-gradient(135deg,rgba(233,30,99,0.2),rgba(156,39,176,0.1))">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px">
+                  <div style="text-align:center">
+                    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6);margin-bottom:4px">Risk Score</div>
+                    <div style="display:flex;align-items:baseline;gap:4px;justify-content:center">
+                      <span id="change-risk-score" style="font-size:56px;font-weight:700;color:#E91E63">--</span>
+                    </div>
+                    <div id="change-risk-level" style="display:inline-block;padding:4px 16px;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase;background:rgba(233,30,99,0.3);color:#E91E63;margin-top:8px">--</div>
+                  </div>
+                  <div style="flex:1;min-width:200px;max-width:300px;text-align:center;padding:0 20px;border-left:1px solid rgba(255,255,255,0.1);border-right:1px solid rgba(255,255,255,0.1)">
+                    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6);margin-bottom:8px">Blast Radius</div>
+                    <div id="change-blast-radius" style="font-size:32px;font-weight:700;color:var(--warning)">-- APs</div>
+                    <div id="change-blast-detail" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px">-- clients affected</div>
+                  </div>
+                  <div style="text-align:center">
+                    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6);margin-bottom:8px">Suggested Window</div>
+                    <div id="change-suggested-window" style="font-size:24px;font-weight:600;color:var(--success)">--</div>
+                    <div id="change-window-reason" style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">Based on usage patterns</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Risk Factors -->
+              <div style="margin-bottom:20px">
+                <div style="font-weight:600;font-size:14px;color:rgba(255,255,255,0.87);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E91E63" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/></svg>
+                  Risk Factors
+                </div>
+                <div id="change-risk-factors" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+                  <!-- Factors will be inserted here -->
+                </div>
+              </div>
+
+              <!-- Recommendations -->
+              <div style="margin-bottom:20px">
+                <div style="font-weight:600;font-size:14px;color:rgba(255,255,255,0.87);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  Recommendations
+                </div>
+                <div id="change-risk-recommendations" style="display:flex;flex-direction:column;gap:8px">
+                  <!-- Recommendations will be inserted here -->
+                </div>
+              </div>
+
+              <!-- Historical Failures -->
+              <div id="change-historical-section" style="display:none">
+                <div style="font-weight:600;font-size:14px;color:rgba(255,255,255,0.87);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Recent Historical Incidents
+                </div>
+                <div id="change-historical-failures" style="max-height:200px;overflow-y:auto;background:rgba(255,255,255,0.03);border-radius:8px;padding:12px">
+                  <!-- Historical failures will be inserted here -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script>
@@ -3957,7 +4509,162 @@ app.get(UI_ROUTE, (_req, res) => {
     // Auto-load dashboard on page load
     document.addEventListener('DOMContentLoaded', function() {
       loadDashboardData();
+      loadChangeNetworks(); // Pre-load networks for change risk dropdown
     });
+
+    // Change Risk Prediction Functions
+    async function loadChangeNetworks() {
+      try {
+        const res = await fetch('/api/change-risk/networks');
+        const networks = await res.json();
+        const select = document.getElementById('change-network-select');
+        select.innerHTML = '<option value="">All Networks</option>';
+        networks.forEach(net => {
+          const opt = document.createElement('option');
+          opt.value = net.id;
+          opt.textContent = net.name + ' (' + net.org + ')';
+          select.appendChild(opt);
+        });
+      } catch (err) {
+        console.error('Error loading networks:', err);
+      }
+    }
+
+    async function analyzeChangeRisk() {
+      const changeType = document.getElementById('change-type-select').value;
+      const targetNetwork = document.getElementById('change-network-select').value;
+      const description = document.getElementById('change-description').value;
+
+      const resultsDiv = document.getElementById('change-risk-results');
+      const loadingDiv = document.getElementById('change-risk-loading');
+      const contentDiv = document.getElementById('change-risk-content');
+      const button = document.getElementById('change-risk-button');
+
+      // Show loading
+      resultsDiv.style.display = 'block';
+      loadingDiv.style.display = 'block';
+      contentDiv.style.display = 'none';
+      button.disabled = true;
+      button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analyzing...';
+
+      try {
+        const res = await fetch('/api/change-risk/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ changeType, targetNetwork, changeDescription: description })
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // Hide loading, show content
+        loadingDiv.style.display = 'none';
+        contentDiv.style.display = 'block';
+
+        // Update risk score
+        const riskScore = parseFloat(data.riskScore);
+        document.getElementById('change-risk-score').textContent = data.riskScore;
+
+        // Update risk level with color
+        const levelEl = document.getElementById('change-risk-level');
+        levelEl.textContent = data.riskLevel;
+        const levelColors = {
+          low: { bg: 'rgba(74,222,128,0.3)', color: 'var(--success)' },
+          medium: { bg: 'rgba(251,191,36,0.3)', color: 'var(--warning)' },
+          high: { bg: 'rgba(248,113,113,0.3)', color: 'var(--destructive)' },
+          critical: { bg: 'rgba(220,38,38,0.4)', color: '#DC2626' }
+        };
+        const lc = levelColors[data.riskLevel] || levelColors.medium;
+        levelEl.style.background = lc.bg;
+        levelEl.style.color = lc.color;
+
+        // Update score color
+        const scoreEl = document.getElementById('change-risk-score');
+        scoreEl.style.color = lc.color;
+
+        // Update banner background
+        const banner = document.getElementById('change-risk-banner');
+        if (data.riskLevel === 'critical') {
+          banner.style.background = 'linear-gradient(135deg,rgba(220,38,38,0.2),rgba(248,113,113,0.1))';
+        } else if (data.riskLevel === 'high') {
+          banner.style.background = 'linear-gradient(135deg,rgba(248,113,113,0.2),rgba(251,191,36,0.1))';
+        } else if (data.riskLevel === 'medium') {
+          banner.style.background = 'linear-gradient(135deg,rgba(251,191,36,0.2),rgba(74,222,128,0.1))';
+        } else {
+          banner.style.background = 'linear-gradient(135deg,rgba(74,222,128,0.2),rgba(59,130,246,0.1))';
+        }
+
+        // Update blast radius
+        document.getElementById('change-blast-radius').textContent = data.blastRadius.aps + ' APs';
+        document.getElementById('change-blast-detail').textContent = data.blastRadius.clients + ' clients affected';
+
+        // Update suggested window
+        document.getElementById('change-suggested-window').textContent = data.suggestedWindow.recommended;
+        document.getElementById('change-window-reason').textContent = data.suggestedWindow.reason;
+
+        // Update risk factors
+        const factorsDiv = document.getElementById('change-risk-factors');
+        factorsDiv.innerHTML = Object.entries(data.factors).map(([key, factor]) => {
+          const factorColor = factor.score >= 70 ? 'var(--destructive)' :
+                             factor.score >= 40 ? 'var(--warning)' : 'var(--success)';
+          return '<div style="padding:14px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid ' + factorColor + '">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+            '<span style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.8);text-transform:capitalize">' + key.replace(/([A-Z])/g, ' $1').trim() + '</span>' +
+            '<span style="font-size:14px;font-weight:700;color:' + factorColor + '">' + factor.score + '</span>' +
+            '</div>' +
+            '<div style="font-size:11px;color:rgba(255,255,255,0.5)">' + factor.detail + '</div>' +
+            '</div>';
+        }).join('');
+
+        // Update recommendations
+        const recsDiv = document.getElementById('change-risk-recommendations');
+        const priorityColors = {
+          critical: { bg: 'rgba(220,38,38,0.15)', border: '#DC2626', icon: '#DC2626' },
+          high: { bg: 'rgba(248,113,113,0.15)', border: 'var(--destructive)', icon: 'var(--destructive)' },
+          medium: { bg: 'rgba(251,191,36,0.15)', border: 'var(--warning)', icon: 'var(--warning)' },
+          info: { bg: 'rgba(59,130,246,0.15)', border: '#3B82F6', icon: '#3B82F6' }
+        };
+        recsDiv.innerHTML = data.recommendations.map(rec => {
+          const pc = priorityColors[rec.priority] || priorityColors.info;
+          return '<div style="padding:12px 16px;background:' + pc.bg + ';border-left:3px solid ' + pc.border + ';border-radius:6px">' +
+            '<div style="font-weight:600;font-size:13px;color:' + pc.icon + ';margin-bottom:4px">' + rec.title + '</div>' +
+            '<div style="font-size:12px;color:rgba(255,255,255,0.7)">' + rec.detail + '</div>' +
+            '</div>';
+        }).join('');
+
+        // Update historical failures
+        const histSection = document.getElementById('change-historical-section');
+        const histDiv = document.getElementById('change-historical-failures');
+        if (data.historicalFailures && data.historicalFailures.length > 0) {
+          histSection.style.display = 'block';
+          histDiv.innerHTML = data.historicalFailures.map(f =>
+            '<div style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px">' +
+            '<div style="display:flex;justify-content:space-between;gap:12px">' +
+            '<span style="color:var(--warning)">' + f.type + '</span>' +
+            '<span style="color:rgba(255,255,255,0.4)">' + new Date(f.time).toLocaleString() + '</span>' +
+            '</div>' +
+            '<div style="color:rgba(255,255,255,0.6);margin-top:4px">' + (f.device || 'Unknown device') + '</div>' +
+            '</div>'
+          ).join('');
+        } else {
+          histSection.style.display = 'none';
+        }
+
+      } catch (err) {
+        console.error('Change risk analysis error:', err);
+        loadingDiv.style.display = 'none';
+        contentDiv.style.display = 'block';
+        document.getElementById('change-risk-score').textContent = 'ERR';
+        document.getElementById('change-risk-level').textContent = 'Error';
+        document.getElementById('change-risk-factors').innerHTML = '<div style="color:var(--destructive)">Error: ' + err.message + '</div>';
+      } finally {
+        button.disabled = false;
+        button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Analyze Risk';
+      }
+    }
 
     // RCA Functions
     function setRcaQuestion(question) {
