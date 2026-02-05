@@ -2779,6 +2779,289 @@ app.get("/api/change-risk/networks", async (req, res) => {
 });
 
 // ===========================================
+// NETWORK TOPOLOGY MAP API
+// ===========================================
+
+app.get("/api/topology/map", async (req, res) => {
+  try {
+    const { networkId } = req.query;
+
+    const topology = {
+      nodes: [],
+      edges: [],
+      networks: [],
+      summary: {
+        totalDevices: 0,
+        appliances: 0,
+        switches: 0,
+        aps: 0,
+        online: 0,
+        offline: 0,
+        alerting: 0
+      }
+    };
+
+    const orgs = await merakiFetch("/organizations");
+    if (!orgs || orgs.length === 0) {
+      return res.status(500).json({ error: "No organizations found" });
+    }
+
+    for (const org of orgs) {
+      // Get networks
+      let networks = [];
+      try {
+        networks = await merakiFetch(`/organizations/${org.id}/networks?perPage=1000`);
+      } catch (e) {
+        continue;
+      }
+
+      // Filter to specific network if requested
+      const targetNetworks = networkId
+        ? networks.filter(n => n.id === networkId)
+        : networks.slice(0, 10); // Limit to 10 networks for performance
+
+      for (const network of targetNetworks) {
+        topology.networks.push({
+          id: network.id,
+          name: network.name,
+          org: org.name,
+          productTypes: network.productTypes
+        });
+
+        // Add network as a container node
+        topology.nodes.push({
+          id: `network-${network.id}`,
+          type: 'network',
+          label: network.name,
+          org: org.name,
+          productTypes: network.productTypes
+        });
+
+        // Get devices in this network
+        try {
+          const devices = await merakiFetch(`/networks/${network.id}/devices`);
+
+          for (const device of (devices || [])) {
+            const model = device.model || "";
+            let deviceType = "other";
+            let tier = 4;
+
+            if (model.startsWith("MX") || model.startsWith("Z")) {
+              deviceType = "appliance";
+              tier = 1;
+              topology.summary.appliances++;
+            } else if (model.startsWith("MS")) {
+              deviceType = "switch";
+              tier = 2;
+              topology.summary.switches++;
+            } else if (model.startsWith("MR") || model.startsWith("CW")) {
+              deviceType = "ap";
+              tier = 3;
+              topology.summary.aps++;
+            }
+
+            // Get device status
+            let status = "unknown";
+            try {
+              const statuses = await merakiFetch(`/organizations/${org.id}/devices/statuses?serials[]=${device.serial}`);
+              if (statuses && statuses[0]) {
+                status = statuses[0].status;
+              }
+            } catch (e) {
+              // Status fetch failed
+            }
+
+            if (status === "online") topology.summary.online++;
+            else if (status === "offline") topology.summary.offline++;
+            else if (status === "alerting") topology.summary.alerting++;
+
+            topology.nodes.push({
+              id: device.serial,
+              type: deviceType,
+              tier,
+              label: device.name || device.serial,
+              model: device.model,
+              serial: device.serial,
+              mac: device.mac,
+              lanIp: device.lanIp,
+              wan1Ip: device.wan1Ip,
+              wan2Ip: device.wan2Ip,
+              status,
+              networkId: network.id,
+              networkName: network.name,
+              lat: device.lat,
+              lng: device.lng,
+              address: device.address,
+              firmware: device.firmware
+            });
+
+            topology.summary.totalDevices++;
+
+            // Create edge from network to device
+            topology.edges.push({
+              from: `network-${network.id}`,
+              to: device.serial,
+              type: 'network-device'
+            });
+          }
+        } catch (e) {
+          console.warn(`Failed to get devices for network ${network.name}:`, e.message);
+        }
+
+        // Get LLDP/CDP neighbors for topology connections
+        try {
+          const lldpCdp = await merakiFetch(`/networks/${network.id}/topology/linkLayer`);
+          if (lldpCdp && lldpCdp.links) {
+            for (const link of lldpCdp.links) {
+              // Avoid duplicate edges
+              const edgeId = [link.ends[0]?.device?.serial, link.ends[1]?.device?.serial].sort().join('-');
+              if (!topology.edges.find(e => e.id === edgeId)) {
+                topology.edges.push({
+                  id: edgeId,
+                  from: link.ends[0]?.device?.serial,
+                  to: link.ends[1]?.device?.serial,
+                  type: 'lldp',
+                  fromPort: link.ends[0]?.port?.portId,
+                  toPort: link.ends[1]?.port?.portId
+                });
+              }
+            }
+          }
+        } catch (e) {
+          // LLDP/CDP may not be available
+        }
+      }
+    }
+
+    // Sort nodes by tier for layout
+    topology.nodes.sort((a, b) => (a.tier || 99) - (b.tier || 99));
+
+    res.json(topology);
+
+  } catch (err) {
+    console.error("Topology map error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get topology for a specific network with more detail
+app.get("/api/topology/network/:networkId", async (req, res) => {
+  try {
+    const { networkId } = req.params;
+
+    const topology = {
+      network: null,
+      nodes: [],
+      edges: [],
+      vlans: [],
+      uplinks: []
+    };
+
+    // Get network info
+    try {
+      topology.network = await merakiFetch(`/networks/${networkId}`);
+    } catch (e) {
+      return res.status(404).json({ error: "Network not found" });
+    }
+
+    // Get devices
+    const devices = await merakiFetch(`/networks/${networkId}/devices`);
+
+    // Get org ID from network
+    const orgId = topology.network.organizationId;
+
+    // Get device statuses
+    let statusMap = {};
+    try {
+      const statuses = await merakiFetch(`/organizations/${orgId}/devices/statuses?networkIds[]=${networkId}`);
+      for (const s of (statuses || [])) {
+        statusMap[s.serial] = s;
+      }
+    } catch (e) {
+      // Status fetch failed
+    }
+
+    for (const device of (devices || [])) {
+      const model = device.model || "";
+      let deviceType = "other";
+      let tier = 4;
+
+      if (model.startsWith("MX") || model.startsWith("Z")) {
+        deviceType = "appliance";
+        tier = 1;
+      } else if (model.startsWith("MS")) {
+        deviceType = "switch";
+        tier = 2;
+      } else if (model.startsWith("MR") || model.startsWith("CW")) {
+        deviceType = "ap";
+        tier = 3;
+      }
+
+      const deviceStatus = statusMap[device.serial] || {};
+
+      topology.nodes.push({
+        id: device.serial,
+        type: deviceType,
+        tier,
+        label: device.name || device.serial,
+        model: device.model,
+        serial: device.serial,
+        mac: device.mac,
+        lanIp: device.lanIp,
+        wan1Ip: device.wan1Ip,
+        status: deviceStatus.status || "unknown",
+        publicIp: deviceStatus.publicIp,
+        gateway: deviceStatus.gateway,
+        clients: deviceStatus.clientCount
+      });
+    }
+
+    // Get LLDP/CDP topology
+    try {
+      const lldpCdp = await merakiFetch(`/networks/${networkId}/topology/linkLayer`);
+      if (lldpCdp && lldpCdp.links) {
+        for (const link of lldpCdp.links) {
+          topology.edges.push({
+            from: link.ends[0]?.device?.serial,
+            to: link.ends[1]?.device?.serial,
+            fromPort: link.ends[0]?.port?.portId,
+            toPort: link.ends[1]?.port?.portId,
+            type: 'physical'
+          });
+        }
+      }
+    } catch (e) {
+      // LLDP/CDP not available
+    }
+
+    // Get VLANs if appliance network
+    try {
+      const vlans = await merakiFetch(`/networks/${networkId}/appliance/vlans`);
+      topology.vlans = vlans || [];
+    } catch (e) {
+      // VLANs not enabled or no appliance
+    }
+
+    // Get uplink status
+    try {
+      const uplinks = await merakiFetch(`/networks/${networkId}/appliance/uplinks/statuses`);
+      topology.uplinks = uplinks || [];
+    } catch (e) {
+      // No appliance
+    }
+
+    // Sort by tier
+    topology.nodes.sort((a, b) => a.tier - b.tier);
+
+    res.json(topology);
+
+  } catch (err) {
+    console.error("Network topology error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===========================================
 // AUTONOMOUS EVIDENCE COLLECTION API
 // ===========================================
 
@@ -3915,6 +4198,10 @@ app.get(UI_ROUTE, (_req, res) => {
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
           Switches
         </button>
+        <button class="nav-item" onclick="showView('topology')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/></svg>
+          Topology Map
+        </button>
       </div>
       <div class="nav-section">
         <div class="nav-section-title">AI Intelligence</div>
@@ -4717,6 +5004,109 @@ app.get(UI_ROUTE, (_req, res) => {
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4;margin-bottom:16px"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
           <div style="font-size:16px;margin-bottom:8px">Switch telemetry available in Network Intelligence</div>
           <div style="font-size:13px">Navigate to Network Intelligence > Telemetry tab</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topology Map View -->
+    <div id="view-topology" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Network Topology Map</h1>
+          <div class="page-subtitle">Visualize device connections and network hierarchy</div>
+        </div>
+        <div class="header-actions">
+          <select id="topology-network-select" style="padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--foreground);margin-right:8px">
+            <option value="">All Networks</option>
+          </select>
+          <button class="header-btn" onclick="loadTopologyMap()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+      <div class="page-content">
+        <!-- Topology Stats -->
+        <div class="stat-cards" id="topology-stats">
+          <div class="stat-card">
+            <div class="stat-card-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/></svg>
+              Total Nodes
+            </div>
+            <div class="stat-card-value" id="topo-total-nodes">--</div>
+            <div class="stat-card-sub">Network devices</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 19 19 12"/></svg>
+              Connections
+            </div>
+            <div class="stat-card-value" id="topo-connections">--</div>
+            <div class="stat-card-sub">LLDP/CDP links</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              Networks
+            </div>
+            <div class="stat-card-value" id="topo-networks">--</div>
+            <div class="stat-card-sub">Meraki networks</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Online
+            </div>
+            <div class="stat-card-value" id="topo-online" style="color:var(--success)">--</div>
+            <div class="stat-card-sub">Active devices</div>
+          </div>
+        </div>
+
+        <!-- Topology Legend -->
+        <div style="display:flex;gap:24px;margin-bottom:20px;padding:16px;background:var(--surface);border-radius:12px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:16px;height:16px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:4px"></div>
+            <span style="font-size:13px;color:var(--foreground-muted)">MX (Appliance)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:16px;height:16px;background:linear-gradient(135deg,#3b82f6,#0ea5e9);border-radius:4px"></div>
+            <span style="font-size:13px;color:var(--foreground-muted)">MS (Switch)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:16px;height:16px;background:linear-gradient(135deg,#22c55e,#10b981);border-radius:4px"></div>
+            <span style="font-size:13px;color:var(--foreground-muted)">MR (Access Point)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:16px;height:16px;background:linear-gradient(135deg,#f59e0b,#f97316);border-radius:4px"></div>
+            <span style="font-size:13px;color:var(--foreground-muted)">MV (Camera)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:16px;height:16px;background:linear-gradient(135deg,#ec4899,#d946ef);border-radius:4px"></div>
+            <span style="font-size:13px;color:var(--foreground-muted)">Other</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+            <div style="width:24px;height:3px;background:var(--success);border-radius:2px"></div>
+            <span style="font-size:13px;color:var(--foreground-muted)">Active Link</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:24px;height:3px;background:var(--border);border-radius:2px;border:1px dashed var(--foreground-muted)"></div>
+            <span style="font-size:13px;color:var(--foreground-muted)">Inactive</span>
+          </div>
+        </div>
+
+        <!-- Topology Canvas -->
+        <div id="topology-canvas" style="background:var(--surface);border-radius:12px;border:1px solid var(--border);min-height:500px;position:relative;overflow:hidden">
+          <div id="topology-loading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--foreground-muted)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4;margin-bottom:16px"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/></svg>
+            <div style="font-size:14px">Click Refresh to load topology</div>
+          </div>
+          <svg id="topology-svg" width="100%" height="500" style="display:none"></svg>
+        </div>
+
+        <!-- Device Details Panel -->
+        <div id="topology-details" style="display:none;margin-top:20px;background:var(--surface);border-radius:12px;padding:20px;border:1px solid var(--border)">
+          <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:600">Device Details</h3>
+          <div id="topology-device-info" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px"></div>
         </div>
       </div>
     </div>
@@ -5623,6 +6013,271 @@ app.get(UI_ROUTE, (_req, res) => {
       navigator.clipboard.writeText(JSON.stringify(lastEvidenceData.siemFormat, null, 2))
         .then(() => alert('SIEM format copied to clipboard'))
         .catch(err => alert('Failed to copy: ' + err.message));
+    }
+
+    // Topology Map Functions
+    let topologyData = null;
+
+    async function loadTopologyMap() {
+      const loadingDiv = document.getElementById('topology-loading');
+      const svgElement = document.getElementById('topology-svg');
+      const networkSelect = document.getElementById('topology-network-select');
+
+      loadingDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="animation:spin 1s linear infinite;margin-bottom:16px"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><div style="font-size:14px">Loading topology...</div>';
+      loadingDiv.style.display = 'flex';
+      svgElement.style.display = 'none';
+
+      try {
+        const selectedNetwork = networkSelect.value;
+        let url = '/api/topology/map';
+        if (selectedNetwork) {
+          url = '/api/topology/network/' + selectedNetwork;
+        }
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.error) throw new Error(data.error);
+
+        topologyData = data;
+
+        // Update stats
+        document.getElementById('topo-total-nodes').textContent = data.nodes ? data.nodes.length : 0;
+        document.getElementById('topo-connections').textContent = data.edges ? data.edges.length : 0;
+        document.getElementById('topo-networks').textContent = data.networks ? data.networks.length : (selectedNetwork ? 1 : 0);
+        const onlineCount = data.nodes ? data.nodes.filter(n => n.status === 'online').length : 0;
+        document.getElementById('topo-online').textContent = onlineCount;
+
+        // Populate network dropdown if not already done
+        if (networkSelect.options.length <= 1 && data.networks) {
+          data.networks.forEach(net => {
+            const opt = document.createElement('option');
+            opt.value = net.id;
+            opt.textContent = net.name;
+            networkSelect.appendChild(opt);
+          });
+        }
+
+        // Render topology
+        renderTopology(data);
+
+        loadingDiv.style.display = 'none';
+        svgElement.style.display = 'block';
+
+      } catch (err) {
+        console.error('Topology load error:', err);
+        loadingDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--destructive)" stroke-width="1.5" style="opacity:0.6;margin-bottom:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><div style="font-size:14px;color:var(--destructive)">Error: ' + err.message + '</div>';
+      }
+    }
+
+    function renderTopology(data) {
+      const svg = document.getElementById('topology-svg');
+      const container = document.getElementById('topology-canvas');
+      const width = container.clientWidth || 800;
+      const height = 500;
+
+      svg.setAttribute('width', width);
+      svg.setAttribute('height', height);
+      svg.innerHTML = '';
+
+      // Filter out network container nodes, only show devices
+      const deviceNodes = data.nodes ? data.nodes.filter(n => n.type !== 'network') : [];
+
+      if (deviceNodes.length === 0) {
+        svg.innerHTML = '<text x="' + (width/2) + '" y="' + (height/2) + '" text-anchor="middle" fill="var(--foreground-muted)" font-size="14">No devices found</text>';
+        return;
+      }
+
+      // Map numeric tiers to names: 1=core, 2=distribution, 3=access, 4=endpoint
+      const tierNames = { 1: 'core', 2: 'distribution', 3: 'access', 4: 'endpoint' };
+
+      // Group nodes by tier
+      const tiers = { core: [], distribution: [], access: [], endpoint: [] };
+      deviceNodes.forEach(node => {
+        const tierName = tierNames[node.tier] || 'access';
+        tiers[tierName].push(node);
+      });
+
+      // Calculate positions for each tier
+      const tierY = { core: 60, distribution: 160, access: 280, endpoint: 400 };
+      const nodePositions = {};
+
+      Object.keys(tiers).forEach(tier => {
+        const nodes = tiers[tier];
+        if (nodes.length === 0) return;
+
+        const spacing = width / (nodes.length + 1);
+        nodes.forEach((node, i) => {
+          nodePositions[node.id] = {
+            x: spacing * (i + 1),
+            y: tierY[tier],
+            node: node
+          };
+        });
+      });
+
+      // Draw edges first (behind nodes)
+      const edgesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      if (data.edges) {
+        data.edges.forEach(edge => {
+          // Skip network-device edges (container relationships)
+          if (edge.type === 'network-device') return;
+
+          const source = nodePositions[edge.from];
+          const target = nodePositions[edge.to];
+          if (!source || !target) return;
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', source.x);
+          line.setAttribute('y1', source.y);
+          line.setAttribute('x2', target.x);
+          line.setAttribute('y2', target.y);
+          line.setAttribute('stroke', edge.type === 'lldp' ? 'var(--success)' : 'var(--border)');
+          line.setAttribute('stroke-width', edge.type === 'lldp' ? '2' : '1');
+          line.setAttribute('stroke-dasharray', edge.type === 'lldp' ? '' : '4,4');
+          edgesGroup.appendChild(line);
+
+          // Add port labels if available
+          if (edge.fromPort || edge.toPort) {
+            const midX = (source.x + target.x) / 2;
+            const midY = (source.y + target.y) / 2;
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', midX);
+            label.setAttribute('y', midY - 5);
+            label.setAttribute('text-anchor', 'middle');
+            label.setAttribute('fill', 'var(--foreground-muted)');
+            label.setAttribute('font-size', '10');
+            label.textContent = (edge.fromPort || '') + ' ↔ ' + (edge.toPort || '');
+            edgesGroup.appendChild(label);
+          }
+        });
+      }
+      svg.appendChild(edgesGroup);
+
+      // Draw nodes
+      const nodesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+      const typeColors = {
+        MX: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+        MS: 'linear-gradient(135deg,#3b82f6,#0ea5e9)',
+        MR: 'linear-gradient(135deg,#22c55e,#10b981)',
+        MV: 'linear-gradient(135deg,#f59e0b,#f97316)',
+        appliance: '#6366f1',
+        switch: '#3b82f6',
+        wireless: '#22c55e',
+        camera: '#f59e0b'
+      };
+
+      Object.values(nodePositions).forEach(pos => {
+        const node = pos.node;
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('transform', 'translate(' + pos.x + ',' + pos.y + ')');
+        group.style.cursor = 'pointer';
+        group.onclick = () => showDeviceDetails(node);
+
+        // Determine color based on device type
+        let color = '#ec4899';
+        if (node.model) {
+          if (node.model.startsWith('MX')) color = '#6366f1';
+          else if (node.model.startsWith('MS')) color = '#3b82f6';
+          else if (node.model.startsWith('MR')) color = '#22c55e';
+          else if (node.model.startsWith('MV')) color = '#f59e0b';
+        } else if (node.type) {
+          color = typeColors[node.type] || '#ec4899';
+        }
+
+        // Background circle
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('r', '24');
+        circle.setAttribute('fill', color);
+        circle.setAttribute('opacity', node.status === 'online' ? '1' : '0.4');
+        group.appendChild(circle);
+
+        // Status indicator
+        const statusCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        statusCircle.setAttribute('cx', '16');
+        statusCircle.setAttribute('cy', '-16');
+        statusCircle.setAttribute('r', '6');
+        statusCircle.setAttribute('fill', node.status === 'online' ? '#22c55e' : node.status === 'alerting' ? '#f59e0b' : '#ef4444');
+        statusCircle.setAttribute('stroke', 'var(--background)');
+        statusCircle.setAttribute('stroke-width', '2');
+        group.appendChild(statusCircle);
+
+        // Device icon (simple representation)
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        icon.setAttribute('text-anchor', 'middle');
+        icon.setAttribute('dy', '5');
+        icon.setAttribute('fill', 'white');
+        icon.setAttribute('font-size', '12');
+        icon.setAttribute('font-weight', 'bold');
+        icon.textContent = node.model ? node.model.substring(0, 2) : (node.type ? node.type.substring(0, 2).toUpperCase() : '??');
+        group.appendChild(icon);
+
+        // Device name
+        const nameLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        nameLabel.setAttribute('y', '40');
+        nameLabel.setAttribute('text-anchor', 'middle');
+        nameLabel.setAttribute('fill', 'var(--foreground)');
+        nameLabel.setAttribute('font-size', '11');
+        nameLabel.textContent = (node.label || node.name || node.serial || 'Unknown').substring(0, 15);
+        group.appendChild(nameLabel);
+
+        nodesGroup.appendChild(group);
+      });
+
+      svg.appendChild(nodesGroup);
+
+      // Add tier labels
+      const tierLabels = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      Object.entries(tierY).forEach(([tier, y]) => {
+        if (tiers[tier] && tiers[tier].length > 0) {
+          const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          label.setAttribute('x', '20');
+          label.setAttribute('y', y + 5);
+          label.setAttribute('fill', 'var(--foreground-muted)');
+          label.setAttribute('font-size', '11');
+          label.setAttribute('font-weight', '500');
+          label.textContent = tier.charAt(0).toUpperCase() + tier.slice(1);
+          tierLabels.appendChild(label);
+        }
+      });
+      svg.appendChild(tierLabels);
+    }
+
+    function showDeviceDetails(node) {
+      const detailsPanel = document.getElementById('topology-details');
+      const infoDiv = document.getElementById('topology-device-info');
+
+      detailsPanel.style.display = 'block';
+
+      const statusColor = node.status === 'online' ? 'var(--success)' : node.status === 'alerting' ? '#f59e0b' : 'var(--destructive)';
+      const displayName = node.label || node.name || node.serial || 'Unnamed';
+
+      infoDiv.innerHTML =
+        '<div style="background:rgba(255,255,255,0.02);padding:12px;border-radius:8px">' +
+          '<div style="color:var(--foreground-muted);font-size:11px;margin-bottom:4px">Device Name</div>' +
+          '<div style="font-weight:600">' + displayName + '</div>' +
+        '</div>' +
+        '<div style="background:rgba(255,255,255,0.02);padding:12px;border-radius:8px">' +
+          '<div style="color:var(--foreground-muted);font-size:11px;margin-bottom:4px">Model</div>' +
+          '<div style="font-weight:600">' + (node.model || 'Unknown') + '</div>' +
+        '</div>' +
+        '<div style="background:rgba(255,255,255,0.02);padding:12px;border-radius:8px">' +
+          '<div style="color:var(--foreground-muted);font-size:11px;margin-bottom:4px">Serial</div>' +
+          '<div style="font-weight:600;font-family:monospace">' + (node.serial || node.id || 'N/A') + '</div>' +
+        '</div>' +
+        '<div style="background:rgba(255,255,255,0.02);padding:12px;border-radius:8px">' +
+          '<div style="color:var(--foreground-muted);font-size:11px;margin-bottom:4px">Status</div>' +
+          '<div style="font-weight:600;color:' + statusColor + '">' + (node.status || 'Unknown').toUpperCase() + '</div>' +
+        '</div>' +
+        '<div style="background:rgba(255,255,255,0.02);padding:12px;border-radius:8px">' +
+          '<div style="color:var(--foreground-muted);font-size:11px;margin-bottom:4px">Tier</div>' +
+          '<div style="font-weight:600">' + ({1:'Core',2:'Distribution',3:'Access',4:'Endpoint'}[node.tier] || 'Unknown') + '</div>' +
+        '</div>' +
+        '<div style="background:rgba(255,255,255,0.02);padding:12px;border-radius:8px">' +
+          '<div style="color:var(--foreground-muted);font-size:11px;margin-bottom:4px">IP Address</div>' +
+          '<div style="font-weight:600;font-family:monospace">' + (node.lanIp || node.ip || 'N/A') + '</div>' +
+        '</div>';
     }
 
     // Change Risk Prediction Functions
