@@ -2430,21 +2430,23 @@ app.get(UI_ROUTE, (_req, res) => {
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
     :root {
-      --background: #121212;
+      --background: #0d1117;
+      --background-sidebar: #161b22;
       --foreground: rgba(255, 255, 255, 0.87);
       --foreground-muted: rgba(255, 255, 255, 0.60);
-      --primary: #BB86FC;
+      --primary: #8b5cf6;
+      --primary-hover: #a78bfa;
       --secondary: #03DAC5;
-      --destructive: #CF6679;
-      --success: #81C784;
-      --warning: #FFB74D;
-      --border: rgba(255, 255, 255, 0.12);
-      --surface-1dp: rgba(255, 255, 255, 0.05);
-      --surface-2dp: rgba(255, 255, 255, 0.07);
-      --surface-4dp: rgba(255, 255, 255, 0.09);
+      --destructive: #f87171;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --border: rgba(255, 255, 255, 0.08);
+      --surface-1dp: rgba(255, 255, 255, 0.03);
+      --surface-2dp: rgba(255, 255, 255, 0.05);
+      --surface-4dp: rgba(255, 255, 255, 0.07);
       --font-sans: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-mono: 'Roboto Mono', 'SF Mono', Monaco, monospace;
-      --radius: 0.25rem;
+      --sidebar-width: 220px;
     }
     * { box-sizing: border-box; }
     body {
@@ -2455,8 +2457,303 @@ app.get(UI_ROUTE, (_req, res) => {
       color: var(--foreground);
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
+      display: flex;
+      min-height: 100vh;
     }
-    .wrap { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--background-sidebar);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .sidebar-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), #6366f1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      color: white;
+    }
+    .sidebar-brand {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+    .sidebar-nav {
+      flex: 1;
+      padding: 12px 8px;
+    }
+    .nav-section {
+      margin-bottom: 8px;
+    }
+    .nav-section-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.4);
+      padding: 8px 12px 4px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      color: var(--foreground-muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+    }
+    .nav-item:hover {
+      background: rgba(255,255,255,0.05);
+      color: var(--foreground);
+    }
+    .nav-item.active {
+      background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(99,102,241,0.1));
+      color: var(--primary);
+      border-left: 3px solid var(--primary);
+      margin-left: -3px;
+    }
+    .nav-item svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    .sidebar-footer {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+    }
+    /* Main Content */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      min-height: 100vh;
+    }
+    .page-header {
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border);
+      background: var(--background-sidebar);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .page-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--foreground);
+      margin: 0;
+    }
+    .page-subtitle {
+      font-size: 13px;
+      color: var(--foreground-muted);
+      margin-top: 4px;
+    }
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .header-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--foreground-muted);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .header-btn:hover {
+      background: rgba(255,255,255,0.05);
+      color: var(--foreground);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .header-btn.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+    .header-btn.primary:hover {
+      background: var(--primary-hover);
+    }
+    .page-content {
+      padding: 24px 32px;
+    }
+    /* Stat Cards */
+    .stat-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--background-sidebar);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .stat-card-label {
+      font-size: 12px;
+      color: var(--foreground-muted);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stat-card-value {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+    .stat-card-sub {
+      font-size: 12px;
+      color: var(--foreground-muted);
+      margin-top: 4px;
+    }
+    .stat-online { color: var(--success); }
+    .stat-offline { color: var(--destructive); }
+    /* Data Table */
+    .data-table-container {
+      background: var(--background-sidebar);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .data-table-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .data-table-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+    .data-table-subtitle {
+      font-size: 12px;
+      color: var(--foreground-muted);
+      margin-top: 2px;
+    }
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      min-width: 280px;
+    }
+    .search-box input {
+      border: none;
+      background: transparent;
+      color: var(--foreground);
+      font-size: 13px;
+      outline: none;
+      width: 100%;
+    }
+    .search-box input::placeholder {
+      color: rgba(255,255,255,0.4);
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .data-table th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--foreground-muted);
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .data-table td {
+      padding: 14px 16px;
+      font-size: 13px;
+      color: var(--foreground);
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table tr:hover {
+      background: rgba(255,255,255,0.02);
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .status-badge.online {
+      background: rgba(74,222,128,0.15);
+      color: var(--success);
+    }
+    .status-badge.offline {
+      background: rgba(248,113,113,0.15);
+      color: var(--destructive);
+    }
+    .status-badge.alerting {
+      background: rgba(251,191,36,0.15);
+      color: var(--warning);
+    }
+    .client-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: rgba(139,92,246,0.15);
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--primary);
+    }
+    /* View panels */
+    .view-panel {
+      display: none;
+    }
+    .view-panel.active {
+      display: block;
+    }
+    /* Legacy wrap for embedded content */
+    .wrap { max-width: 100%; margin: 0; padding: 0; }
     .header {
       display: flex;
       align-items: center;
@@ -2572,47 +2869,238 @@ app.get(UI_ROUTE, (_req, res) => {
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
-      <div style="display:flex;align-items:center;gap:16px">
-        <div class="logo">E</div>
-        <div class="brand">
-          <div class="brand-name">Extreme Networks MCP Exchange</div>
-          <div class="brand-sub">Meraki MCP Server (RDU)</div>
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">E</div>
+      <div class="sidebar-brand">MCP Exchange</div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">
+        <button class="nav-item active" onclick="showView('dashboard')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </button>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Monitoring</div>
+        <button class="nav-item" onclick="showView('devices')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          Access Points
+        </button>
+        <button class="nav-item" onclick="showView('clients')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Connected Clients
+        </button>
+        <button class="nav-item" onclick="showView('switches')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          Switches
+        </button>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">AI Intelligence</div>
+        <button class="nav-item" onclick="showView('rca')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Root Cause Analysis
+        </button>
+        <button class="nav-item" onclick="showView('intelligence')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+          Network Intelligence
+        </button>
+        <button class="nav-item" onclick="showView('predictive')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Predictive Alerts
+        </button>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Events</div>
+        <button class="nav-item" onclick="showView('events')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Network Events
+        </button>
+        <button class="nav-item" onclick="showView('roaming')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          Client Roaming
+        </button>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">XIQ</div>
+        <button class="nav-item" onclick="showView('xiq')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          ExtremeCloud IQ
+        </button>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <span style="width:8px;height:8px;background:var(--success);border-radius:50%"></span>
+        <span style="color:var(--success)">Service Active</span>
+      </div>
+      <div>Route: ${PROXY_ROUTE}</div>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <!-- Dashboard View -->
+    <div id="view-dashboard" class="view-panel active">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Dashboard</h1>
+          <div class="page-subtitle">Network overview and quick stats</div>
+        </div>
+        <div class="header-actions">
+          <button class="header-btn" onclick="loadDashboardData()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            Refresh
+          </button>
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span class="status-dot"></span>
-          <span style="font-weight:600;color:var(--secondary)">Service Active</span>
+      <div class="page-content">
+        <div class="stat-cards" id="dashboard-stats">
+          <div class="stat-card">
+            <div class="stat-card-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+              Total Devices
+            </div>
+            <div class="stat-card-value" id="stat-total-devices">--</div>
+            <div class="stat-card-sub">Managed devices</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Device Status</div>
+            <div class="stat-card-value"><span class="stat-online" id="stat-online">--</span> <span style="font-size:14px;color:var(--foreground-muted)">online</span></div>
+            <div class="stat-card-sub"><span class="stat-offline" id="stat-offline">--</span> offline</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Total Clients</div>
+            <div class="stat-card-value" id="stat-clients">--</div>
+            <div class="stat-card-sub">Connected devices</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Organizations</div>
+            <div class="stat-card-value" id="stat-orgs">--</div>
+            <div class="stat-card-sub" id="orgs-container">Loading...</div>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <span class="pill" style="font-size:12px">Upstream: <b>${UPSTREAM}</b></span>
-          <span class="pill" style="font-size:12px">Route: <b>${PROXY_ROUTE}</b></span>
+
+        <!-- Quick Access Cards -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+          <div class="data-table-container" style="padding:20px;cursor:pointer" onclick="showView('rca')">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+              <div style="width:40px;height:40px;background:linear-gradient(135deg,var(--primary),#6366f1);border-radius:8px;display:flex;align-items:center;justify-content:center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div>
+                <div style="font-weight:600;color:var(--foreground)">AI Root Cause Analysis</div>
+                <div style="font-size:12px;color:var(--foreground-muted)">Ask questions about network issues</div>
+              </div>
+            </div>
+          </div>
+          <div class="data-table-container" style="padding:20px;cursor:pointer" onclick="showView('intelligence')">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+              <div style="width:40px;height:40px;background:linear-gradient(135deg,#8b5cf6,#a855f7);border-radius:8px;display:flex;align-items:center;justify-content:center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/></svg>
+              </div>
+              <div>
+                <div style="font-weight:600;color:var(--foreground)">Network Intelligence</div>
+                <div style="font-size:12px;color:var(--foreground-muted)">Roaming, telemetry, health radar</div>
+              </div>
+            </div>
+          </div>
+          <div class="data-table-container" style="padding:20px;cursor:pointer" onclick="showView('predictive')">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+              <div style="width:40px;height:40px;background:linear-gradient(135deg,#f97316,#ef4444);border-radius:8px;display:flex;align-items:center;justify-content:center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
+              </div>
+              <div>
+                <div style="font-weight:600;color:var(--foreground)">Predictive Alerts</div>
+                <div style="font-size:12px;color:var(--foreground-muted)">Failure detection & forecasting</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div style="margin:0 0 24px;padding:20px 24px;background:linear-gradient(135deg,rgba(108,179,63,0.15),rgba(129,199,132,0.1));border:1px solid rgba(108,179,63,0.3);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:16px">
-        <div style="flex-shrink:0">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 56" width="64" height="45">
-            <path fill="#9dbe40" d="M40,4 C23,4 16,12 14,18 C6,20 0,28 0,36 C0,46 8,52 18,52 L62,52 C72,52 80,46 80,36 C80,28 74,20 66,18 C64,12 57,4 40,4 Z"/>
-            <text x="40" y="38" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="28" font-weight="bold">M</text>
-          </svg>
-        </div>
+    <!-- Devices View -->
+    <div id="view-devices" class="view-panel">
+      <div class="page-header">
         <div>
-          <h2 style="margin:0;font-size:1.25rem;font-weight:600;color:var(--foreground)">Meraki Dynamic Troubleshooting</h2>
-          <div style="font-size:0.875rem;color:var(--foreground-muted);margin-top:4px">Real-time wireless diagnostics and event analysis</div>
+          <h1 class="page-title">Access Points</h1>
+          <div class="page-subtitle">Configure and monitor access points across your network infrastructure</div>
+        </div>
+        <div class="header-actions">
+          <button class="header-btn" onclick="loadDevicesView()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            Refresh APs
+          </button>
         </div>
       </div>
-      <div style="text-align:center">
-        <div style="font-size:11px;font-weight:600;color:rgba(157,190,64,0.8);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Meraki Organizations</div>
-        <div id="orgs-container" style="display:flex;flex-direction:column;gap:8px;align-items:center">
-          <div class="muted" style="font-size:12px">Loading...</div>
+      <div class="page-content">
+        <div class="stat-cards" id="ap-stats">
+          <div class="stat-card">
+            <div class="stat-card-label">Total Access Points</div>
+            <div class="stat-card-value" id="ap-total">--</div>
+            <div class="stat-card-sub">Managed devices</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">AP Status</div>
+            <div class="stat-card-value"><span class="stat-online" id="ap-online">--</span></div>
+            <div class="stat-card-sub"><span class="stat-offline" id="ap-offline">--</span> offline</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Total Clients</div>
+            <div class="stat-card-value" id="ap-clients">--</div>
+            <div class="stat-card-sub">Connected devices</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Hardware Types</div>
+            <div class="stat-card-value" id="ap-models">--</div>
+            <div class="stat-card-sub">Different models</div>
+          </div>
+        </div>
+
+        <div class="data-table-container">
+          <div class="data-table-header">
+            <div>
+              <div class="data-table-title">Access Points</div>
+              <div class="data-table-subtitle">Click any access point to view detailed information</div>
+            </div>
+            <div class="search-box">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" placeholder="Search by name, model, IP, or site..." id="ap-search" onkeyup="filterAPTable()"/>
+            </div>
+          </div>
+          <table class="data-table" id="ap-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>AP Name</th>
+                <th>Serial Number</th>
+                <th>Network</th>
+                <th>Model</th>
+                <th>IP Address</th>
+                <th>Clients</th>
+              </tr>
+            </thead>
+            <tbody id="ap-table-body">
+              <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--foreground-muted)">Click "Refresh APs" to load data</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
+
+    <!-- RCA View (keeping original content) -->
+    <div id="view-rca" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">AI Root Cause Analysis</h1>
+          <div class="page-subtitle">Ask natural language questions about network issues</div>
+        </div>
+      </div>
+      <div class="page-content">
+        <div class="wrap">
 
     <div class="card" style="border-left:3px solid var(--primary);background:linear-gradient(135deg,rgba(187,134,252,0.05),rgba(3,218,197,0.05))">
       <div class="section-title">
@@ -3168,10 +3656,309 @@ app.get(UI_ROUTE, (_req, res) => {
         <div class="muted">Loading...</div>
       </div>
     </div>
-
+        </div>
+      </div>
     </div>
 
+    <!-- Clients View (Placeholder) -->
+    <div id="view-clients" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Connected Clients</h1>
+          <div class="page-subtitle">Monitor connected wireless and wired clients</div>
+        </div>
+      </div>
+      <div class="page-content">
+        <div style="padding:60px;text-align:center;color:var(--foreground-muted)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4;margin-bottom:16px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <div style="font-size:16px;margin-bottom:8px">Client monitoring available through RCA</div>
+          <div style="font-size:13px">Use the Root Cause Analysis section for client insights</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Switches View (Placeholder) -->
+    <div id="view-switches" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Switches</h1>
+          <div class="page-subtitle">Monitor switch port telemetry and status</div>
+        </div>
+      </div>
+      <div class="page-content">
+        <div style="padding:60px;text-align:center;color:var(--foreground-muted)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4;margin-bottom:16px"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          <div style="font-size:16px;margin-bottom:8px">Switch telemetry available in Network Intelligence</div>
+          <div style="font-size:13px">Navigate to Network Intelligence > Telemetry tab</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Network Intelligence View (links to RCA tabs) -->
+    <div id="view-intelligence" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Network Intelligence</h1>
+          <div class="page-subtitle">AI-powered roaming, telemetry, and health analysis</div>
+        </div>
+      </div>
+      <div class="page-content">
+        <div style="padding:60px;text-align:center;color:var(--foreground-muted)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" style="opacity:0.6;margin-bottom:16px"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+          <div style="font-size:16px;margin-bottom:8px">Network Intelligence features are in the RCA section</div>
+          <div style="font-size:13px;margin-bottom:20px">Roaming Analysis, Switch Telemetry, Health Radar, and Predictive Detection</div>
+          <button onclick="showView('rca')" style="padding:12px 24px;background:var(--primary);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer">Go to Root Cause Analysis</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Predictive View (links to RCA predictive tab) -->
+    <div id="view-predictive" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Predictive Alerts</h1>
+          <div class="page-subtitle">AI-powered failure detection and risk forecasting</div>
+        </div>
+      </div>
+      <div class="page-content">
+        <div style="padding:60px;text-align:center;color:var(--foreground-muted)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FF5722" stroke-width="1.5" style="opacity:0.6;margin-bottom:16px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div style="font-size:16px;margin-bottom:8px">Predictive Detection in AI Network Intelligence</div>
+          <div style="font-size:13px;margin-bottom:20px">Forecasts risk of device outage or flapping within 30-120 minutes</div>
+          <button onclick="showView('rca');setTimeout(()=>switchAnalysisTab('predictive'),100)" style="padding:12px 24px;background:linear-gradient(135deg,#FF5722,#E64A19);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer">Run Predictive Analysis</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Events View (Placeholder) -->
+    <div id="view-events" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Network Events</h1>
+          <div class="page-subtitle">DFS radar events, WIPS alerts, and network activity</div>
+        </div>
+      </div>
+      <div class="page-content">
+        <div style="padding:60px;text-align:center;color:var(--foreground-muted)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4;margin-bottom:16px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <div style="font-size:16px;margin-bottom:8px">Event monitoring available in RCA section</div>
+          <div style="font-size:13px">Network health, DFS events, and WIPS alerts</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Roaming View (Placeholder) -->
+    <div id="view-roaming" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Client Roaming</h1>
+          <div class="page-subtitle">Track client movement and roaming patterns</div>
+        </div>
+      </div>
+      <div class="page-content">
+        <div style="padding:60px;text-align:center;color:var(--foreground-muted)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#00BCD4" stroke-width="1.5" style="opacity:0.6;margin-bottom:16px"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          <div style="font-size:16px;margin-bottom:8px">Roaming Analysis in AI Network Intelligence</div>
+          <div style="font-size:13px;margin-bottom:20px">Track client movement, detect failures, identify sticky clients</div>
+          <button onclick="showView('rca');setTimeout(()=>switchAnalysisTab('roaming'),100)" style="padding:12px 24px;background:linear-gradient(135deg,#00BCD4,#009688);border:none;border-radius:8px;color:rgba(0,0,0,0.87);font-weight:600;cursor:pointer">Run Roaming Analysis</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- XIQ View (Placeholder) -->
+    <div id="view-xiq" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">ExtremeCloud IQ</h1>
+          <div class="page-subtitle">XIQ devices, sites, and client connectivity</div>
+        </div>
+      </div>
+      <div class="page-content">
+        <div style="padding:60px;text-align:center;color:var(--foreground-muted)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--secondary)" stroke-width="1.5" style="opacity:0.6;margin-bottom:16px"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <div style="font-size:16px;margin-bottom:8px">XIQ insights available in RCA section</div>
+          <div style="font-size:13px">ExtremeCloud IQ devices, sites, and active clients</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
   <script>
+    // View Navigation Functions
+    function showView(viewId) {
+      // Hide all view panels
+      document.querySelectorAll('.view-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+
+      // Remove active from all nav items
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+      });
+
+      // Show selected view panel
+      const targetPanel = document.getElementById('view-' + viewId);
+      if (targetPanel) {
+        targetPanel.classList.add('active');
+      }
+
+      // Set active nav item
+      document.querySelectorAll('.nav-item').forEach(item => {
+        if (item.getAttribute('onclick') && item.getAttribute('onclick').includes("'" + viewId + "'")) {
+          item.classList.add('active');
+        }
+      });
+
+      // Trigger data load for specific views
+      if (viewId === 'dashboard') {
+        loadDashboardData();
+      } else if (viewId === 'devices') {
+        loadDevicesView();
+      }
+    }
+
+    // Dashboard data loading
+    async function loadDashboardData() {
+      try {
+        // Fetch organizations
+        const orgsRes = await fetch('/api/organizations');
+        const orgs = await orgsRes.json();
+
+        // Update org stats
+        document.getElementById('stat-orgs').textContent = orgs.length;
+        const orgNames = orgs.map(o => o.name).slice(0, 3).join(', ');
+        document.getElementById('orgs-container').textContent = orgNames + (orgs.length > 3 ? '...' : '');
+
+        // Fetch devices for each org and aggregate
+        let totalDevices = 0;
+        let onlineDevices = 0;
+        let offlineDevices = 0;
+        let totalClients = 0;
+
+        for (const org of orgs) {
+          try {
+            const devRes = await fetch('/api/organizations/' + org.id + '/devices');
+            const devices = await devRes.json();
+            totalDevices += devices.length;
+            onlineDevices += devices.filter(d => d.status === 'online').length;
+            offlineDevices += devices.filter(d => d.status === 'offline').length;
+          } catch (e) {
+            console.warn('Error fetching devices for org', org.name, e);
+          }
+        }
+
+        document.getElementById('stat-total-devices').textContent = totalDevices;
+        document.getElementById('stat-online').textContent = onlineDevices;
+        document.getElementById('stat-offline').textContent = offlineDevices;
+        document.getElementById('stat-clients').textContent = '--'; // Would need client API call
+
+      } catch (err) {
+        console.error('Error loading dashboard data:', err);
+      }
+    }
+
+    // Devices view data loading
+    let allDevices = [];
+    async function loadDevicesView() {
+      const tbody = document.getElementById('ap-table-body');
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--foreground-muted)"><div style="animation:spin 1s linear infinite;display:inline-block;width:20px;height:20px;border:2px solid var(--primary);border-top-color:transparent;border-radius:50%"></div> Loading...</td></tr>';
+
+      try {
+        const orgsRes = await fetch('/api/organizations');
+        const orgs = await orgsRes.json();
+
+        allDevices = [];
+        let totalClients = 0;
+
+        for (const org of orgs) {
+          try {
+            const netsRes = await fetch('/api/organizations/' + org.id + '/networks');
+            const networks = await netsRes.json();
+            const networkMap = {};
+            networks.forEach(n => networkMap[n.id] = n.name);
+
+            const devRes = await fetch('/api/organizations/' + org.id + '/devices');
+            const devices = await devRes.json();
+
+            // Filter for APs only
+            const aps = devices.filter(d => d.productType === 'wireless');
+
+            for (const ap of aps) {
+              allDevices.push({
+                ...ap,
+                networkName: networkMap[ap.networkId] || ap.networkId,
+                orgName: org.name
+              });
+            }
+          } catch (e) {
+            console.warn('Error fetching devices for org', org.name, e);
+          }
+        }
+
+        // Update stats
+        const online = allDevices.filter(d => d.status === 'online').length;
+        const offline = allDevices.filter(d => d.status !== 'online').length;
+        const models = new Set(allDevices.map(d => d.model)).size;
+
+        document.getElementById('ap-total').textContent = allDevices.length;
+        document.getElementById('ap-online').textContent = online;
+        document.getElementById('ap-offline').textContent = offline;
+        document.getElementById('ap-models').textContent = models;
+        document.getElementById('ap-clients').textContent = '--';
+
+        // Render table
+        renderAPTable(allDevices);
+
+      } catch (err) {
+        console.error('Error loading devices:', err);
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--destructive)">Error loading devices: ' + err.message + '</td></tr>';
+      }
+    }
+
+    function renderAPTable(devices) {
+      const tbody = document.getElementById('ap-table-body');
+      if (devices.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--foreground-muted)">No access points found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = devices.map(ap => {
+        const statusClass = ap.status === 'online' ? 'online' : (ap.status === 'alerting' ? 'alerting' : 'offline');
+        const statusText = ap.status === 'online' ? 'Online' : (ap.status === 'alerting' ? 'Alerting' : 'Offline');
+        return '<tr>' +
+          '<td><span class="status-badge ' + statusClass + '"><span style="width:6px;height:6px;border-radius:50%;background:currentColor"></span> ' + statusText + '</span></td>' +
+          '<td>' + (ap.name || ap.serial) + '</td>' +
+          '<td style="font-family:var(--font-mono);font-size:12px">' + ap.serial + '</td>' +
+          '<td>' + (ap.networkName || '--') + '</td>' +
+          '<td>' + (ap.model || '--') + '</td>' +
+          '<td style="font-family:var(--font-mono);font-size:12px">' + (ap.lanIp || '--') + '</td>' +
+          '<td><span class="client-count">' + (ap.clients || '--') + '</span></td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    function filterAPTable() {
+      const search = document.getElementById('ap-search').value.toLowerCase();
+      if (!search) {
+        renderAPTable(allDevices);
+        return;
+      }
+      const filtered = allDevices.filter(ap =>
+        (ap.name && ap.name.toLowerCase().includes(search)) ||
+        (ap.serial && ap.serial.toLowerCase().includes(search)) ||
+        (ap.model && ap.model.toLowerCase().includes(search)) ||
+        (ap.lanIp && ap.lanIp.includes(search)) ||
+        (ap.networkName && ap.networkName.toLowerCase().includes(search))
+      );
+      renderAPTable(filtered);
+    }
+
+    // Auto-load dashboard on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      loadDashboardData();
+    });
+
     // RCA Functions
     function setRcaQuestion(question) {
       document.getElementById('rca-question').value = question;
