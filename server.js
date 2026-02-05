@@ -2778,6 +2778,605 @@ app.get("/api/change-risk/networks", async (req, res) => {
   }
 });
 
+// ===========================================
+// AUTONOMOUS EVIDENCE COLLECTION API
+// ===========================================
+
+// Evidence collection - gathers comprehensive diagnostic data for incident investigation
+app.post("/api/evidence/collect", express.json(), async (req, res) => {
+  try {
+    const {
+      networkId = null,
+      deviceSerial = null,
+      clientMac = null,
+      timespan = 3600, // Default 1 hour
+      includePacketCapture = false,
+      includeClientLogs = true,
+      includeDhcpDns = true,
+      includeAuthLogs = true,
+      includeRfSnapshot = true,
+      includeSecurityEvents = true,
+      includeConfigSnapshot = true,
+      triggerType = "manual", // manual, anomaly, scheduled
+      anomalyDetails = null
+    } = req.body;
+
+    const collectionId = `EVD-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    const collectionStart = new Date().toISOString();
+
+    const evidence = {
+      collectionId,
+      collectionStart,
+      triggerType,
+      anomalyDetails,
+      parameters: { networkId, deviceSerial, clientMac, timespan },
+      data: {},
+      summary: { totalEvents: 0, criticalFindings: 0, warnings: 0 },
+      timeline: []
+    };
+
+    const orgs = await merakiFetch("/organizations");
+    if (!orgs || orgs.length === 0) {
+      return res.status(500).json({ error: "No organizations found" });
+    }
+
+    // Determine target networks
+    let targetNetworks = [];
+    for (const org of orgs) {
+      try {
+        const networks = await merakiFetch(`/organizations/${org.id}/networks?perPage=1000`);
+        for (const net of (networks || [])) {
+          if (!networkId || net.id === networkId) {
+            targetNetworks.push({ ...net, orgId: org.id, orgName: org.name });
+          }
+        }
+      } catch (e) {
+        console.warn(`Failed to get networks for org ${org.name}:`, e.message);
+      }
+    }
+
+    // Limit to first 3 networks for performance
+    targetNetworks = targetNetworks.slice(0, 3);
+
+    // 1. Device Status Snapshot
+    evidence.data.deviceStatus = [];
+    for (const org of orgs) {
+      try {
+        const statuses = await merakiFetch(`/organizations/${org.id}/devices/statuses?perPage=1000`);
+        for (const device of (statuses || [])) {
+          if (!networkId || device.networkId === networkId) {
+            if (!deviceSerial || device.serial === deviceSerial) {
+              evidence.data.deviceStatus.push({
+                name: device.name || device.mac,
+                serial: device.serial,
+                mac: device.mac,
+                model: device.model,
+                status: device.status,
+                lanIp: device.lanIp,
+                publicIp: device.publicIp,
+                lastReportedAt: device.lastReportedAt,
+                networkId: device.networkId,
+                org: org.name
+              });
+
+              if (device.status === "alerting" || device.status === "offline") {
+                evidence.summary.criticalFindings++;
+                evidence.timeline.push({
+                  time: device.lastReportedAt || collectionStart,
+                  type: "device_status",
+                  severity: device.status === "offline" ? "critical" : "high",
+                  message: `${device.name || device.serial} is ${device.status}`,
+                  device: device.serial
+                });
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn(`Failed to get device statuses:`, e.message);
+      }
+    }
+
+    // 2. Client Event Logs
+    if (includeClientLogs) {
+      evidence.data.clientEvents = [];
+      for (const network of targetNetworks) {
+        try {
+          let eventUrl = `/networks/${network.id}/events?perPage=500&productType=wireless&timespan=${timespan}`;
+          if (clientMac) {
+            eventUrl += `&clientMac=${clientMac}`;
+          }
+          const events = await merakiFetch(eventUrl);
+          if (events && events.events) {
+            for (const event of events.events) {
+              evidence.data.clientEvents.push({
+                occurredAt: event.occurredAt,
+                networkId: network.id,
+                networkName: network.name,
+                type: event.type,
+                description: event.description,
+                clientId: event.clientId,
+                clientMac: event.clientMac,
+                clientDescription: event.clientDescription,
+                deviceSerial: event.deviceSerial,
+                deviceName: event.deviceName,
+                ssidNumber: event.ssidNumber,
+                eventData: event.eventData
+              });
+              evidence.summary.totalEvents++;
+
+              // Add to timeline for important events
+              if (event.type.includes("fail") || event.type.includes("deauth") || event.type.includes("disassoc")) {
+                evidence.timeline.push({
+                  time: event.occurredAt,
+                  type: "client_event",
+                  severity: event.type.includes("fail") ? "high" : "medium",
+                  message: `${event.type}: ${event.clientDescription || event.clientMac || 'Unknown client'}`,
+                  device: event.deviceName || event.deviceSerial,
+                  client: event.clientMac
+                });
+                evidence.summary.warnings++;
+              }
+            }
+          }
+        } catch (e) {
+          // May fail for some network types
+        }
+      }
+    }
+
+    // 3. DHCP + DNS Events
+    if (includeDhcpDns) {
+      evidence.data.dhcpDnsEvents = [];
+      for (const network of targetNetworks) {
+        try {
+          // DHCP events
+          const dhcpEvents = await merakiFetch(`/networks/${network.id}/events?perPage=200&productType=appliance&includedEventTypes[]=dhcp_lease&includedEventTypes[]=dhcp_no_leases&timespan=${timespan}`);
+          if (dhcpEvents && dhcpEvents.events) {
+            for (const event of dhcpEvents.events) {
+              evidence.data.dhcpDnsEvents.push({
+                occurredAt: event.occurredAt,
+                networkId: network.id,
+                networkName: network.name,
+                type: event.type,
+                description: event.description,
+                clientMac: event.clientMac,
+                eventData: event.eventData,
+                category: "dhcp"
+              });
+              evidence.summary.totalEvents++;
+
+              if (event.type === "dhcp_no_leases") {
+                evidence.summary.criticalFindings++;
+                evidence.timeline.push({
+                  time: event.occurredAt,
+                  type: "dhcp",
+                  severity: "critical",
+                  message: `DHCP pool exhausted: ${event.description}`,
+                  network: network.name
+                });
+              }
+            }
+          }
+        } catch (e) {
+          // May not have appliance
+        }
+
+        try {
+          // DNS/Content filtering events
+          const contentEvents = await merakiFetch(`/networks/${network.id}/events?perPage=200&productType=appliance&includedEventTypes[]=content_filtering_block&timespan=${timespan}`);
+          if (contentEvents && contentEvents.events) {
+            for (const event of contentEvents.events) {
+              evidence.data.dhcpDnsEvents.push({
+                occurredAt: event.occurredAt,
+                networkId: network.id,
+                networkName: network.name,
+                type: event.type,
+                description: event.description,
+                clientMac: event.clientMac,
+                eventData: event.eventData,
+                category: "dns_filtering"
+              });
+              evidence.summary.totalEvents++;
+            }
+          }
+        } catch (e) {
+          // May not have appliance
+        }
+      }
+    }
+
+    // 4. Authentication Logs (802.1x, WPA)
+    if (includeAuthLogs) {
+      evidence.data.authEvents = [];
+      for (const network of targetNetworks) {
+        try {
+          const authEvents = await merakiFetch(`/networks/${network.id}/events?perPage=300&productType=wireless&includedEventTypes[]=wpa_auth&includedEventTypes[]=wpa_deauth&includedEventTypes[]=8021x_auth&includedEventTypes[]=8021x_deauth&includedEventTypes[]=8021x_eap_failure&timespan=${timespan}`);
+          if (authEvents && authEvents.events) {
+            for (const event of authEvents.events) {
+              evidence.data.authEvents.push({
+                occurredAt: event.occurredAt,
+                networkId: network.id,
+                networkName: network.name,
+                type: event.type,
+                description: event.description,
+                clientMac: event.clientMac,
+                clientDescription: event.clientDescription,
+                deviceSerial: event.deviceSerial,
+                deviceName: event.deviceName,
+                ssidNumber: event.ssidNumber,
+                eventData: event.eventData
+              });
+              evidence.summary.totalEvents++;
+
+              // Flag auth failures
+              if (event.type.includes("fail") || event.type.includes("deauth")) {
+                evidence.timeline.push({
+                  time: event.occurredAt,
+                  type: "auth",
+                  severity: event.type.includes("fail") ? "high" : "medium",
+                  message: `Auth ${event.type}: ${event.clientDescription || event.clientMac}`,
+                  device: event.deviceName || event.deviceSerial,
+                  client: event.clientMac
+                });
+                evidence.summary.warnings++;
+              }
+            }
+          }
+        } catch (e) {
+          // May fail
+        }
+      }
+    }
+
+    // 5. RF Snapshot (channel utilization, interference)
+    if (includeRfSnapshot) {
+      evidence.data.rfSnapshot = {
+        channelUtilization: [],
+        connectionStats: [],
+        clientSignalQuality: []
+      };
+
+      for (const network of targetNetworks) {
+        try {
+          // Channel utilization history
+          const channelUtil = await merakiFetch(`/networks/${network.id}/wireless/channelUtilizationHistory?timespan=${Math.min(timespan, 7200)}`);
+          if (channelUtil && channelUtil.length > 0) {
+            evidence.data.rfSnapshot.channelUtilization.push({
+              networkId: network.id,
+              networkName: network.name,
+              data: channelUtil.slice(0, 50), // Limit data points
+              avgUtilization: channelUtil.reduce((sum, c) => sum + (c.utilization80211 || 0), 0) / channelUtil.length,
+              avgInterference: channelUtil.reduce((sum, c) => sum + (c.utilizationNon80211 || 0), 0) / channelUtil.length
+            });
+
+            const avgUtil = channelUtil.reduce((sum, c) => sum + (c.utilization80211 || 0), 0) / channelUtil.length;
+            if (avgUtil > 70) {
+              evidence.summary.warnings++;
+              evidence.timeline.push({
+                time: collectionStart,
+                type: "rf",
+                severity: avgUtil > 85 ? "high" : "medium",
+                message: `High channel utilization: ${Math.round(avgUtil)}% on ${network.name}`,
+                network: network.name
+              });
+            }
+          }
+        } catch (e) {
+          // May not have wireless
+        }
+
+        try {
+          // Connection stats
+          const connStats = await merakiFetch(`/networks/${network.id}/wireless/connectionStats?timespan=${timespan}`);
+          if (connStats) {
+            evidence.data.rfSnapshot.connectionStats.push({
+              networkId: network.id,
+              networkName: network.name,
+              ...connStats
+            });
+
+            // Check for high failure rates
+            if (connStats.assoc > 10 && connStats.authFail > 0) {
+              const failRate = (connStats.authFail / connStats.assoc) * 100;
+              if (failRate > 5) {
+                evidence.summary.warnings++;
+                evidence.timeline.push({
+                  time: collectionStart,
+                  type: "rf",
+                  severity: failRate > 15 ? "high" : "medium",
+                  message: `Auth failure rate ${failRate.toFixed(1)}% on ${network.name}`,
+                  network: network.name
+                });
+              }
+            }
+          }
+        } catch (e) {
+          // May fail
+        }
+
+        // Client signal quality (if specific client)
+        if (clientMac) {
+          try {
+            const clients = await merakiFetch(`/networks/${network.id}/clients?timespan=${timespan}&perPage=500`);
+            const targetClient = (clients || []).find(c => c.mac === clientMac);
+            if (targetClient) {
+              evidence.data.rfSnapshot.clientSignalQuality.push({
+                networkId: network.id,
+                networkName: network.name,
+                client: targetClient
+              });
+            }
+          } catch (e) {
+            // May fail
+          }
+        }
+      }
+    }
+
+    // 6. Security Events
+    if (includeSecurityEvents) {
+      evidence.data.securityEvents = [];
+      for (const network of targetNetworks) {
+        try {
+          // IDS/IPS events
+          const secEvents = await merakiFetch(`/networks/${network.id}/events?perPage=200&productType=appliance&includedEventTypes[]=ids_alerted&includedEventTypes[]=ids_blocked&timespan=${timespan}`);
+          if (secEvents && secEvents.events) {
+            for (const event of secEvents.events) {
+              evidence.data.securityEvents.push({
+                occurredAt: event.occurredAt,
+                networkId: network.id,
+                networkName: network.name,
+                type: event.type,
+                description: event.description,
+                eventData: event.eventData,
+                category: "ids"
+              });
+              evidence.summary.totalEvents++;
+              evidence.summary.criticalFindings++;
+
+              evidence.timeline.push({
+                time: event.occurredAt,
+                type: "security",
+                severity: "critical",
+                message: `Security: ${event.type} - ${event.description}`,
+                network: network.name
+              });
+            }
+          }
+        } catch (e) {
+          // May not have appliance
+        }
+
+        try {
+          // Rogue AP detection
+          const rogueEvents = await merakiFetch(`/networks/${network.id}/events?perPage=100&productType=wireless&includedEventTypes[]=rogue_ap&timespan=${timespan}`);
+          if (rogueEvents && rogueEvents.events) {
+            for (const event of rogueEvents.events) {
+              evidence.data.securityEvents.push({
+                occurredAt: event.occurredAt,
+                networkId: network.id,
+                networkName: network.name,
+                type: event.type,
+                description: event.description,
+                eventData: event.eventData,
+                category: "rogue_ap"
+              });
+              evidence.summary.totalEvents++;
+              evidence.summary.warnings++;
+            }
+          }
+        } catch (e) {
+          // May fail
+        }
+      }
+    }
+
+    // 7. Configuration Snapshot
+    if (includeConfigSnapshot) {
+      evidence.data.configSnapshot = {
+        ssids: [],
+        vlans: [],
+        firewallRules: []
+      };
+
+      for (const network of targetNetworks) {
+        try {
+          const ssids = await merakiFetch(`/networks/${network.id}/wireless/ssids`);
+          if (ssids) {
+            evidence.data.configSnapshot.ssids.push({
+              networkId: network.id,
+              networkName: network.name,
+              ssids: ssids.map(s => ({
+                number: s.number,
+                name: s.name,
+                enabled: s.enabled,
+                authMode: s.authMode,
+                encryptionMode: s.encryptionMode,
+                bandSelection: s.bandSelection,
+                visible: s.visible
+              }))
+            });
+          }
+        } catch (e) {
+          // May not have wireless
+        }
+
+        try {
+          const vlans = await merakiFetch(`/networks/${network.id}/appliance/vlans`);
+          if (vlans) {
+            evidence.data.configSnapshot.vlans.push({
+              networkId: network.id,
+              networkName: network.name,
+              vlans: vlans.map(v => ({
+                id: v.id,
+                name: v.name,
+                subnet: v.subnet,
+                applianceIp: v.applianceIp,
+                dhcpHandling: v.dhcpHandling
+              }))
+            });
+          }
+        } catch (e) {
+          // May not have appliance or VLANs enabled
+        }
+      }
+    }
+
+    // 8. Packet Capture Info (placeholder - actual capture requires device-level API)
+    if (includePacketCapture) {
+      evidence.data.packetCaptureInfo = {
+        status: "available",
+        note: "Packet capture requires device-level access. Use Meraki Dashboard or API to initiate capture.",
+        targetDevices: evidence.data.deviceStatus.filter(d =>
+          d.model && (d.model.startsWith("MR") || d.model.startsWith("MS") || d.model.startsWith("MX"))
+        ).map(d => ({ serial: d.serial, name: d.name, model: d.model }))
+      };
+    }
+
+    // Sort timeline by time (newest first)
+    evidence.timeline.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+    // Complete collection
+    evidence.collectionEnd = new Date().toISOString();
+    evidence.collectionDuration = `${((new Date(evidence.collectionEnd) - new Date(evidence.collectionStart)) / 1000).toFixed(1)}s`;
+
+    // Generate SIEM-compatible format
+    evidence.siemFormat = {
+      eventType: "network_evidence_collection",
+      collectionId: evidence.collectionId,
+      timestamp: evidence.collectionStart,
+      triggerType: evidence.triggerType,
+      anomalyDetails: evidence.anomalyDetails,
+      summary: evidence.summary,
+      criticalEvents: evidence.timeline.filter(t => t.severity === "critical"),
+      affectedNetworks: targetNetworks.map(n => n.name),
+      affectedDevices: evidence.data.deviceStatus.filter(d => d.status !== "online").map(d => d.serial)
+    };
+
+    res.json(evidence);
+
+  } catch (err) {
+    console.error("Evidence collection error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get list of devices for evidence collection targeting
+app.get("/api/evidence/devices", async (req, res) => {
+  try {
+    const orgs = await merakiFetch("/organizations");
+    const devices = [];
+
+    for (const org of orgs) {
+      try {
+        const statuses = await merakiFetch(`/organizations/${org.id}/devices/statuses?perPage=1000`);
+        for (const device of (statuses || [])) {
+          devices.push({
+            serial: device.serial,
+            name: device.name || device.mac,
+            model: device.model,
+            status: device.status,
+            networkId: device.networkId,
+            org: org.name,
+            type: (device.model || "").startsWith("MR") || (device.model || "").startsWith("CW") ? "AP" :
+                  (device.model || "").startsWith("MS") ? "Switch" :
+                  (device.model || "").startsWith("MX") || (device.model || "").startsWith("Z") ? "Appliance" : "Other"
+          });
+        }
+      } catch (e) {
+        console.warn(`Failed to get devices for org ${org.name}:`, e.message);
+      }
+    }
+
+    res.json(devices);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Anomaly detection trigger - checks for anomalies and auto-collects evidence
+app.get("/api/evidence/anomaly-check", async (req, res) => {
+  try {
+    const anomalies = [];
+    const orgs = await merakiFetch("/organizations");
+
+    for (const org of orgs) {
+      try {
+        // Check device statuses for anomalies
+        const statuses = await merakiFetch(`/organizations/${org.id}/devices/statuses?perPage=1000`);
+        const alertingDevices = (statuses || []).filter(d => d.status === "alerting");
+        const offlineDevices = (statuses || []).filter(d => d.status === "offline");
+
+        if (alertingDevices.length > 0) {
+          anomalies.push({
+            type: "devices_alerting",
+            severity: "high",
+            org: org.name,
+            count: alertingDevices.length,
+            devices: alertingDevices.slice(0, 5).map(d => ({ serial: d.serial, name: d.name })),
+            recommendation: "Collect evidence for alerting devices"
+          });
+        }
+
+        if (offlineDevices.length > 3) {
+          anomalies.push({
+            type: "multiple_devices_offline",
+            severity: "critical",
+            org: org.name,
+            count: offlineDevices.length,
+            devices: offlineDevices.slice(0, 5).map(d => ({ serial: d.serial, name: d.name })),
+            recommendation: "Possible network outage - collect evidence immediately"
+          });
+        }
+      } catch (e) {
+        console.warn(`Anomaly check failed for org ${org.name}:`, e.message);
+      }
+
+      // Check for high event rates (indicates issues)
+      try {
+        const networks = await merakiFetch(`/organizations/${org.id}/networks?perPage=100`);
+        for (const network of (networks || []).slice(0, 3)) {
+          try {
+            const events = await merakiFetch(`/networks/${network.id}/events?perPage=100&productType=wireless&timespan=1800`);
+            if (events && events.events) {
+              const failEvents = events.events.filter(e =>
+                e.type.includes("fail") || e.type.includes("deauth") || e.type.includes("timeout")
+              );
+              if (failEvents.length > 20) {
+                anomalies.push({
+                  type: "high_failure_rate",
+                  severity: "high",
+                  org: org.name,
+                  network: network.name,
+                  networkId: network.id,
+                  count: failEvents.length,
+                  recommendation: "High auth/connection failure rate detected"
+                });
+              }
+            }
+          } catch (e) {
+            // May fail for some network types
+          }
+        }
+      } catch (e) {
+        // May fail
+      }
+    }
+
+    res.json({
+      timestamp: new Date().toISOString(),
+      anomaliesDetected: anomalies.length > 0,
+      anomalyCount: anomalies.length,
+      anomalies,
+      autoCollectRecommended: anomalies.some(a => a.severity === "critical")
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // BOB Asset Tracker API
 app.get("/api/assets", (req, res) => {
   const { owner, type, region, search, page = 1, limit = 50 } = req.query;
@@ -3334,6 +3933,10 @@ app.get(UI_ROUTE, (_req, res) => {
         <button class="nav-item" onclick="showView('change-risk')">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
           Change Risk
+        </button>
+        <button class="nav-item" onclick="showView('evidence')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Evidence Collection
         </button>
       </div>
       <div class="nav-section">
@@ -4206,6 +4809,232 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
     </div>
 
+    <!-- Evidence Collection View -->
+    <div id="view-evidence" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Autonomous Evidence Collection</h1>
+          <div class="page-subtitle">Collect diagnostic data for incident investigation and SIEM integration</div>
+        </div>
+        <div class="header-actions">
+          <button class="header-btn" onclick="checkForAnomalies()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+            Check Anomalies
+          </button>
+        </div>
+      </div>
+      <div class="page-content">
+        <!-- Anomaly Alert Banner -->
+        <div id="evidence-anomaly-banner" style="display:none;padding:16px 20px;background:linear-gradient(135deg,rgba(239,68,68,0.2),rgba(234,88,12,0.1));border:1px solid rgba(239,68,68,0.3);border-radius:10px;margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;background:rgba(239,68,68,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div style="flex:1">
+              <div style="font-weight:600;color:#EF4444;margin-bottom:4px">Anomalies Detected</div>
+              <div id="evidence-anomaly-summary" style="font-size:13px;color:rgba(255,255,255,0.7)">--</div>
+            </div>
+            <button onclick="autoCollectEvidence()" style="padding:10px 20px;background:linear-gradient(135deg,#EF4444,#DC2626);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;font-size:13px">Auto-Collect Evidence</button>
+          </div>
+        </div>
+
+        <div class="card" style="border-left:3px solid #06B6D4;background:linear-gradient(135deg,rgba(6,182,212,0.08),rgba(59,130,246,0.05))">
+          <div class="section-title">
+            <span class="icon" style="color:#06B6D4"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+            <h2>Evidence Collection</h2>
+            <span style="margin-left:auto;padding:4px 10px;background:linear-gradient(135deg,#06B6D4,#3B82F6);border-radius:12px;font-size:10px;font-weight:600;color:white;text-transform:uppercase">Autonomous</span>
+          </div>
+          <div class="muted">Collects packet captures, client logs, DHCP/DNS traces, auth logs, and RF snapshots</div>
+
+          <div style="margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+            <!-- Target Network -->
+            <div>
+              <label style="display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px">Target Network</label>
+              <select id="evidence-network-select" style="width:100%;padding:12px;background:#0b1220;color:#e8eefc;border:1px solid rgba(6,182,212,0.3);border-radius:8px;font-size:13px">
+                <option value="">All Networks</option>
+              </select>
+            </div>
+
+            <!-- Target Device -->
+            <div>
+              <label style="display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px">Target Device (Optional)</label>
+              <select id="evidence-device-select" style="width:100%;padding:12px;background:#0b1220;color:#e8eefc;border:1px solid rgba(6,182,212,0.3);border-radius:8px;font-size:13px">
+                <option value="">All Devices</option>
+              </select>
+            </div>
+
+            <!-- Client MAC -->
+            <div>
+              <label style="display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px">Client MAC (Optional)</label>
+              <input type="text" id="evidence-client-mac" placeholder="e.g., 00:11:22:33:44:55" style="width:100%;padding:12px;background:#0b1220;color:#e8eefc;border:1px solid rgba(6,182,212,0.3);border-radius:8px;font-size:13px;box-sizing:border-box" />
+            </div>
+
+            <!-- Timespan -->
+            <div>
+              <label style="display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px">Timespan</label>
+              <select id="evidence-timespan" style="width:100%;padding:12px;background:#0b1220;color:#e8eefc;border:1px solid rgba(6,182,212,0.3);border-radius:8px;font-size:13px">
+                <option value="1800">30 minutes</option>
+                <option value="3600" selected>1 hour</option>
+                <option value="7200">2 hours</option>
+                <option value="14400">4 hours</option>
+                <option value="86400">24 hours</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Evidence Types -->
+          <div style="margin-top:20px">
+            <label style="display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:10px">Evidence Types to Collect</label>
+            <div style="display:flex;flex-wrap:wrap;gap:10px">
+              <label style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.3);border-radius:8px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="ev-client-logs" checked style="accent-color:#06B6D4" /> Client Event Logs
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);border-radius:8px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="ev-dhcp-dns" checked style="accent-color:#22C55E" /> DHCP + DNS Trace
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);border-radius:8px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="ev-auth-logs" checked style="accent-color:#A855F7" /> Auth Logs (802.1x/WPA)
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);border-radius:8px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="ev-rf-snapshot" checked style="accent-color:#F97316" /> RF Snapshot
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:8px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="ev-security" checked style="accent-color:#EF4444" /> Security Events
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:8px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="ev-config" checked style="accent-color:#3B82F6" /> Config Snapshot
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(156,163,175,0.15);border:1px solid rgba(156,163,175,0.3);border-radius:8px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="ev-packet-capture" style="accent-color:#9CA3AF" /> Packet Capture Info
+              </label>
+            </div>
+          </div>
+
+          <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap">
+            <button onclick="collectEvidence()" id="evidence-collect-button" style="padding:12px 24px;background:linear-gradient(135deg,#06B6D4,#3B82F6);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Collect Evidence
+            </button>
+            <button onclick="loadEvidenceNetworks();loadEvidenceDevices()" style="padding:12px 20px;background:transparent;border:1px solid rgba(6,182,212,0.3);border-radius:8px;color:#06B6D4;font-weight:500;cursor:pointer;font-size:13px">
+              Refresh Targets
+            </button>
+          </div>
+
+          <!-- Results Section -->
+          <div id="evidence-results" style="margin-top:24px;display:none">
+            <div id="evidence-loading" style="display:none;padding:40px;text-align:center">
+              <div style="width:40px;height:40px;border:3px solid rgba(6,182,212,0.3);border-top-color:#06B6D4;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
+              <div style="margin-top:12px;color:var(--foreground-muted)">Collecting evidence from network devices...</div>
+              <div style="margin-top:8px;font-size:12px;color:rgba(255,255,255,0.4)">This may take 30-60 seconds</div>
+            </div>
+
+            <div id="evidence-content" style="display:none">
+              <!-- Collection Summary Banner -->
+              <div id="evidence-summary-banner" style="padding:20px;border-radius:12px;margin-bottom:20px;background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(59,130,246,0.1))">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+                  <div>
+                    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6)">Collection ID</div>
+                    <div id="evidence-collection-id" style="font-size:18px;font-weight:600;color:#06B6D4;font-family:var(--font-mono)">--</div>
+                  </div>
+                  <div style="text-align:center;padding:0 20px;border-left:1px solid rgba(255,255,255,0.1);border-right:1px solid rgba(255,255,255,0.1)">
+                    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6)">Total Events</div>
+                    <div id="evidence-total-events" style="font-size:28px;font-weight:700;color:var(--foreground)">--</div>
+                  </div>
+                  <div style="text-align:center;padding:0 20px;border-right:1px solid rgba(255,255,255,0.1)">
+                    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6)">Critical</div>
+                    <div id="evidence-critical" style="font-size:28px;font-weight:700;color:#EF4444">--</div>
+                  </div>
+                  <div style="text-align:center">
+                    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6)">Warnings</div>
+                    <div id="evidence-warnings" style="font-size:28px;font-weight:700;color:var(--warning)">--</div>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6)">Duration</div>
+                    <div id="evidence-duration" style="font-size:18px;font-weight:600;color:var(--success)">--</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Timeline -->
+              <div style="margin-bottom:20px">
+                <div style="font-weight:600;font-size:14px;color:rgba(255,255,255,0.87);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Event Timeline
+                </div>
+                <div id="evidence-timeline" style="max-height:300px;overflow-y:auto;background:rgba(255,255,255,0.03);border-radius:8px;padding:12px">
+                  <div class="muted">No events</div>
+                </div>
+              </div>
+
+              <!-- Data Sections Grid -->
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:20px">
+                <!-- Device Status -->
+                <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:16px">
+                  <div style="font-weight:600;font-size:13px;color:rgba(255,255,255,0.87);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/></svg>
+                    Device Status
+                    <span id="evidence-device-count" style="margin-left:auto;padding:2px 8px;background:rgba(6,182,212,0.2);border-radius:10px;font-size:11px;color:#06B6D4">0</span>
+                  </div>
+                  <div id="evidence-devices-list" style="max-height:150px;overflow-y:auto;font-size:12px"><div class="muted">No data</div></div>
+                </div>
+
+                <!-- Client Events -->
+                <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:16px">
+                  <div style="font-weight:600;font-size:13px;color:rgba(255,255,255,0.87);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Client Events
+                    <span id="evidence-client-count" style="margin-left:auto;padding:2px 8px;background:rgba(34,197,94,0.2);border-radius:10px;font-size:11px;color:#22C55E">0</span>
+                  </div>
+                  <div id="evidence-clients-list" style="max-height:150px;overflow-y:auto;font-size:12px"><div class="muted">No data</div></div>
+                </div>
+
+                <!-- Auth Events -->
+                <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:16px">
+                  <div style="font-weight:600;font-size:13px;color:rgba(255,255,255,0.87);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Auth Events
+                    <span id="evidence-auth-count" style="margin-left:auto;padding:2px 8px;background:rgba(168,85,247,0.2);border-radius:10px;font-size:11px;color:#A855F7">0</span>
+                  </div>
+                  <div id="evidence-auth-list" style="max-height:150px;overflow-y:auto;font-size:12px"><div class="muted">No data</div></div>
+                </div>
+
+                <!-- Security Events -->
+                <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:16px">
+                  <div style="font-weight:600;font-size:13px;color:rgba(255,255,255,0.87);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Security Events
+                    <span id="evidence-security-count" style="margin-left:auto;padding:2px 8px;background:rgba(239,68,68,0.2);border-radius:10px;font-size:11px;color:#EF4444">0</span>
+                  </div>
+                  <div id="evidence-security-list" style="max-height:150px;overflow-y:auto;font-size:12px"><div class="muted">No data</div></div>
+                </div>
+              </div>
+
+              <!-- RF Snapshot -->
+              <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:16px;margin-bottom:20px">
+                <div style="font-weight:600;font-size:13px;color:rgba(255,255,255,0.87);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                  RF Snapshot
+                </div>
+                <div id="evidence-rf-data" style="font-size:12px"><div class="muted">No data</div></div>
+              </div>
+
+              <!-- Export Actions -->
+              <div style="display:flex;gap:12px;flex-wrap:wrap;padding-top:16px;border-top:1px solid rgba(255,255,255,0.1)">
+                <button onclick="downloadEvidence()" style="padding:10px 20px;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.3);border-radius:8px;color:#06B6D4;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download JSON Bundle
+                </button>
+                <button onclick="copySiemFormat()" style="padding:10px 20px;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);border-radius:8px;color:#A855F7;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  Copy SIEM Format
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Change Risk Prediction View -->
     <div id="view-change-risk" class="view-panel">
       <div class="page-header">
@@ -4510,7 +5339,291 @@ app.get(UI_ROUTE, (_req, res) => {
     document.addEventListener('DOMContentLoaded', function() {
       loadDashboardData();
       loadChangeNetworks(); // Pre-load networks for change risk dropdown
+      loadEvidenceNetworks(); // Pre-load networks for evidence collection
+      loadEvidenceDevices(); // Pre-load devices for evidence collection
     });
+
+    // Evidence Collection Functions
+    let lastEvidenceData = null;
+    let detectedAnomalies = [];
+
+    async function loadEvidenceNetworks() {
+      try {
+        const res = await fetch('/api/change-risk/networks');
+        const networks = await res.json();
+        const select = document.getElementById('evidence-network-select');
+        if (select) {
+          select.innerHTML = '<option value="">All Networks</option>';
+          networks.forEach(net => {
+            const opt = document.createElement('option');
+            opt.value = net.id;
+            opt.textContent = net.name + ' (' + net.org + ')';
+            select.appendChild(opt);
+          });
+        }
+      } catch (err) {
+        console.error('Error loading networks:', err);
+      }
+    }
+
+    async function loadEvidenceDevices() {
+      try {
+        const res = await fetch('/api/evidence/devices');
+        const devices = await res.json();
+        const select = document.getElementById('evidence-device-select');
+        if (select) {
+          select.innerHTML = '<option value="">All Devices</option>';
+          devices.forEach(dev => {
+            const opt = document.createElement('option');
+            opt.value = dev.serial;
+            opt.textContent = dev.name + ' (' + dev.type + ' - ' + dev.status + ')';
+            select.appendChild(opt);
+          });
+        }
+      } catch (err) {
+        console.error('Error loading devices:', err);
+      }
+    }
+
+    async function checkForAnomalies() {
+      try {
+        const res = await fetch('/api/evidence/anomaly-check');
+        const data = await res.json();
+        detectedAnomalies = data.anomalies || [];
+
+        const banner = document.getElementById('evidence-anomaly-banner');
+        const summary = document.getElementById('evidence-anomaly-summary');
+
+        if (data.anomaliesDetected && data.anomalyCount > 0) {
+          banner.style.display = 'block';
+          const criticalCount = detectedAnomalies.filter(a => a.severity === 'critical').length;
+          const highCount = detectedAnomalies.filter(a => a.severity === 'high').length;
+          summary.textContent = data.anomalyCount + ' anomalies detected: ' +
+            (criticalCount > 0 ? criticalCount + ' critical, ' : '') +
+            (highCount > 0 ? highCount + ' high priority' : '') +
+            ' - ' + detectedAnomalies[0].recommendation;
+        } else {
+          banner.style.display = 'none';
+          alert('No anomalies detected. Network is healthy.');
+        }
+      } catch (err) {
+        console.error('Anomaly check error:', err);
+        alert('Error checking for anomalies: ' + err.message);
+      }
+    }
+
+    async function autoCollectEvidence() {
+      if (detectedAnomalies.length === 0) {
+        alert('No anomalies to investigate. Run anomaly check first.');
+        return;
+      }
+
+      // Set trigger type to anomaly and collect
+      await collectEvidence('anomaly', detectedAnomalies);
+    }
+
+    async function collectEvidence(triggerType = 'manual', anomalyDetails = null) {
+      const networkId = document.getElementById('evidence-network-select').value;
+      const deviceSerial = document.getElementById('evidence-device-select').value;
+      const clientMac = document.getElementById('evidence-client-mac').value.trim();
+      const timespan = parseInt(document.getElementById('evidence-timespan').value);
+
+      const includeClientLogs = document.getElementById('ev-client-logs').checked;
+      const includeDhcpDns = document.getElementById('ev-dhcp-dns').checked;
+      const includeAuthLogs = document.getElementById('ev-auth-logs').checked;
+      const includeRfSnapshot = document.getElementById('ev-rf-snapshot').checked;
+      const includeSecurityEvents = document.getElementById('ev-security').checked;
+      const includeConfigSnapshot = document.getElementById('ev-config').checked;
+      const includePacketCapture = document.getElementById('ev-packet-capture').checked;
+
+      const resultsDiv = document.getElementById('evidence-results');
+      const loadingDiv = document.getElementById('evidence-loading');
+      const contentDiv = document.getElementById('evidence-content');
+      const button = document.getElementById('evidence-collect-button');
+
+      // Show loading
+      resultsDiv.style.display = 'block';
+      loadingDiv.style.display = 'block';
+      contentDiv.style.display = 'none';
+      button.disabled = true;
+      button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Collecting...';
+
+      try {
+        const res = await fetch('/api/evidence/collect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            networkId: networkId || null,
+            deviceSerial: deviceSerial || null,
+            clientMac: clientMac || null,
+            timespan,
+            includeClientLogs,
+            includeDhcpDns,
+            includeAuthLogs,
+            includeRfSnapshot,
+            includeSecurityEvents,
+            includeConfigSnapshot,
+            includePacketCapture,
+            triggerType,
+            anomalyDetails
+          })
+        });
+
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        lastEvidenceData = data;
+
+        // Hide loading, show content
+        loadingDiv.style.display = 'none';
+        contentDiv.style.display = 'block';
+
+        // Update summary
+        document.getElementById('evidence-collection-id').textContent = data.collectionId;
+        document.getElementById('evidence-total-events').textContent = data.summary.totalEvents;
+        document.getElementById('evidence-critical').textContent = data.summary.criticalFindings;
+        document.getElementById('evidence-warnings').textContent = data.summary.warnings;
+        document.getElementById('evidence-duration').textContent = data.collectionDuration;
+
+        // Update timeline
+        const timelineDiv = document.getElementById('evidence-timeline');
+        if (data.timeline && data.timeline.length > 0) {
+          timelineDiv.innerHTML = data.timeline.slice(0, 50).map(t => {
+            const severityColors = {
+              critical: '#EF4444',
+              high: '#F97316',
+              medium: '#FBBF24',
+              low: '#22C55E'
+            };
+            const color = severityColors[t.severity] || '#9CA3AF';
+            return '<div style="padding:8px 12px;border-left:3px solid ' + color + ';margin-bottom:6px;background:rgba(255,255,255,0.02)">' +
+              '<div style="display:flex;justify-content:space-between;gap:12px">' +
+              '<span style="color:' + color + ';font-weight:500">' + t.type.toUpperCase() + '</span>' +
+              '<span style="color:rgba(255,255,255,0.4);font-size:11px">' + new Date(t.time).toLocaleString() + '</span>' +
+              '</div>' +
+              '<div style="color:rgba(255,255,255,0.7);margin-top:4px">' + t.message + '</div>' +
+              '</div>';
+          }).join('');
+        } else {
+          timelineDiv.innerHTML = '<div class="muted">No significant events in timeline</div>';
+        }
+
+        // Update device status
+        const deviceCount = (data.data.deviceStatus || []).length;
+        document.getElementById('evidence-device-count').textContent = deviceCount;
+        const devicesDiv = document.getElementById('evidence-devices-list');
+        if (deviceCount > 0) {
+          devicesDiv.innerHTML = data.data.deviceStatus.slice(0, 20).map(d => {
+            const statusColor = d.status === 'online' ? '#22C55E' : d.status === 'alerting' ? '#FBBF24' : '#EF4444';
+            return '<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
+              '<span style="color:' + statusColor + '">\u25CF</span> ' + d.name + ' <span style="color:rgba(255,255,255,0.4)">(' + d.model + ')</span>' +
+              '</div>';
+          }).join('');
+        } else {
+          devicesDiv.innerHTML = '<div class="muted">No devices</div>';
+        }
+
+        // Update client events
+        const clientCount = (data.data.clientEvents || []).length;
+        document.getElementById('evidence-client-count').textContent = clientCount;
+        const clientsDiv = document.getElementById('evidence-clients-list');
+        if (clientCount > 0) {
+          const eventTypes = {};
+          data.data.clientEvents.forEach(e => {
+            eventTypes[e.type] = (eventTypes[e.type] || 0) + 1;
+          });
+          clientsDiv.innerHTML = Object.entries(eventTypes).map(([type, count]) =>
+            '<div style="padding:4px 0;display:flex;justify-content:space-between">' +
+            '<span style="color:rgba(255,255,255,0.7)">' + type + '</span>' +
+            '<span style="color:#22C55E">' + count + '</span></div>'
+          ).join('');
+        } else {
+          clientsDiv.innerHTML = '<div class="muted">No client events</div>';
+        }
+
+        // Update auth events
+        const authCount = (data.data.authEvents || []).length;
+        document.getElementById('evidence-auth-count').textContent = authCount;
+        const authDiv = document.getElementById('evidence-auth-list');
+        if (authCount > 0) {
+          const authTypes = {};
+          data.data.authEvents.forEach(e => {
+            authTypes[e.type] = (authTypes[e.type] || 0) + 1;
+          });
+          authDiv.innerHTML = Object.entries(authTypes).map(([type, count]) =>
+            '<div style="padding:4px 0;display:flex;justify-content:space-between">' +
+            '<span style="color:rgba(255,255,255,0.7)">' + type + '</span>' +
+            '<span style="color:#A855F7">' + count + '</span></div>'
+          ).join('');
+        } else {
+          authDiv.innerHTML = '<div class="muted">No auth events</div>';
+        }
+
+        // Update security events
+        const secCount = (data.data.securityEvents || []).length;
+        document.getElementById('evidence-security-count').textContent = secCount;
+        const secDiv = document.getElementById('evidence-security-list');
+        if (secCount > 0) {
+          secDiv.innerHTML = data.data.securityEvents.slice(0, 10).map(e =>
+            '<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
+            '<span style="color:#EF4444">' + e.type + '</span><br/>' +
+            '<span style="color:rgba(255,255,255,0.5);font-size:11px">' + e.description + '</span>' +
+            '</div>'
+          ).join('');
+        } else {
+          secDiv.innerHTML = '<div class="muted">No security events</div>';
+        }
+
+        // Update RF data
+        const rfDiv = document.getElementById('evidence-rf-data');
+        if (data.data.rfSnapshot && data.data.rfSnapshot.channelUtilization.length > 0) {
+          rfDiv.innerHTML = data.data.rfSnapshot.channelUtilization.map(cu =>
+            '<div style="padding:8px;background:rgba(249,115,22,0.1);border-radius:6px;margin-bottom:8px">' +
+            '<div style="font-weight:500;color:#F97316">' + cu.networkName + '</div>' +
+            '<div style="display:flex;gap:16px;margin-top:6px;color:rgba(255,255,255,0.7)">' +
+            '<span>Avg Utilization: <b>' + Math.round(cu.avgUtilization) + '%</b></span>' +
+            '<span>Interference: <b>' + Math.round(cu.avgInterference) + '%</b></span>' +
+            '</div></div>'
+          ).join('');
+        } else {
+          rfDiv.innerHTML = '<div class="muted">No RF data collected</div>';
+        }
+
+      } catch (err) {
+        console.error('Evidence collection error:', err);
+        loadingDiv.style.display = 'none';
+        contentDiv.style.display = 'block';
+        document.getElementById('evidence-collection-id').textContent = 'ERROR';
+        document.getElementById('evidence-timeline').innerHTML = '<div style="color:var(--destructive)">Error: ' + err.message + '</div>';
+      } finally {
+        button.disabled = false;
+        button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Collect Evidence';
+      }
+    }
+
+    function downloadEvidence() {
+      if (!lastEvidenceData) {
+        alert('No evidence data to download. Run collection first.');
+        return;
+      }
+      const blob = new Blob([JSON.stringify(lastEvidenceData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = lastEvidenceData.collectionId + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function copySiemFormat() {
+      if (!lastEvidenceData || !lastEvidenceData.siemFormat) {
+        alert('No SIEM data available. Run collection first.');
+        return;
+      }
+      navigator.clipboard.writeText(JSON.stringify(lastEvidenceData.siemFormat, null, 2))
+        .then(() => alert('SIEM format copied to clipboard'))
+        .catch(err => alert('Failed to copy: ' + err.message));
+    }
 
     // Change Risk Prediction Functions
     async function loadChangeNetworks() {
