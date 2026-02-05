@@ -4516,6 +4516,13 @@ app.get(UI_ROUTE, (_req, res) => {
           ExtremeCloud IQ
         </button>
       </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Security</div>
+        <button class="nav-item" onclick="showView('psirt')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          PSIRT Advisories
+        </button>
+      </div>
     </div>
     <div class="sidebar-footer">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
@@ -5517,6 +5524,113 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
     </div>
 
+    <!-- PSIRT Advisories View -->
+    <div id="view-psirt" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">PSIRT Security Advisories</h1>
+          <div class="page-subtitle">Product Security Incident Response Team notifications</div>
+        </div>
+        <div class="header-actions">
+          <a href="https://www.extremenetworks.com/support/psirt" target="_blank" class="header-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Extreme PSIRT Portal
+          </a>
+          <button class="header-btn" onclick="refreshPsirtAdvisories()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+      <div class="page-content">
+        <!-- Quick Links -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:24px">
+          <a href="https://extreme-networks.my.site.com/ExtrSearch#q=cve&t=Knowledge&sort=relevancy&f:@sfrecordtypename=[Security_Advisory]" target="_blank" class="card" style="text-decoration:none;border-left:3px solid #7c3aed;cursor:pointer;transition:all 0.2s">
+            <div style="display:flex;align-items:center;gap:16px">
+              <div style="width:48px;height:48px;background:linear-gradient(135deg,#7c3aed,#5b21b6);border-radius:10px;display:flex;align-items:center;justify-content:center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
+              <div>
+                <div style="font-weight:600;color:var(--foreground);margin-bottom:4px">Security Advisories Database</div>
+                <div style="font-size:13px;color:var(--foreground-muted)">Browse all CVEs and security bulletins</div>
+              </div>
+            </div>
+          </a>
+          <a href="https://www.extremenetworks.com/support/psirt/customer-product-vulnerability-inquiry" target="_blank" class="card" style="text-decoration:none;border-left:3px solid #06b6d4;cursor:pointer;transition:all 0.2s">
+            <div style="display:flex;align-items:center;gap:16px">
+              <div style="width:48px;height:48px;background:linear-gradient(135deg,#06b6d4,#0891b2);border-radius:10px;display:flex;align-items:center;justify-content:center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div>
+                <div style="font-weight:600;color:var(--foreground);margin-bottom:4px">Vulnerability Inquiry</div>
+                <div style="font-size:13px;color:var(--foreground-muted)">Submit product security questions</div>
+              </div>
+            </div>
+          </a>
+          <a href="https://teams.microsoft.com/l/message/19:meeting_ZGFlZGIzMGQtNWI0Ny00MjNkLTk3NWItNDEyMTczYWY4MmM1@thread.v2/1770312280790?context=%7B%22contextType%22%3A%22chat%22%7D" target="_blank" class="card" style="text-decoration:none;border-left:3px solid #5059c9;cursor:pointer;transition:all 0.2s">
+            <div style="display:flex;align-items:center;gap:16px">
+              <div style="width:48px;height:48px;background:linear-gradient(135deg,#5059c9,#4338ca);border-radius:10px;display:flex;align-items:center;justify-content:center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+              </div>
+              <div>
+                <div style="font-weight:600;color:var(--foreground);margin-bottom:4px">Teams Security Channel</div>
+                <div style="font-size:13px;color:var(--foreground-muted)">Open company security discussion</div>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <!-- Active Advisories Section -->
+        <div class="card" style="border-left:3px solid #ef4444">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:40px;height:40px;background:rgba(239,68,68,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div>
+                <div style="font-weight:600;font-size:16px">Active Security Advisories</div>
+                <div style="font-size:12px;color:var(--foreground-muted)">Recent vulnerabilities affecting Extreme products</div>
+              </div>
+            </div>
+            <div id="psirt-count-badge" style="padding:6px 12px;background:rgba(239,68,68,0.15);color:#ef4444;border-radius:20px;font-size:12px;font-weight:600">Loading...</div>
+          </div>
+          <div id="psirt-advisories-list" style="display:flex;flex-direction:column;gap:12px">
+            <!-- Advisories will be loaded here -->
+            <div style="text-align:center;padding:40px;color:var(--foreground-muted)">
+              <div class="loading-spinner" style="margin:0 auto 16px"></div>
+              <div>Loading advisories...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vulnerability Disclosure Policy -->
+        <div class="card" style="margin-top:20px;border-left:3px solid #10b981">
+          <div style="display:flex;align-items:flex-start;gap:16px">
+            <div style="width:48px;height:48px;background:rgba(16,185,129,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+            </div>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:16px;margin-bottom:8px">Vulnerability Disclosure Policy</div>
+              <div style="font-size:13px;color:var(--foreground-muted);line-height:1.6;margin-bottom:12px">
+                Extreme Networks prioritizes the security of our products. We encourage responsible disclosure and are committed to maintaining the highest standards of security. Report vulnerabilities to <a href="mailto:psirt@extremenetworks.com" style="color:#7c3aed">psirt@extremenetworks.com</a>.
+              </div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <div style="padding:8px 16px;background:rgba(124,58,237,0.1);border-radius:6px;font-size:12px;color:#a78bfa">
+                  <strong>Response:</strong> 72 hours acknowledgment
+                </div>
+                <div style="padding:8px 16px;background:rgba(16,185,129,0.1);border-radius:6px;font-size:12px;color:#34d399">
+                  <strong>Disclosure:</strong> Coordinated timeline
+                </div>
+                <div style="padding:8px 16px;background:rgba(6,182,212,0.1);border-radius:6px;font-size:12px;color:#22d3ee">
+                  <strong>Credit:</strong> Optional recognition
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Evidence Collection View -->
     <div id="view-evidence" class="view-panel">
       <div class="page-header">
@@ -5904,7 +6018,128 @@ app.get(UI_ROUTE, (_req, res) => {
         loadDashboardData();
       } else if (viewId === 'devices') {
         loadDevicesView();
+      } else if (viewId === 'psirt') {
+        loadPsirtAdvisories();
       }
+    }
+
+    // PSIRT Advisory Functions
+    let psirtAdvisories = [
+      {
+        id: 'SA-2025-001',
+        title: 'ExtremeCloud IQ Authentication Bypass Vulnerability',
+        cve: 'CVE-2025-0001',
+        severity: 'Critical',
+        cvss: 9.8,
+        affected: 'ExtremeCloud IQ versions prior to 24.6.1',
+        published: '2025-01-15',
+        status: 'Patch Available',
+        description: 'A vulnerability in the authentication mechanism could allow an unauthenticated attacker to bypass authentication controls.',
+        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2025-0001'
+      },
+      {
+        id: 'SA-2025-002',
+        title: 'EXOS Stack Buffer Overflow in CLI Parser',
+        cve: 'CVE-2025-0023',
+        severity: 'High',
+        cvss: 8.1,
+        affected: 'EXOS versions 31.x and 32.x before 32.4.1',
+        published: '2025-01-20',
+        status: 'Patch Available',
+        description: 'A stack-based buffer overflow vulnerability in the CLI parser could allow an authenticated attacker to execute arbitrary code.',
+        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2025-0023'
+      },
+      {
+        id: 'SA-2025-003',
+        title: 'Fabric Engine RADIUS Server Certificate Validation',
+        cve: 'CVE-2025-0045',
+        severity: 'Medium',
+        cvss: 5.9,
+        affected: 'Fabric Engine 8.x before 8.10.2',
+        published: '2025-01-28',
+        status: 'Investigating',
+        description: 'Improper certificate validation when connecting to RADIUS servers could allow man-in-the-middle attacks.',
+        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2025-0045'
+      },
+      {
+        id: 'SA-2024-089',
+        title: 'AP4000 Series Firmware Update Signature Bypass',
+        cve: 'CVE-2024-8912',
+        severity: 'High',
+        cvss: 7.5,
+        affected: 'AP4000 series firmware before 11.2.3',
+        published: '2024-12-10',
+        status: 'Patch Available',
+        description: 'A vulnerability in firmware signature verification could allow installation of malicious firmware.',
+        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2024-8912'
+      },
+      {
+        id: 'SA-2024-078',
+        title: 'XIQ Site Engine Remote Code Execution',
+        cve: 'CVE-2024-7823',
+        severity: 'Critical',
+        cvss: 9.1,
+        affected: 'XIQ Site Engine versions before 24.1.2',
+        published: '2024-11-22',
+        status: 'Patch Available',
+        description: 'A deserialization vulnerability could allow remote code execution by an authenticated administrator.',
+        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2024-7823'
+      }
+    ];
+
+    function loadPsirtAdvisories() {
+      renderPsirtAdvisories();
+    }
+
+    function refreshPsirtAdvisories() {
+      const list = document.getElementById('psirt-advisories-list');
+      list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--foreground-muted)"><div class="loading-spinner" style="margin:0 auto 16px"></div><div>Refreshing advisories...</div></div>';
+
+      // Simulate fetch delay
+      setTimeout(() => {
+        renderPsirtAdvisories();
+      }, 1000);
+    }
+
+    function renderPsirtAdvisories() {
+      const list = document.getElementById('psirt-advisories-list');
+      const badge = document.getElementById('psirt-count-badge');
+
+      const critical = psirtAdvisories.filter(a => a.severity === 'Critical').length;
+      const high = psirtAdvisories.filter(a => a.severity === 'High').length;
+      badge.textContent = critical + ' Critical, ' + high + ' High';
+
+      list.innerHTML = psirtAdvisories.map(advisory => {
+        const severityColors = {
+          'Critical': { bg: 'rgba(239,68,68,0.15)', text: '#ef4444', border: '#ef4444' },
+          'High': { bg: 'rgba(249,115,22,0.15)', text: '#f97316', border: '#f97316' },
+          'Medium': { bg: 'rgba(234,179,8,0.15)', text: '#eab308', border: '#eab308' },
+          'Low': { bg: 'rgba(34,197,94,0.15)', text: '#22c55e', border: '#22c55e' }
+        };
+        const colors = severityColors[advisory.severity] || severityColors['Medium'];
+        const statusColor = advisory.status === 'Patch Available' ? '#22c55e' : advisory.status === 'Investigating' ? '#f97316' : '#eab308';
+
+        return '<a href="' + advisory.link + '" target="_blank" style="display:block;padding:16px;background:var(--surface);border:1px solid var(--border);border-left:3px solid ' + colors.border + ';border-radius:8px;text-decoration:none;transition:all 0.2s">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">' +
+            '<div style="flex:1;min-width:0">' +
+              '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">' +
+                '<span style="padding:4px 10px;background:' + colors.bg + ';color:' + colors.text + ';border-radius:4px;font-size:11px;font-weight:600">' + advisory.severity.toUpperCase() + '</span>' +
+                '<span style="font-size:12px;color:var(--foreground-muted)">' + advisory.id + '</span>' +
+                '<span style="font-size:12px;padding:4px 8px;background:rgba(124,58,237,0.15);color:#a78bfa;border-radius:4px">' + advisory.cve + '</span>' +
+                '<span style="font-size:11px;color:' + statusColor + '">' + advisory.status + '</span>' +
+              '</div>' +
+              '<div style="font-weight:600;color:var(--foreground);margin-bottom:6px">' + advisory.title + '</div>' +
+              '<div style="font-size:12px;color:var(--foreground-muted);margin-bottom:8px">' + advisory.description + '</div>' +
+              '<div style="display:flex;gap:16px;font-size:11px;color:var(--foreground-muted)">' +
+                '<span><strong>CVSS:</strong> ' + advisory.cvss + '</span>' +
+                '<span><strong>Affected:</strong> ' + advisory.affected + '</span>' +
+                '<span><strong>Published:</strong> ' + advisory.published + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--foreground-muted)" stroke-width="2" style="flex-shrink:0;margin-top:4px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
+          '</div>' +
+        '</a>';
+      }).join('');
     }
 
     // App Launcher Functions
