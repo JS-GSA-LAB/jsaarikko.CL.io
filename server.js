@@ -7107,12 +7107,15 @@ app.get(UI_ROUTE, (_req, res) => {
 
       // Position switches (leftmost)
       switches.forEach((sw, i) => {
-        nodePositions[sw.id] = {
+        const posData = {
           x: startX,
           y: currentY + (i * verticalSpacing * 2),
           node: sw,
           deviceType: 'switch'
         };
+        nodePositions[sw.id] = posData;
+        // Also store by serial for edge lookups
+        if (sw.serial) nodePositions[sw.serial] = posData;
       });
 
       // Position routers and APs connected to switches
@@ -7146,12 +7149,15 @@ app.get(UI_ROUTE, (_req, res) => {
           deviceType = 'laptop';
         }
 
-        nodePositions[device.id] = {
+        const posData = {
           x: startX + tierSpacing,
           y: baseY + (i * verticalSpacing) - ((tier2Devices.length - 1) * verticalSpacing / 2),
           node: device,
           deviceType: deviceType
         };
+        nodePositions[device.id] = posData;
+        // Also store by serial for edge lookups
+        if (device.serial) nodePositions[device.serial] = posData;
         tier2Y += verticalSpacing;
       });
 
@@ -7165,12 +7171,15 @@ app.get(UI_ROUTE, (_req, res) => {
           } else if (device.model && device.model.startsWith('MV')) {
             deviceType = 'camera';
           }
-          nodePositions[device.id] = {
+          const posData = {
             x: startX + (i % 3) * tierSpacing,
             y: yPos + Math.floor(i / 3) * verticalSpacing,
             node: device,
             deviceType: deviceType
           };
+          nodePositions[device.id] = posData;
+          // Also store by serial for edge lookups
+          if (device.serial) nodePositions[device.serial] = posData;
         });
       }
 
