@@ -7486,35 +7486,35 @@ app.get(UI_ROUTE, (_req, res) => {
     ];
 
     function loadSampleConfig() {
-      var sampleConfig = '# IQEngine AP Configuration Sample\n' +
-        '# Device: AP-4000\n' +
-        '# Software: 10.8.5.0\n\n' +
-        'hostname AP-Office-01\n\n' +
-        'interface wifi0\n' +
-        '  radio profile auto-channel\n' +
-        '  channel auto\n' +
-        '  power auto\n\n' +
-        'interface wifi1\n' +
-        '  radio profile auto-channel\n' +
-        '  channel auto\n' +
-        '  power auto\n' +
-        '  band-steering enable\n\n' +
-        'ssid Corporate-WiFi\n' +
-        '  security wpa2-aes-ccmp\n' +
-        '  radius-server primary 10.1.1.100\n' +
-        '  vlan 100\n' +
-        '  dot11r enable\n' +
-        '  dot11k enable\n' +
-        '  management-frame-protection optional\n\n' +
-        'ssid Guest-WiFi\n' +
-        '  security wpa2-psk\n' +
-        '  vlan 200\n' +
-        '  captive-web-portal enable\n' +
-        '  client-isolation enable\n\n' +
-        'aaa radius-server primary\n' +
-        '  host 10.1.1.100\n' +
-        '  secret encrypted\n' +
-        '  accounting enable\n';
+      var sampleConfig = '# IQEngine AP Configuration Sample\\n' +
+        '# Device: AP-4000\\n' +
+        '# Software: 10.8.5.0\\n\\n' +
+        'hostname AP-Office-01\\n\\n' +
+        'interface wifi0\\n' +
+        '  radio profile auto-channel\\n' +
+        '  channel auto\\n' +
+        '  power auto\\n\\n' +
+        'interface wifi1\\n' +
+        '  radio profile auto-channel\\n' +
+        '  channel auto\\n' +
+        '  power auto\\n' +
+        '  band-steering enable\\n\\n' +
+        'ssid Corporate-WiFi\\n' +
+        '  security wpa2-aes-ccmp\\n' +
+        '  radius-server primary 10.1.1.100\\n' +
+        '  vlan 100\\n' +
+        '  dot11r enable\\n' +
+        '  dot11k enable\\n' +
+        '  management-frame-protection optional\\n\\n' +
+        'ssid Guest-WiFi\\n' +
+        '  security wpa2-psk\\n' +
+        '  vlan 200\\n' +
+        '  captive-web-portal enable\\n' +
+        '  client-isolation enable\\n\\n' +
+        'aaa radius-server primary\\n' +
+        '  host 10.1.1.100\\n' +
+        '  secret encrypted\\n' +
+        '  accounting enable\\n';
 
       document.getElementById('xiq-config-input').value = sampleConfig;
     }
