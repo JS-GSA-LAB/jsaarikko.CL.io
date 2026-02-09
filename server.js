@@ -7294,7 +7294,7 @@ app.get(UI_ROUTE, (_req, res) => {
 
     function copyScenarioCmd(idx) {
       if (currentScenarioCommands[idx]) {
-        navigator.clipboard.writeText(currentScenarioCommands[idx].replace(/\\n/g, '\n'));
+        navigator.clipboard.writeText(currentScenarioCommands[idx].replace(/\\\\n/g, '\\n'));
         showToast('Copied');
       }
     }
@@ -7330,7 +7330,7 @@ app.get(UI_ROUTE, (_req, res) => {
         html += '</div>';
         html += '<div style="font-size:11px;color:var(--foreground-muted);margin-bottom:8px;margin-left:32px">' + step.detail + '</div>';
         html += '<div style="display:flex;align-items:center;gap:8px;margin-left:32px">';
-        html += '<code style="flex:1;font-size:11px;color:#22c55e;background:rgba(0,0,0,0.3);padding:6px 10px;border-radius:4px;white-space:pre-wrap">' + step.cmd.replace(/\\n/g, '\n') + '</code>';
+        html += '<code style="flex:1;font-size:11px;color:#22c55e;background:rgba(0,0,0,0.3);padding:6px 10px;border-radius:4px;white-space:pre-wrap">' + step.cmd.replace(/\\\\n/g, '\\n') + '</code>';
         html += '<button onclick="copyScenarioCmd(' + idx + ')" style="padding:4px 8px;background:var(--primary);border:none;border-radius:4px;color:white;cursor:pointer;font-size:10px">Copy</button>';
         html += '</div>';
         html += '</div>';
