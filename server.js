@@ -4613,6 +4613,13 @@ app.get(UI_ROUTE, (_req, res) => {
           PSIRT Advisories
         </button>
       </div>
+      <div class="nav-section">
+        <div class="nav-section-title">RF Planning</div>
+        <button class="nav-item" onclick="showView('rf-visualizer')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          RF Visualizer
+        </button>
+      </div>
     </div>
     <div class="sidebar-footer">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
@@ -5896,6 +5903,193 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
     </div>
 
+    <!-- RF Visualizer View -->
+    <div id="view-rf-visualizer" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Wireless RF Visualizer</h1>
+          <div class="page-subtitle">Visualize AP coverage, channel planning, and RF interference</div>
+        </div>
+        <div class="header-actions">
+          <button class="header-btn" onclick="clearRfCanvas()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            Clear All
+          </button>
+          <button class="header-btn" onclick="exportRfPlan()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Export
+          </button>
+        </div>
+      </div>
+      <div class="page-content">
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;height:calc(100vh - 180px)">
+          <!-- RF Canvas -->
+          <div class="card" style="padding:0;overflow:hidden;position:relative">
+            <div style="position:absolute;top:12px;left:12px;z-index:10;display:flex;gap:8px">
+              <button id="rf-tool-add" onclick="setRfTool('add')" class="rf-tool-btn active" style="padding:8px 12px;background:var(--primary);border:none;border-radius:6px;color:white;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:6px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add AP
+              </button>
+              <button id="rf-tool-move" onclick="setRfTool('move')" class="rf-tool-btn" style="padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--foreground);cursor:pointer;font-size:12px;display:flex;align-items:center;gap:6px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                Move
+              </button>
+              <button id="rf-tool-delete" onclick="setRfTool('delete')" class="rf-tool-btn" style="padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--foreground);cursor:pointer;font-size:12px;display:flex;align-items:center;gap:6px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Delete
+              </button>
+            </div>
+            <div style="position:absolute;top:12px;right:12px;z-index:10;display:flex;gap:8px">
+              <select id="rf-band-filter" onchange="updateRfVisualization()" style="padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--foreground);font-size:12px">
+                <option value="all">All Bands</option>
+                <option value="2.4">2.4 GHz</option>
+                <option value="5">5 GHz</option>
+                <option value="6">6 GHz</option>
+              </select>
+              <label style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer">
+                <input type="checkbox" id="rf-show-interference" onchange="updateRfVisualization()" checked style="accent-color:var(--primary)">
+                Show Interference
+              </label>
+            </div>
+            <svg id="rf-canvas" width="100%" height="100%" style="background:linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);background-size:20px 20px;cursor:crosshair" onclick="handleRfCanvasClick(event)">
+              <!-- Grid reference -->
+              <defs>
+                <pattern id="rf-grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                  <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+                </pattern>
+                <!-- Gradient for interference zones -->
+                <radialGradient id="rf-gradient-interference">
+                  <stop offset="0%" stop-color="rgba(239,68,68,0.4)"/>
+                  <stop offset="100%" stop-color="rgba(239,68,68,0)"/>
+                </radialGradient>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#rf-grid)"/>
+              <g id="rf-coverage-layer"></g>
+              <g id="rf-interference-layer"></g>
+              <g id="rf-ap-layer"></g>
+            </svg>
+            <!-- Scale indicator -->
+            <div style="position:absolute;bottom:12px;left:12px;padding:6px 10px;background:rgba(0,0,0,0.7);border-radius:4px;font-size:10px;color:rgba(255,255,255,0.7)">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:50px;height:2px;background:var(--foreground)"></div>
+                <span>~10m / 33ft</span>
+              </div>
+            </div>
+            <!-- Stats overlay -->
+            <div style="position:absolute;bottom:12px;right:12px;padding:10px;background:rgba(0,0,0,0.7);border-radius:6px;font-size:11px">
+              <div style="display:grid;grid-template-columns:auto auto;gap:4px 12px">
+                <span style="color:rgba(255,255,255,0.6)">APs:</span>
+                <span id="rf-stat-aps" style="font-weight:600">0</span>
+                <span style="color:rgba(255,255,255,0.6)">Coverage:</span>
+                <span id="rf-stat-coverage" style="font-weight:600">0%</span>
+                <span style="color:rgba(255,255,255,0.6)">Interference:</span>
+                <span id="rf-stat-interference" style="font-weight:600;color:#22c55e">None</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- AP Configuration Panel -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <!-- Channel Legend -->
+            <div class="card">
+              <div style="font-size:13px;font-weight:600;margin-bottom:12px">Channel Color Legend</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:16px;height:16px;background:#ef4444;border-radius:4px;opacity:0.7"></div>
+                  <span>2.4GHz Ch 1</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:16px;height:16px;background:#f59e0b;border-radius:4px;opacity:0.7"></div>
+                  <span>2.4GHz Ch 6</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:16px;height:16px;background:#22c55e;border-radius:4px;opacity:0.7"></div>
+                  <span>2.4GHz Ch 11</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:16px;height:16px;background:#3b82f6;border-radius:4px;opacity:0.7"></div>
+                  <span>5GHz (36-48)</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:16px;height:16px;background:#8b5cf6;border-radius:4px;opacity:0.7"></div>
+                  <span>5GHz (149-165)</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:16px;height:16px;background:#ec4899;border-radius:4px;opacity:0.7"></div>
+                  <span>6GHz</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Selected AP Properties -->
+            <div class="card" id="rf-ap-properties" style="display:none">
+              <div style="font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+                <span>AP Properties</span>
+                <button onclick="deleteSelectedAp()" style="padding:4px 8px;background:rgba(239,68,68,0.2);border:none;border-radius:4px;color:#ef4444;cursor:pointer;font-size:10px">Delete</button>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div>
+                  <label style="font-size:11px;color:var(--foreground-muted);display:block;margin-bottom:4px">AP Name</label>
+                  <input type="text" id="rf-ap-name" onchange="updateSelectedAp()" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--foreground);font-size:12px">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                  <div>
+                    <label style="font-size:11px;color:var(--foreground-muted);display:block;margin-bottom:4px">Band</label>
+                    <select id="rf-ap-band" onchange="updateApChannelOptions();updateSelectedAp()" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--foreground);font-size:12px">
+                      <option value="2.4">2.4 GHz</option>
+                      <option value="5">5 GHz</option>
+                      <option value="6">6 GHz</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="font-size:11px;color:var(--foreground-muted);display:block;margin-bottom:4px">Channel</label>
+                    <select id="rf-ap-channel" onchange="updateSelectedAp()" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--foreground);font-size:12px">
+                      <option value="1">1</option>
+                      <option value="6">6</option>
+                      <option value="11">11</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label style="font-size:11px;color:var(--foreground-muted);display:block;margin-bottom:4px">Tx Power: <span id="rf-ap-power-val">17</span> dBm</label>
+                  <input type="range" id="rf-ap-power" min="5" max="23" value="17" onchange="document.getElementById('rf-ap-power-val').textContent=this.value;updateSelectedAp()" style="width:100%;accent-color:var(--primary)">
+                </div>
+                <div>
+                  <label style="font-size:11px;color:var(--foreground-muted);display:block;margin-bottom:4px">Coverage Radius</label>
+                  <div style="display:flex;gap:8px">
+                    <button onclick="setApCoverage('small')" class="coverage-btn" data-size="small" style="flex:1;padding:6px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--foreground);cursor:pointer;font-size:11px">Small</button>
+                    <button onclick="setApCoverage('medium')" class="coverage-btn active" data-size="medium" style="flex:1;padding:6px;background:var(--primary);border:none;border-radius:4px;color:white;cursor:pointer;font-size:11px">Medium</button>
+                    <button onclick="setApCoverage('large')" class="coverage-btn" data-size="large" style="flex:1;padding:6px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--foreground);cursor:pointer;font-size:11px">Large</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AP List -->
+            <div class="card" style="flex:1;overflow:auto">
+              <div style="font-size:13px;font-weight:600;margin-bottom:12px">Placed APs</div>
+              <div id="rf-ap-list" style="display:flex;flex-direction:column;gap:8px">
+                <div style="text-align:center;padding:30px;color:var(--foreground-muted);font-size:12px">
+                  Click on the canvas to place APs
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Tips -->
+            <div class="card" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3)">
+              <div style="font-size:12px;font-weight:600;color:#a78bfa;margin-bottom:8px">RF Planning Tips</div>
+              <ul style="font-size:11px;color:var(--foreground-muted);margin:0;padding-left:16px;line-height:1.6">
+                <li>Use non-overlapping 2.4GHz channels: 1, 6, 11</li>
+                <li>5GHz has more channels, less interference</li>
+                <li>Aim for 15-20% coverage overlap for roaming</li>
+                <li>Adjacent APs should use different channels</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- XIQ Troubleshooting View -->
     <div id="view-xiq-troubleshoot" class="view-panel">
       <div class="page-header">
@@ -6547,6 +6741,8 @@ app.get(UI_ROUTE, (_req, res) => {
         initLocalStatusView();
       } else if (viewId === 'xiq-troubleshoot') {
         initXiqTroubleshoot();
+      } else if (viewId === 'rf-visualizer') {
+        initRfVisualizer();
       }
     }
 
@@ -7685,6 +7881,455 @@ app.get(UI_ROUTE, (_req, res) => {
       html += '</div></div>';
 
       resultsDiv.innerHTML = html;
+    }
+
+    // ===========================================
+    // RF VISUALIZER FUNCTIONS
+    // ===========================================
+
+    var rfAps = [];
+    var selectedApIndex = -1;
+    var rfTool = 'add';
+    var rfApCounter = 1;
+    var draggingAp = null;
+    var dragOffset = { x: 0, y: 0 };
+
+    // Channel color mapping
+    var channelColors = {
+      // 2.4 GHz
+      '1': '#ef4444',
+      '2': '#f87171',
+      '3': '#fca5a5',
+      '4': '#fb923c',
+      '5': '#fdba74',
+      '6': '#f59e0b',
+      '7': '#fcd34d',
+      '8': '#fde047',
+      '9': '#a3e635',
+      '10': '#84cc16',
+      '11': '#22c55e',
+      // 5 GHz lower
+      '36': '#3b82f6',
+      '40': '#60a5fa',
+      '44': '#93c5fd',
+      '48': '#bfdbfe',
+      // 5 GHz upper
+      '149': '#8b5cf6',
+      '153': '#a78bfa',
+      '157': '#c4b5fd',
+      '161': '#ddd6fe',
+      '165': '#ede9fe',
+      // 6 GHz
+      '1e': '#ec4899',
+      '5e': '#f472b6',
+      '9e': '#f9a8d4',
+      '13e': '#fbcfe8'
+    };
+
+    var bandChannels = {
+      '2.4': ['1', '6', '11'],
+      '5': ['36', '40', '44', '48', '149', '153', '157', '161', '165'],
+      '6': ['1e', '5e', '9e', '13e']
+    };
+
+    function setRfTool(tool) {
+      rfTool = tool;
+      document.querySelectorAll('.rf-tool-btn').forEach(function(btn) {
+        btn.style.background = 'var(--surface)';
+        btn.style.border = '1px solid var(--border)';
+        btn.style.color = 'var(--foreground)';
+      });
+      var activeBtn = document.getElementById('rf-tool-' + tool);
+      if (activeBtn) {
+        activeBtn.style.background = 'var(--primary)';
+        activeBtn.style.border = 'none';
+        activeBtn.style.color = 'white';
+      }
+    }
+
+    function handleRfCanvasClick(event) {
+      var canvas = document.getElementById('rf-canvas');
+      var rect = canvas.getBoundingClientRect();
+      var x = event.clientX - rect.left;
+      var y = event.clientY - rect.top;
+
+      if (rfTool === 'add') {
+        addAp(x, y);
+      } else if (rfTool === 'delete') {
+        var clickedAp = findApAtPosition(x, y);
+        if (clickedAp !== -1) {
+          rfAps.splice(clickedAp, 1);
+          if (selectedApIndex === clickedAp) {
+            selectedApIndex = -1;
+            document.getElementById('rf-ap-properties').style.display = 'none';
+          } else if (selectedApIndex > clickedAp) {
+            selectedApIndex--;
+          }
+          updateRfVisualization();
+        }
+      } else if (rfTool === 'move') {
+        var clickedAp = findApAtPosition(x, y);
+        if (clickedAp !== -1) {
+          selectAp(clickedAp);
+        }
+      }
+    }
+
+    function findApAtPosition(x, y) {
+      for (var i = rfAps.length - 1; i >= 0; i--) {
+        var ap = rfAps[i];
+        var dist = Math.sqrt(Math.pow(x - ap.x, 2) + Math.pow(y - ap.y, 2));
+        if (dist <= 20) {
+          return i;
+        }
+      }
+      return -1;
+    }
+
+    function addAp(x, y) {
+      var newAp = {
+        id: 'ap-' + rfApCounter,
+        name: 'AP-' + rfApCounter,
+        x: x,
+        y: y,
+        band: '5',
+        channel: '36',
+        power: 17,
+        coverage: 'medium'
+      };
+      rfAps.push(newAp);
+      rfApCounter++;
+      selectAp(rfAps.length - 1);
+      updateRfVisualization();
+    }
+
+    function selectAp(index) {
+      selectedApIndex = index;
+      var ap = rfAps[index];
+      if (!ap) return;
+
+      document.getElementById('rf-ap-properties').style.display = 'block';
+      document.getElementById('rf-ap-name').value = ap.name;
+      document.getElementById('rf-ap-band').value = ap.band;
+      updateApChannelOptions();
+      document.getElementById('rf-ap-channel').value = ap.channel;
+      document.getElementById('rf-ap-power').value = ap.power;
+      document.getElementById('rf-ap-power-val').textContent = ap.power;
+
+      document.querySelectorAll('.coverage-btn').forEach(function(btn) {
+        if (btn.dataset.size === ap.coverage) {
+          btn.style.background = 'var(--primary)';
+          btn.style.border = 'none';
+          btn.style.color = 'white';
+        } else {
+          btn.style.background = 'var(--surface)';
+          btn.style.border = '1px solid var(--border)';
+          btn.style.color = 'var(--foreground)';
+        }
+      });
+
+      updateRfVisualization();
+    }
+
+    function updateApChannelOptions() {
+      var band = document.getElementById('rf-ap-band').value;
+      var channelSelect = document.getElementById('rf-ap-channel');
+      var channels = bandChannels[band] || ['1', '6', '11'];
+
+      channelSelect.innerHTML = '';
+      channels.forEach(function(ch) {
+        var opt = document.createElement('option');
+        opt.value = ch;
+        opt.textContent = ch.replace('e', ' (6E)');
+        channelSelect.appendChild(opt);
+      });
+    }
+
+    function updateSelectedAp() {
+      if (selectedApIndex === -1) return;
+
+      var ap = rfAps[selectedApIndex];
+      ap.name = document.getElementById('rf-ap-name').value;
+      ap.band = document.getElementById('rf-ap-band').value;
+      ap.channel = document.getElementById('rf-ap-channel').value;
+      ap.power = parseInt(document.getElementById('rf-ap-power').value);
+
+      updateRfVisualization();
+    }
+
+    function setApCoverage(size) {
+      if (selectedApIndex === -1) return;
+      rfAps[selectedApIndex].coverage = size;
+
+      document.querySelectorAll('.coverage-btn').forEach(function(btn) {
+        if (btn.dataset.size === size) {
+          btn.style.background = 'var(--primary)';
+          btn.style.border = 'none';
+          btn.style.color = 'white';
+        } else {
+          btn.style.background = 'var(--surface)';
+          btn.style.border = '1px solid var(--border)';
+          btn.style.color = 'var(--foreground)';
+        }
+      });
+
+      updateRfVisualization();
+    }
+
+    function deleteSelectedAp() {
+      if (selectedApIndex === -1) return;
+      rfAps.splice(selectedApIndex, 1);
+      selectedApIndex = -1;
+      document.getElementById('rf-ap-properties').style.display = 'none';
+      updateRfVisualization();
+    }
+
+    function clearRfCanvas() {
+      rfAps = [];
+      selectedApIndex = -1;
+      rfApCounter = 1;
+      document.getElementById('rf-ap-properties').style.display = 'none';
+      updateRfVisualization();
+    }
+
+    function getCoverageRadius(ap) {
+      var baseRadius = { small: 60, medium: 100, large: 150 };
+      var radius = baseRadius[ap.coverage] || 100;
+      // Adjust for power (rough approximation)
+      var powerFactor = 1 + (ap.power - 17) * 0.05;
+      // 5GHz/6GHz has shorter range than 2.4GHz
+      var bandFactor = ap.band === '2.4' ? 1.3 : (ap.band === '6' ? 0.8 : 1);
+      return radius * powerFactor * bandFactor;
+    }
+
+    function getChannelColor(ap) {
+      return channelColors[ap.channel] || '#8b5cf6';
+    }
+
+    function updateRfVisualization() {
+      var coverageLayer = document.getElementById('rf-coverage-layer');
+      var interferenceLayer = document.getElementById('rf-interference-layer');
+      var apLayer = document.getElementById('rf-ap-layer');
+      var bandFilter = document.getElementById('rf-band-filter').value;
+      var showInterference = document.getElementById('rf-show-interference').checked;
+
+      coverageLayer.innerHTML = '';
+      interferenceLayer.innerHTML = '';
+      apLayer.innerHTML = '';
+
+      var filteredAps = rfAps.filter(function(ap) {
+        return bandFilter === 'all' || ap.band === bandFilter;
+      });
+
+      // Draw coverage circles
+      filteredAps.forEach(function(ap, idx) {
+        var radius = getCoverageRadius(ap);
+        var color = getChannelColor(ap);
+        var isSelected = rfAps.indexOf(ap) === selectedApIndex;
+
+        // Coverage circle
+        var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', ap.x);
+        circle.setAttribute('cy', ap.y);
+        circle.setAttribute('r', radius);
+        circle.setAttribute('fill', color);
+        circle.setAttribute('fill-opacity', '0.15');
+        circle.setAttribute('stroke', color);
+        circle.setAttribute('stroke-width', isSelected ? '3' : '1');
+        circle.setAttribute('stroke-opacity', '0.5');
+        coverageLayer.appendChild(circle);
+
+        // Inner strong signal area
+        var innerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        innerCircle.setAttribute('cx', ap.x);
+        innerCircle.setAttribute('cy', ap.y);
+        innerCircle.setAttribute('r', radius * 0.5);
+        innerCircle.setAttribute('fill', color);
+        innerCircle.setAttribute('fill-opacity', '0.1');
+        coverageLayer.appendChild(innerCircle);
+      });
+
+      // Draw interference zones (overlapping same-channel APs)
+      if (showInterference) {
+        for (var i = 0; i < filteredAps.length; i++) {
+          for (var j = i + 1; j < filteredAps.length; j++) {
+            var ap1 = filteredAps[i];
+            var ap2 = filteredAps[j];
+
+            // Check if same channel (co-channel interference)
+            if (ap1.channel === ap2.channel && ap1.band === ap2.band) {
+              var dist = Math.sqrt(Math.pow(ap1.x - ap2.x, 2) + Math.pow(ap1.y - ap2.y, 2));
+              var r1 = getCoverageRadius(ap1);
+              var r2 = getCoverageRadius(ap2);
+
+              if (dist < r1 + r2) {
+                // Draw interference indicator
+                var midX = (ap1.x + ap2.x) / 2;
+                var midY = (ap1.y + ap2.y) / 2;
+
+                var interferenceCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                interferenceCircle.setAttribute('cx', midX);
+                interferenceCircle.setAttribute('cy', midY);
+                interferenceCircle.setAttribute('r', Math.min(r1, r2) * 0.5);
+                interferenceCircle.setAttribute('fill', '#ef4444');
+                interferenceCircle.setAttribute('fill-opacity', '0.3');
+                interferenceCircle.setAttribute('stroke', '#ef4444');
+                interferenceCircle.setAttribute('stroke-width', '2');
+                interferenceCircle.setAttribute('stroke-dasharray', '5,5');
+                interferenceLayer.appendChild(interferenceCircle);
+
+                // Warning icon
+                var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', midX);
+                text.setAttribute('y', midY + 4);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('fill', '#ef4444');
+                text.setAttribute('font-size', '16');
+                text.setAttribute('font-weight', 'bold');
+                text.textContent = '⚠';
+                interferenceLayer.appendChild(text);
+              }
+            }
+          }
+        }
+      }
+
+      // Draw AP icons
+      filteredAps.forEach(function(ap) {
+        var realIdx = rfAps.indexOf(ap);
+        var isSelected = realIdx === selectedApIndex;
+        var color = getChannelColor(ap);
+
+        var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('transform', 'translate(' + ap.x + ',' + ap.y + ')');
+        g.setAttribute('style', 'cursor:pointer');
+        g.setAttribute('onclick', 'selectAp(' + realIdx + ')');
+
+        // AP circle background
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        bg.setAttribute('r', isSelected ? '18' : '15');
+        bg.setAttribute('fill', isSelected ? color : '#1f2937');
+        bg.setAttribute('stroke', color);
+        bg.setAttribute('stroke-width', isSelected ? '3' : '2');
+        g.appendChild(bg);
+
+        // WiFi icon
+        var wifi = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        wifi.setAttribute('transform', 'scale(0.5) translate(-12,-12)');
+        wifi.innerHTML = '<path d="M5 12.55a11 11 0 0 1 14.08 0" fill="none" stroke="' + (isSelected ? 'white' : color) + '" stroke-width="2"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0" fill="none" stroke="' + (isSelected ? 'white' : color) + '" stroke-width="2"/><circle cx="12" cy="20" r="1" fill="' + (isSelected ? 'white' : color) + '"/>';
+        g.appendChild(wifi);
+
+        // AP name label
+        var label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('y', '30');
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('fill', 'var(--foreground)');
+        label.setAttribute('font-size', '10');
+        label.setAttribute('font-weight', '500');
+        label.textContent = ap.name;
+        g.appendChild(label);
+
+        // Channel badge
+        var badge = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        badge.setAttribute('transform', 'translate(12,-12)');
+        var badgeBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        badgeBg.setAttribute('x', '-10');
+        badgeBg.setAttribute('y', '-8');
+        badgeBg.setAttribute('width', '20');
+        badgeBg.setAttribute('height', '16');
+        badgeBg.setAttribute('rx', '4');
+        badgeBg.setAttribute('fill', color);
+        badge.appendChild(badgeBg);
+        var badgeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        badgeText.setAttribute('text-anchor', 'middle');
+        badgeText.setAttribute('y', '4');
+        badgeText.setAttribute('fill', 'white');
+        badgeText.setAttribute('font-size', '9');
+        badgeText.setAttribute('font-weight', '600');
+        badgeText.textContent = ap.channel.replace('e', '');
+        badge.appendChild(badgeText);
+        g.appendChild(badge);
+
+        apLayer.appendChild(g);
+      });
+
+      // Update stats
+      document.getElementById('rf-stat-aps').textContent = filteredAps.length;
+
+      // Calculate coverage percentage (rough estimate based on canvas)
+      var canvas = document.getElementById('rf-canvas');
+      var canvasArea = canvas.clientWidth * canvas.clientHeight;
+      var coverageArea = 0;
+      filteredAps.forEach(function(ap) {
+        var r = getCoverageRadius(ap);
+        coverageArea += Math.PI * r * r;
+      });
+      var coveragePercent = Math.min(100, Math.round((coverageArea / canvasArea) * 100));
+      document.getElementById('rf-stat-coverage').textContent = coveragePercent + '%';
+
+      // Count interference zones
+      var interferenceCount = 0;
+      for (var i = 0; i < filteredAps.length; i++) {
+        for (var j = i + 1; j < filteredAps.length; j++) {
+          if (filteredAps[i].channel === filteredAps[j].channel && filteredAps[i].band === filteredAps[j].band) {
+            var dist = Math.sqrt(Math.pow(filteredAps[i].x - filteredAps[j].x, 2) + Math.pow(filteredAps[i].y - filteredAps[j].y, 2));
+            var r1 = getCoverageRadius(filteredAps[i]);
+            var r2 = getCoverageRadius(filteredAps[j]);
+            if (dist < r1 + r2) interferenceCount++;
+          }
+        }
+      }
+      var interferenceEl = document.getElementById('rf-stat-interference');
+      if (interferenceCount === 0) {
+        interferenceEl.textContent = 'None';
+        interferenceEl.style.color = '#22c55e';
+      } else {
+        interferenceEl.textContent = interferenceCount + ' zone' + (interferenceCount > 1 ? 's' : '');
+        interferenceEl.style.color = '#ef4444';
+      }
+
+      // Update AP list
+      var listHtml = '';
+      if (rfAps.length === 0) {
+        listHtml = '<div style="text-align:center;padding:30px;color:var(--foreground-muted);font-size:12px">Click on the canvas to place APs</div>';
+      } else {
+        rfAps.forEach(function(ap, idx) {
+          var color = getChannelColor(ap);
+          var isSelected = idx === selectedApIndex;
+          listHtml += '<div onclick="selectAp(' + idx + ')" style="padding:10px;background:' + (isSelected ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.02)') + ';border:1px solid ' + (isSelected ? 'var(--primary)' : 'var(--border)') + ';border-radius:6px;cursor:pointer">';
+          listHtml += '<div style="display:flex;align-items:center;gap:10px">';
+          listHtml += '<div style="width:32px;height:32px;background:' + color + ';border-radius:6px;display:flex;align-items:center;justify-content:center">';
+          listHtml += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="white"/></svg>';
+          listHtml += '</div>';
+          listHtml += '<div style="flex:1">';
+          listHtml += '<div style="font-size:12px;font-weight:500">' + ap.name + '</div>';
+          listHtml += '<div style="font-size:10px;color:var(--foreground-muted)">' + ap.band + 'GHz · Ch ' + ap.channel.replace('e', ' (6E)') + ' · ' + ap.power + 'dBm</div>';
+          listHtml += '</div>';
+          listHtml += '</div></div>';
+        });
+      }
+      document.getElementById('rf-ap-list').innerHTML = listHtml;
+    }
+
+    function exportRfPlan() {
+      var plan = {
+        aps: rfAps,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+      };
+      var dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(plan, null, 2));
+      var downloadEl = document.createElement('a');
+      downloadEl.setAttribute('href', dataStr);
+      downloadEl.setAttribute('download', 'rf-plan-' + Date.now() + '.json');
+      document.body.appendChild(downloadEl);
+      downloadEl.click();
+      downloadEl.remove();
+      showToast('RF Plan exported');
+    }
+
+    // Initialize RF Visualizer when view is shown
+    function initRfVisualizer() {
+      updateRfVisualization();
     }
 
     // PSIRT Advisory Functions
