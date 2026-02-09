@@ -7282,6 +7282,8 @@ app.get(UI_ROUTE, (_req, res) => {
       }
     }
 
+    var currentScenarioCommands = [];
+
     function copyToClipboard(elementId) {
       var el = document.getElementById(elementId);
       if (el) {
@@ -7304,8 +7306,6 @@ app.get(UI_ROUTE, (_req, res) => {
       document.body.appendChild(toast);
       setTimeout(function() { toast.remove(); }, 2000);
     }
-
-    var currentScenarioCommands = [];
 
     function loadTsScenario(scenarioId) {
       var scenario = xiqTsScenarios[scenarioId];
