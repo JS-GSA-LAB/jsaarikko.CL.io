@@ -4601,6 +4601,10 @@ app.get(UI_ROUTE, (_req, res) => {
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           ExtremeCloud IQ
         </button>
+        <button class="nav-item" onclick="showView('xiq-troubleshoot')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          XIQ Troubleshoot
+        </button>
       </div>
       <div class="nav-section">
         <div class="nav-section-title">Security</div>
@@ -5892,6 +5896,176 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
     </div>
 
+    <!-- XIQ Troubleshooting View -->
+    <div id="view-xiq-troubleshoot" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">XIQ Troubleshooting Center</h1>
+          <div class="page-subtitle">Diagnose wireless and switching issues with CLI commands and best practices</div>
+        </div>
+        <div class="header-actions">
+          <select id="xiq-ts-device-select" onchange="loadXiqDeviceInfo()" style="padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--foreground);min-width:200px">
+            <option value="">Select Device</option>
+          </select>
+          <button class="header-btn" onclick="refreshXiqTroubleshoot()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+      <div class="page-content">
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-label">Total Devices</div>
+            <div class="stat-card-value" id="xiq-ts-total">--</div>
+            <div class="stat-card-sub">APs + Switches</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Online</div>
+            <div class="stat-card-value" id="xiq-ts-online" style="color:var(--success)">--</div>
+            <div class="stat-card-sub">Connected</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Config Mismatch</div>
+            <div class="stat-card-value" id="xiq-ts-mismatch" style="color:#f59e0b">--</div>
+            <div class="stat-card-sub">Needs sync</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Best Practices</div>
+            <div class="stat-card-value" id="xiq-ts-bp-score">--</div>
+            <div class="stat-card-sub">Compliance score</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px">
+          <!-- Left Column: Device Info & SSH -->
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <!-- Device Information -->
+            <div class="card" id="xiq-ts-device-info">
+              <div style="font-size:14px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Device Information
+              </div>
+              <div style="text-align:center;padding:40px;color:var(--foreground-muted)">
+                <div>Select a device to view details</div>
+              </div>
+            </div>
+
+            <!-- SSH Connection -->
+            <div class="card">
+              <div style="font-size:14px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                SSH Connection
+              </div>
+              <div id="xiq-ts-ssh-info">
+                <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:16px;font-family:monospace">
+                  <div style="color:var(--foreground-muted);font-size:11px;margin-bottom:8px">SSH Command:</div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <code id="xiq-ts-ssh-cmd" style="flex:1;color:#22c55e;font-size:13px">ssh admin@&lt;select-device&gt;</code>
+                    <button onclick="copyToClipboard('xiq-ts-ssh-cmd')" style="padding:6px 10px;background:var(--primary);border:none;border-radius:4px;color:white;cursor:pointer;font-size:11px">Copy</button>
+                  </div>
+                </div>
+                <div style="margin-top:12px;padding:12px;background:rgba(59,130,246,0.1);border-radius:8px;border-left:3px solid #3b82f6">
+                  <div style="font-size:12px;color:#3b82f6;font-weight:600;margin-bottom:4px">Default Credentials</div>
+                  <div style="font-size:11px;color:var(--foreground-muted)">Username: <code>admin</code> | Password: <code>aerohive</code> (or your configured password)</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Common Troubleshooting Challenges -->
+            <div class="card">
+              <div style="font-size:14px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                Common Troubleshooting Scenarios
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px" id="xiq-ts-scenarios">
+                <div class="ts-scenario" onclick="loadTsScenario('wifi-connectivity')" style="padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                  <div style="font-weight:500;font-size:13px">WiFi Connectivity Issues</div>
+                  <div style="font-size:11px;color:var(--foreground-muted);margin-top:2px">Client can't connect or drops frequently</div>
+                </div>
+                <div class="ts-scenario" onclick="loadTsScenario('slow-wifi')" style="padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                  <div style="font-weight:500;font-size:13px">Slow WiFi Performance</div>
+                  <div style="font-size:11px;color:var(--foreground-muted);margin-top:2px">Low throughput, high latency</div>
+                </div>
+                <div class="ts-scenario" onclick="loadTsScenario('roaming')" style="padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                  <div style="font-weight:500;font-size:13px">Roaming Problems</div>
+                  <div style="font-size:11px;color:var(--foreground-muted);margin-top:2px">Clients not roaming or sticky clients</div>
+                </div>
+                <div class="ts-scenario" onclick="loadTsScenario('vlan-issues')" style="padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                  <div style="font-weight:500;font-size:13px">VLAN/Network Segmentation</div>
+                  <div style="font-size:11px;color:var(--foreground-muted);margin-top:2px">Traffic not reaching correct VLAN</div>
+                </div>
+                <div class="ts-scenario" onclick="loadTsScenario('switch-port')" style="padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                  <div style="font-weight:500;font-size:13px">Switch Port Issues</div>
+                  <div style="font-size:11px;color:var(--foreground-muted);margin-top:2px">Port down, errors, or speed mismatch</div>
+                </div>
+                <div class="ts-scenario" onclick="loadTsScenario('auth-issues')" style="padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                  <div style="font-weight:500;font-size:13px">Authentication Failures</div>
+                  <div style="font-size:11px;color:var(--foreground-muted);margin-top:2px">RADIUS, 802.1X, or PSK issues</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: CLI Commands & Best Practices -->
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <!-- CLI Command Library -->
+            <div class="card">
+              <div style="font-size:14px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><polyline points="9 11 12 14 22 4"/></svg>
+                  CLI Commands
+                </div>
+                <select id="xiq-ts-cmd-category" onchange="filterCliCommands()" style="padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--foreground);font-size:12px">
+                  <option value="all">All Commands</option>
+                  <option value="ap">AP Commands</option>
+                  <option value="switch">Switch Commands</option>
+                  <option value="wireless">Wireless</option>
+                  <option value="network">Network</option>
+                  <option value="diagnostics">Diagnostics</option>
+                </select>
+              </div>
+              <div id="xiq-ts-cli-commands" style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
+                <!-- Commands will be populated here -->
+              </div>
+            </div>
+
+            <!-- Best Practices Check -->
+            <div class="card">
+              <div style="font-size:14px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Best Practices Check
+              </div>
+              <div id="xiq-ts-best-practices">
+                <div style="text-align:center;padding:20px;color:var(--foreground-muted)">
+                  <div>Select a device to run best practices analysis</div>
+                </div>
+              </div>
+              <button onclick="runBestPracticesCheck()" style="width:100%;margin-top:16px;padding:12px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Run Best Practices Analysis
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scenario Details Panel -->
+        <div id="xiq-ts-scenario-detail" class="card" style="margin-top:20px;display:none">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+            <div>
+              <div id="xiq-ts-scenario-title" style="font-size:16px;font-weight:600"></div>
+              <div id="xiq-ts-scenario-desc" style="font-size:12px;color:var(--foreground-muted);margin-top:4px"></div>
+            </div>
+            <button onclick="document.getElementById('xiq-ts-scenario-detail').style.display='none'" style="background:none;border:none;color:var(--foreground-muted);cursor:pointer;padding:4px">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div id="xiq-ts-scenario-content"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Evidence Collection View -->
     <div id="view-evidence" class="view-panel">
       <div class="page-header">
@@ -6285,6 +6459,8 @@ app.get(UI_ROUTE, (_req, res) => {
         initAppTrafficView();
       } else if (viewId === 'local-status') {
         initLocalStatusView();
+      } else if (viewId === 'xiq-troubleshoot') {
+        initXiqTroubleshoot();
       }
     }
 
@@ -6713,6 +6889,465 @@ app.get(UI_ROUTE, (_req, res) => {
         loadAPStatus();
       } else {
         loadLocalStatusAPs();
+      }
+    }
+
+    // ===========================================
+    // XIQ TROUBLESHOOTING FUNCTIONS
+    // ===========================================
+
+    var xiqDevices = [];
+    var xiqCliCommands = [
+      // AP Wireless Commands
+      { category: 'ap', subcategory: 'wireless', name: 'Show interface', cmd: 'show interface', desc: 'Display all interface status' },
+      { category: 'ap', subcategory: 'wireless', name: 'Show SSID', cmd: 'show ssid', desc: 'List all configured SSIDs' },
+      { category: 'ap', subcategory: 'wireless', name: 'Show station', cmd: 'show station', desc: 'Show connected wireless clients' },
+      { category: 'ap', subcategory: 'wireless', name: 'Show roaming cache', cmd: 'show roaming cache', desc: 'Display roaming cache entries' },
+      { category: 'ap', subcategory: 'wireless', name: 'Show acsp', cmd: 'show acsp', desc: 'Auto Channel Selection status' },
+      { category: 'ap', subcategory: 'wireless', name: 'Show acsp neighbor', cmd: 'show acsp neighbor', desc: 'Show neighboring APs for channel planning' },
+      { category: 'ap', subcategory: 'wireless', name: 'Show radio', cmd: 'show interface wifi0\\nshow interface wifi1', desc: 'Radio interface details (2.4/5GHz)' },
+
+      // AP Network Commands
+      { category: 'ap', subcategory: 'network', name: 'Show IP route', cmd: 'show ip route', desc: 'Display routing table' },
+      { category: 'ap', subcategory: 'network', name: 'Show ARP', cmd: 'show arp', desc: 'ARP table entries' },
+      { category: 'ap', subcategory: 'network', name: 'Show VLAN', cmd: 'show vlan', desc: 'VLAN configuration' },
+      { category: 'ap', subcategory: 'network', name: 'Show DNS', cmd: 'show dns', desc: 'DNS configuration and cache' },
+      { category: 'ap', subcategory: 'network', name: 'Show CAPWAP', cmd: 'show capwap client', desc: 'CAPWAP tunnel status to XIQ' },
+      { category: 'ap', subcategory: 'network', name: 'Show LLDP', cmd: 'show lldp neighbor', desc: 'LLDP neighbor discovery' },
+
+      // AP Diagnostics
+      { category: 'ap', subcategory: 'diagnostics', name: 'Show memory', cmd: 'show memory', desc: 'Memory utilization' },
+      { category: 'ap', subcategory: 'diagnostics', name: 'Show CPU', cmd: 'show cpu', desc: 'CPU utilization' },
+      { category: 'ap', subcategory: 'diagnostics', name: 'Show log', cmd: 'show log buffered', desc: 'System log messages' },
+      { category: 'ap', subcategory: 'diagnostics', name: 'Show running config', cmd: 'show running-config', desc: 'Current running configuration' },
+      { category: 'ap', subcategory: 'diagnostics', name: 'Show version', cmd: 'show version', desc: 'Firmware and hardware info' },
+      { category: 'ap', subcategory: 'diagnostics', name: 'Ping test', cmd: 'ping <ip-address>', desc: 'Test network connectivity' },
+      { category: 'ap', subcategory: 'diagnostics', name: 'Traceroute', cmd: 'traceroute <ip-address>', desc: 'Trace network path' },
+
+      // Switch Commands
+      { category: 'switch', subcategory: 'network', name: 'Show ports', cmd: 'show ports', desc: 'Port status and statistics' },
+      { category: 'switch', subcategory: 'network', name: 'Show VLAN', cmd: 'show vlan', desc: 'VLAN configuration' },
+      { category: 'switch', subcategory: 'network', name: 'Show FDB', cmd: 'show fdb', desc: 'Forwarding database (MAC table)' },
+      { category: 'switch', subcategory: 'network', name: 'Show STP', cmd: 'show stpd', desc: 'Spanning tree status' },
+      { category: 'switch', subcategory: 'network', name: 'Show LLDP', cmd: 'show lldp neighbors', desc: 'LLDP neighbor information' },
+      { category: 'switch', subcategory: 'network', name: 'Show LAG', cmd: 'show sharing', desc: 'Link aggregation groups' },
+      { category: 'switch', subcategory: 'diagnostics', name: 'Show port errors', cmd: 'show ports statistics', desc: 'Port error counters' },
+      { category: 'switch', subcategory: 'diagnostics', name: 'Show log', cmd: 'show log', desc: 'System event log' },
+      { category: 'switch', subcategory: 'diagnostics', name: 'Show config', cmd: 'show configuration', desc: 'Current configuration' },
+      { category: 'switch', subcategory: 'diagnostics', name: 'Show version', cmd: 'show version', desc: 'Software and hardware info' }
+    ];
+
+    var xiqTsScenarios = {
+      'wifi-connectivity': {
+        title: 'WiFi Connectivity Issues',
+        desc: 'Diagnose why clients cannot connect or are being disconnected',
+        steps: [
+          { title: 'Check AP Status', cmd: 'show interface wifi0\\nshow interface wifi1', detail: 'Verify radios are up and broadcasting' },
+          { title: 'Verify SSID', cmd: 'show ssid', detail: 'Ensure SSID is enabled and configured correctly' },
+          { title: 'Check Client Association', cmd: 'show station', detail: 'See if client is attempting to connect' },
+          { title: 'Review Authentication', cmd: 'show aaa radius-server', detail: 'Verify RADIUS server connectivity' },
+          { title: 'Check Logs', cmd: 'show log buffered | include auth', detail: 'Look for authentication failures' }
+        ],
+        bestPractices: [
+          'Ensure minimum RSSI threshold is set appropriately (-75 dBm recommended)',
+          'Verify RADIUS server is reachable from AP management VLAN',
+          'Check that 802.1X supplicant is configured correctly on client',
+          'Ensure DHCP server is available on client VLAN'
+        ]
+      },
+      'slow-wifi': {
+        title: 'Slow WiFi Performance',
+        desc: 'Investigate low throughput and high latency issues',
+        steps: [
+          { title: 'Check Channel Utilization', cmd: 'show acsp', detail: 'Review channel congestion levels' },
+          { title: 'View Neighbor APs', cmd: 'show acsp neighbor', detail: 'Check for co-channel interference' },
+          { title: 'Check Client Signal', cmd: 'show station', detail: 'Review client RSSI and SNR values' },
+          { title: 'Review Radio Settings', cmd: 'show interface wifi0\\nshow interface wifi1', detail: 'Check channel width and power settings' },
+          { title: 'Check CPU/Memory', cmd: 'show cpu\\nshow memory', detail: 'Verify AP is not overloaded' }
+        ],
+        bestPractices: [
+          'Use 5GHz band for high-density areas',
+          'Enable band steering to balance client load',
+          'Set appropriate channel width (40MHz for 5GHz in most cases)',
+          'Consider enabling Airtime Fairness',
+          'Review client mix - older clients can slow down entire BSS'
+        ]
+      },
+      'roaming': {
+        title: 'Roaming Problems',
+        desc: 'Fix sticky clients and slow roaming transitions',
+        steps: [
+          { title: 'Check Roaming Cache', cmd: 'show roaming cache', detail: 'Verify roaming entries exist between APs' },
+          { title: 'Review 802.11r/k/v', cmd: 'show ssid <name>', detail: 'Check fast roaming protocols enabled' },
+          { title: 'Check Client Roaming', cmd: 'show station', detail: 'Monitor client movement between APs' },
+          { title: 'Verify PMK Caching', cmd: 'show roaming cache pairwise', detail: 'Check PMK cache for fast reauthentication' },
+          { title: 'Review Load Balance', cmd: 'show load-balance', detail: 'Check load balancing settings' }
+        ],
+        bestPractices: [
+          'Enable 802.11r (Fast BSS Transition) for seamless roaming',
+          'Enable 802.11k for neighbor reports',
+          'Enable 802.11v for BSS transition management',
+          'Ensure consistent security settings across all APs',
+          'Set minimum RSSI threshold to encourage roaming'
+        ]
+      },
+      'vlan-issues': {
+        title: 'VLAN/Network Segmentation Issues',
+        desc: 'Troubleshoot VLAN tagging and traffic segregation',
+        steps: [
+          { title: 'Check VLAN Config', cmd: 'show vlan', detail: 'Verify VLAN configuration on AP' },
+          { title: 'Verify Trunk Port', cmd: 'show lldp neighbor', detail: 'Check switch port is properly trunked' },
+          { title: 'Check SSID-VLAN Mapping', cmd: 'show ssid', detail: 'Verify correct VLAN assigned to SSID' },
+          { title: 'Test Connectivity', cmd: 'ping -I <vlan-ip> <gateway>', detail: 'Test reachability on specific VLAN' },
+          { title: 'Check ARP', cmd: 'show arp', detail: 'Verify gateway MAC is learned' }
+        ],
+        bestPractices: [
+          'Use tagged VLANs for user traffic, native VLAN for management',
+          'Ensure switch port allows all required VLANs',
+          'Configure DHCP snooping and ARP inspection on switch',
+          'Document VLAN assignments for each SSID',
+          'Test VLAN connectivity after any changes'
+        ]
+      },
+      'switch-port': {
+        title: 'Switch Port Issues',
+        desc: 'Diagnose port connectivity and performance problems',
+        steps: [
+          { title: 'Check Port Status', cmd: 'show ports <port>', detail: 'Verify port is up and speed/duplex' },
+          { title: 'View Port Statistics', cmd: 'show ports statistics <port>', detail: 'Check for errors, CRC, collisions' },
+          { title: 'Check VLAN Assignment', cmd: 'show vlan ports <port>', detail: 'Verify correct VLAN configuration' },
+          { title: 'Review STP State', cmd: 'show stpd ports <port>', detail: 'Check if port is blocked by STP' },
+          { title: 'Check PoE', cmd: 'show inline-power info ports <port>', detail: 'Verify PoE status for AP/IP phone' }
+        ],
+        bestPractices: [
+          'Use auto-negotiation for most deployments',
+          'Enable PoE+ (802.3at) for modern APs',
+          'Configure storm control on edge ports',
+          'Enable BPDU guard on access ports',
+          'Document port assignments with descriptions'
+        ]
+      },
+      'auth-issues': {
+        title: 'Authentication Failures',
+        desc: 'Debug RADIUS, 802.1X, and credential issues',
+        steps: [
+          { title: 'Check RADIUS Server', cmd: 'show aaa radius-server', detail: 'Verify RADIUS server configuration' },
+          { title: 'Test RADIUS', cmd: 'test aaa radius-server <server> <user> <pass>', detail: 'Test RADIUS authentication' },
+          { title: 'Check Auth Logs', cmd: 'show log buffered | include RADIUS', detail: 'Review RADIUS transaction logs' },
+          { title: 'View Failed Auths', cmd: 'show station filter state auth-failed', detail: 'List clients with auth failures' },
+          { title: 'Check Certificates', cmd: 'show crypto certificate', detail: 'Verify certificate validity for EAP-TLS' }
+        ],
+        bestPractices: [
+          'Configure primary and secondary RADIUS servers',
+          'Set appropriate RADIUS timeout (5s recommended)',
+          'Enable RADIUS accounting for auditing',
+          'Use strong EAP methods (PEAP, EAP-TLS)',
+          'Regularly test RADIUS failover'
+        ]
+      }
+    };
+
+    async function initXiqTroubleshoot() {
+      var deviceSelect = document.getElementById('xiq-ts-device-select');
+      if (deviceSelect && deviceSelect.options.length <= 1) {
+        try {
+          var res = await fetch('/api/xiq/devices');
+          var data = await res.json();
+
+          if (data && data.data) {
+            xiqDevices = data.data;
+
+            // Group devices by type
+            var aps = data.data.filter(function(d) { return d.device_function === 'AP'; });
+            var switches = data.data.filter(function(d) { return d.device_function === 'SWITCH'; });
+
+            // Add AP options
+            if (aps.length > 0) {
+              var apGroup = document.createElement('optgroup');
+              apGroup.label = 'Access Points (' + aps.length + ')';
+              aps.forEach(function(ap) {
+                var opt = document.createElement('option');
+                opt.value = ap.id;
+                opt.textContent = (ap.hostname || ap.serial_number) + ' - ' + ap.ip_address;
+                opt.dataset.type = 'AP';
+                apGroup.appendChild(opt);
+              });
+              deviceSelect.appendChild(apGroup);
+            }
+
+            // Add Switch options
+            if (switches.length > 0) {
+              var swGroup = document.createElement('optgroup');
+              swGroup.label = 'Switches (' + switches.length + ')';
+              switches.forEach(function(sw) {
+                var opt = document.createElement('option');
+                opt.value = sw.id;
+                opt.textContent = (sw.hostname || sw.serial_number) + ' - ' + sw.ip_address;
+                opt.dataset.type = 'SWITCH';
+                swGroup.appendChild(opt);
+              });
+              deviceSelect.appendChild(swGroup);
+            }
+
+            // Update stats
+            var online = data.data.filter(function(d) { return d.connected; }).length;
+            var mismatch = data.data.filter(function(d) { return d.config_mismatch; }).length;
+            document.getElementById('xiq-ts-total').textContent = data.data.length;
+            document.getElementById('xiq-ts-online').textContent = online;
+            document.getElementById('xiq-ts-mismatch').textContent = mismatch;
+          }
+        } catch (e) {
+          console.error('Failed to load XIQ devices:', e);
+        }
+      }
+
+      // Populate CLI commands
+      filterCliCommands();
+    }
+
+    function loadXiqDeviceInfo() {
+      var deviceId = document.getElementById('xiq-ts-device-select').value;
+      var infoDiv = document.getElementById('xiq-ts-device-info');
+      var sshCmd = document.getElementById('xiq-ts-ssh-cmd');
+
+      if (!deviceId) {
+        infoDiv.innerHTML = '<div style="font-size:14px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Device Information</div><div style="text-align:center;padding:40px;color:var(--foreground-muted)"><div>Select a device to view details</div></div>';
+        sshCmd.textContent = 'ssh admin@<select-device>';
+        return;
+      }
+
+      var device = xiqDevices.find(function(d) { return d.id == deviceId; });
+      if (!device) return;
+
+      // Update SSH command
+      sshCmd.textContent = 'ssh admin@' + device.ip_address;
+
+      // Build device info
+      var statusColor = device.connected ? 'var(--success)' : 'var(--destructive)';
+      var statusText = device.connected ? 'ONLINE' : 'OFFLINE';
+
+      var html = '<div style="font-size:14px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px">';
+      html += '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>';
+      html += 'Device Information</div>';
+
+      html += '<div style="display:grid;gap:10px">';
+      html += renderInfoRow('Hostname', device.hostname || 'N/A');
+      html += renderInfoRow('Type', device.device_function + ' - ' + device.product_type);
+      html += renderInfoRow('IP Address', device.ip_address || 'N/A');
+      html += renderInfoRow('MAC Address', device.mac_address ? device.mac_address.match(/.{2}/g).join(':') : 'N/A');
+      html += renderInfoRow('Serial', device.serial_number || 'N/A');
+      html += renderInfoRow('Software', device.software_version || 'N/A');
+      html += renderInfoRow('Status', '<span style="color:' + statusColor + '">' + statusText + '</span>');
+      html += renderInfoRow('Config Sync', device.config_mismatch ? '<span style="color:#f59e0b">MISMATCH</span>' : '<span style="color:var(--success)">SYNCED</span>');
+      html += '</div>';
+
+      infoDiv.innerHTML = html;
+
+      // Update CLI commands based on device type
+      var cmdCategory = document.getElementById('xiq-ts-cmd-category');
+      cmdCategory.value = device.device_function === 'AP' ? 'ap' : 'switch';
+      filterCliCommands();
+    }
+
+    function filterCliCommands() {
+      var category = document.getElementById('xiq-ts-cmd-category').value;
+      var container = document.getElementById('xiq-ts-cli-commands');
+
+      var filtered = xiqCliCommands;
+      if (category !== 'all') {
+        if (category === 'ap' || category === 'switch') {
+          filtered = xiqCliCommands.filter(function(c) { return c.category === category; });
+        } else {
+          filtered = xiqCliCommands.filter(function(c) { return c.subcategory === category; });
+        }
+      }
+
+      var html = '';
+      filtered.forEach(function(cmd, idx) {
+        html += '<div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:12px">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">';
+        html += '<div>';
+        html += '<div style="font-weight:500;font-size:13px">' + cmd.name + '</div>';
+        html += '<div style="font-size:11px;color:var(--foreground-muted);margin-top:2px">' + cmd.desc + '</div>';
+        html += '</div>';
+        html += '<span style="padding:2px 8px;background:rgba(59,130,246,0.2);color:#3b82f6;border-radius:4px;font-size:10px;text-transform:uppercase">' + cmd.category + '</span>';
+        html += '</div>';
+        html += '<div style="display:flex;align-items:center;gap:8px">';
+        html += '<code id="cli-cmd-' + idx + '" style="flex:1;font-size:12px;color:#22c55e;background:rgba(0,0,0,0.3);padding:8px 12px;border-radius:4px;white-space:pre-wrap">' + cmd.cmd.replace(/\\n/g, '\\n') + '</code>';
+        html += '<button onclick="copyCliCommand(' + idx + ')" style="padding:6px 10px;background:var(--primary);border:none;border-radius:4px;color:white;cursor:pointer;font-size:11px;white-space:nowrap">Copy</button>';
+        html += '</div>';
+        html += '</div>';
+      });
+
+      container.innerHTML = html || '<div style="text-align:center;padding:20px;color:var(--foreground-muted)">No commands found</div>';
+    }
+
+    function copyCliCommand(idx) {
+      var cmd = xiqCliCommands.filter(function(c) {
+        var category = document.getElementById('xiq-ts-cmd-category').value;
+        if (category === 'all') return true;
+        if (category === 'ap' || category === 'switch') return c.category === category;
+        return c.subcategory === category;
+      })[idx];
+
+      if (cmd) {
+        navigator.clipboard.writeText(cmd.cmd.replace(/\\\\n/g, '\\n'));
+        showToast('Command copied to clipboard');
+      }
+    }
+
+    function copyToClipboard(elementId) {
+      var el = document.getElementById(elementId);
+      if (el) {
+        navigator.clipboard.writeText(el.textContent);
+        showToast('Copied to clipboard');
+      }
+    }
+
+    function showToast(message) {
+      var toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#22c55e;color:white;padding:12px 20px;border-radius:8px;font-size:13px;z-index:9999;animation:fadeIn 0.3s';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(function() { toast.remove(); }, 2000);
+    }
+
+    function loadTsScenario(scenarioId) {
+      var scenario = xiqTsScenarios[scenarioId];
+      if (!scenario) return;
+
+      var detailPanel = document.getElementById('xiq-ts-scenario-detail');
+      document.getElementById('xiq-ts-scenario-title').textContent = scenario.title;
+      document.getElementById('xiq-ts-scenario-desc').textContent = scenario.desc;
+
+      var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">';
+
+      // Troubleshooting Steps
+      html += '<div>';
+      html += '<div style="font-weight:600;font-size:13px;margin-bottom:12px;color:var(--primary)">Troubleshooting Steps</div>';
+      scenario.steps.forEach(function(step, idx) {
+        html += '<div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:12px;margin-bottom:8px">';
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+        html += '<span style="width:24px;height:24px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">' + (idx + 1) + '</span>';
+        html += '<span style="font-weight:500;font-size:13px">' + step.title + '</span>';
+        html += '</div>';
+        html += '<div style="font-size:11px;color:var(--foreground-muted);margin-bottom:8px;margin-left:32px">' + step.detail + '</div>';
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-left:32px">';
+        html += '<code style="flex:1;font-size:11px;color:#22c55e;background:rgba(0,0,0,0.3);padding:6px 10px;border-radius:4px;white-space:pre-wrap">' + step.cmd.replace(/\\n/g, '\\n') + '</code>';
+        html += '<button onclick="navigator.clipboard.writeText(\\'' + step.cmd.replace(/\\n/g, '\\n').replace(/'/g, "\\\\'") + '\\');showToast(\\'Copied\\')" style="padding:4px 8px;background:var(--primary);border:none;border-radius:4px;color:white;cursor:pointer;font-size:10px">Copy</button>';
+        html += '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+
+      // Best Practices
+      html += '<div>';
+      html += '<div style="font-weight:600;font-size:13px;margin-bottom:12px;color:#22c55e">Industry Best Practices</div>';
+      html += '<div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:16px">';
+      scenario.bestPractices.forEach(function(bp) {
+        html += '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px">';
+        html += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" style="flex-shrink:0;margin-top:2px"><polyline points="20 6 9 17 4 12"/></svg>';
+        html += '<span style="font-size:12px;color:var(--foreground)">' + bp + '</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+      html += '</div>';
+
+      html += '</div>';
+
+      document.getElementById('xiq-ts-scenario-content').innerHTML = html;
+      detailPanel.style.display = 'block';
+      detailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function runBestPracticesCheck() {
+      var deviceId = document.getElementById('xiq-ts-device-select').value;
+      var container = document.getElementById('xiq-ts-best-practices');
+
+      if (!deviceId) {
+        container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--foreground-muted)"><div>Select a device first</div></div>';
+        return;
+      }
+
+      var device = xiqDevices.find(function(d) { return d.id == deviceId; });
+      if (!device) return;
+
+      // Simulate best practices check
+      var checks = [];
+      var passed = 0;
+      var total = 0;
+
+      if (device.device_function === 'AP') {
+        checks = [
+          { name: 'Firmware Version', status: device.software_version && device.software_version.startsWith('10.') ? 'pass' : 'warn', detail: device.software_version || 'Unknown' },
+          { name: 'Config Synchronization', status: device.config_mismatch ? 'fail' : 'pass', detail: device.config_mismatch ? 'Configuration mismatch detected' : 'Configuration in sync' },
+          { name: 'Connectivity Status', status: device.connected ? 'pass' : 'fail', detail: device.connected ? 'Device online' : 'Device offline' },
+          { name: 'Management State', status: device.device_admin_state === 'MANAGED' ? 'pass' : 'warn', detail: device.device_admin_state },
+          { name: 'IP Address Assigned', status: device.ip_address ? 'pass' : 'fail', detail: device.ip_address || 'No IP' },
+          { name: '5GHz Radio Enabled', status: 'info', detail: 'Verify via CLI: show interface wifi1' },
+          { name: 'Band Steering', status: 'info', detail: 'Verify band steering is enabled for dual-band SSIDs' },
+          { name: '802.11r/k/v Support', status: 'info', detail: 'Verify fast roaming protocols are enabled' }
+        ];
+      } else {
+        checks = [
+          { name: 'Firmware Version', status: device.software_version ? 'pass' : 'warn', detail: device.software_version || 'Unknown' },
+          { name: 'Config Synchronization', status: device.config_mismatch ? 'fail' : 'pass', detail: device.config_mismatch ? 'Configuration mismatch detected' : 'Configuration in sync' },
+          { name: 'Connectivity Status', status: device.connected ? 'pass' : 'fail', detail: device.connected ? 'Device online' : 'Device offline' },
+          { name: 'Management State', status: device.device_admin_state === 'MANAGED' ? 'pass' : 'warn', detail: device.device_admin_state },
+          { name: 'IP Address Assigned', status: device.ip_address ? 'pass' : 'fail', detail: device.ip_address || 'No IP' },
+          { name: 'STP Configuration', status: 'info', detail: 'Verify RSTP/MSTP is enabled' },
+          { name: 'Storm Control', status: 'info', detail: 'Verify storm control on edge ports' },
+          { name: 'BPDU Guard', status: 'info', detail: 'Verify BPDU guard on access ports' }
+        ];
+      }
+
+      checks.forEach(function(c) {
+        if (c.status === 'pass') passed++;
+        if (c.status !== 'info') total++;
+      });
+
+      var score = total > 0 ? Math.round((passed / total) * 100) : 0;
+      document.getElementById('xiq-ts-bp-score').textContent = score + '%';
+      document.getElementById('xiq-ts-bp-score').style.color = score >= 80 ? 'var(--success)' : score >= 50 ? '#f59e0b' : 'var(--destructive)';
+
+      var html = '<div style="display:flex;flex-direction:column;gap:8px">';
+      checks.forEach(function(check) {
+        var icon = '';
+        var color = '';
+        if (check.status === 'pass') {
+          icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+          color = '#22c55e';
+        } else if (check.status === 'fail') {
+          icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+          color = '#ef4444';
+        } else if (check.status === 'warn') {
+          icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+          color = '#f59e0b';
+        } else {
+          icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+          color = '#3b82f6';
+        }
+
+        html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.02);border-radius:6px">';
+        html += icon;
+        html += '<div style="flex:1">';
+        html += '<div style="font-size:12px;font-weight:500">' + check.name + '</div>';
+        html += '<div style="font-size:10px;color:var(--foreground-muted)">' + check.detail + '</div>';
+        html += '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+
+      container.innerHTML = html;
+    }
+
+    function refreshXiqTroubleshoot() {
+      var deviceId = document.getElementById('xiq-ts-device-select').value;
+      if (deviceId) {
+        loadXiqDeviceInfo();
+        runBestPracticesCheck();
+      } else {
+        initXiqTroubleshoot();
       }
     }
 
