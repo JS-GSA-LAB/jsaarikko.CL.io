@@ -7534,9 +7534,27 @@ app.get(UI_ROUTE, (_req, res) => {
       }
 
       // Extract basic info from config
-      var hostname = (config.match(/hostname\s+(\S+)/i) || [])[1] || 'Unknown';
-      var ssids = config.match(/ssid\s+(\S+)/gi) || [];
-      var vlans = config.match(/vlan\s+(\d+)/gi) || [];
+      var hostname = (config.match(/hostname\\s+["']?([^"'\\n]+)["']?/i) || [])[1] || 'Unknown';
+
+      // Extract SSIDs - handle various formats:
+      // - "ssid TeamChaos" (standalone)
+      // - "interface wifi0 ssid TeamChaos" (interface assignment)
+      // - "ssid TeamChaos client-monitor-policy..." (with additional params)
+      var ssidMatches = config.match(/(?:^|\\s)ssid\\s+([\\w\\-]+)/gim) || [];
+      var uniqueSsids = [];
+      ssidMatches.forEach(function(m) {
+        var name = m.replace(/.*ssid\\s+/i, '').trim();
+        if (name && uniqueSsids.indexOf(name) === -1 && name !== 'enable' && name !== 'disable') {
+          uniqueSsids.push(name);
+        }
+      });
+
+      var vlans = config.match(/vlan\\s+(\\d+)/gi) || [];
+      var uniqueVlans = [];
+      vlans.forEach(function(v) {
+        var num = v.replace(/vlan\\s+/i, '');
+        if (uniqueVlans.indexOf(num) === -1) uniqueVlans.push(num);
+      });
 
       // Run best practices checks
       var results = {
@@ -7595,8 +7613,8 @@ app.get(UI_ROUTE, (_req, res) => {
       html += '<div style="font-size:12px;font-weight:600;color:#3b82f6;margin-bottom:8px">Configuration Summary</div>';
       html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px">';
       html += '<div>Hostname: <span style="color:var(--foreground)">' + hostname + '</span></div>';
-      html += '<div>SSIDs: <span style="color:var(--foreground)">' + ssids.length + ' configured</span></div>';
-      html += '<div>VLANs: <span style="color:var(--foreground)">' + vlans.length + ' referenced</span></div>';
+      html += '<div>SSIDs: <span style="color:var(--foreground)">' + (uniqueSsids.length > 0 ? uniqueSsids.join(', ') : 'None detected') + '</span></div>';
+      html += '<div>VLANs: <span style="color:var(--foreground)">' + (uniqueVlans.length > 0 ? uniqueVlans.join(', ') : 'None detected') + '</span></div>';
       html += '</div></div>';
 
       // Critical Issues
