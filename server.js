@@ -7290,6 +7290,13 @@ app.get(UI_ROUTE, (_req, res) => {
       }
     }
 
+    function copyScenarioCmd(idx) {
+      if (currentScenarioCommands[idx]) {
+        navigator.clipboard.writeText(currentScenarioCommands[idx].replace(/\\n/g, '\n'));
+        showToast('Copied');
+      }
+    }
+
     function showToast(message) {
       var toast = document.createElement('div');
       toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#22c55e;color:white;padding:12px 20px;border-radius:8px;font-size:13px;z-index:9999;animation:fadeIn 0.3s';
@@ -7298,10 +7305,13 @@ app.get(UI_ROUTE, (_req, res) => {
       setTimeout(function() { toast.remove(); }, 2000);
     }
 
+    var currentScenarioCommands = [];
+
     function loadTsScenario(scenarioId) {
       var scenario = xiqTsScenarios[scenarioId];
       if (!scenario) return;
 
+      currentScenarioCommands = [];
       var detailPanel = document.getElementById('xiq-ts-scenario-detail');
       document.getElementById('xiq-ts-scenario-title').textContent = scenario.title;
       document.getElementById('xiq-ts-scenario-desc').textContent = scenario.desc;
@@ -7312,6 +7322,7 @@ app.get(UI_ROUTE, (_req, res) => {
       html += '<div>';
       html += '<div style="font-weight:600;font-size:13px;margin-bottom:12px;color:var(--primary)">Troubleshooting Steps</div>';
       scenario.steps.forEach(function(step, idx) {
+        currentScenarioCommands.push(step.cmd);
         html += '<div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:12px;margin-bottom:8px">';
         html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
         html += '<span style="width:24px;height:24px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">' + (idx + 1) + '</span>';
@@ -7319,8 +7330,8 @@ app.get(UI_ROUTE, (_req, res) => {
         html += '</div>';
         html += '<div style="font-size:11px;color:var(--foreground-muted);margin-bottom:8px;margin-left:32px">' + step.detail + '</div>';
         html += '<div style="display:flex;align-items:center;gap:8px;margin-left:32px">';
-        html += '<code style="flex:1;font-size:11px;color:#22c55e;background:rgba(0,0,0,0.3);padding:6px 10px;border-radius:4px;white-space:pre-wrap">' + step.cmd.replace(/\\n/g, '\\n') + '</code>';
-        html += '<button onclick="navigator.clipboard.writeText(\\'' + step.cmd.replace(/\\n/g, '\\n').replace(/'/g, "\\\\'") + '\\');showToast(\\'Copied\\')" style="padding:4px 8px;background:var(--primary);border:none;border-radius:4px;color:white;cursor:pointer;font-size:10px">Copy</button>';
+        html += '<code style="flex:1;font-size:11px;color:#22c55e;background:rgba(0,0,0,0.3);padding:6px 10px;border-radius:4px;white-space:pre-wrap">' + step.cmd.replace(/\\n/g, '\n') + '</code>';
+        html += '<button onclick="copyScenarioCmd(' + idx + ')" style="padding:4px 8px;background:var(--primary);border:none;border-radius:4px;color:white;cursor:pointer;font-size:10px">Copy</button>';
         html += '</div>';
         html += '</div>';
       });
