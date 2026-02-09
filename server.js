@@ -5852,6 +5852,19 @@ app.get(UI_ROUTE, (_req, res) => {
           </a>
         </div>
 
+        <!-- Inventory Scan Results -->
+        <div id="psirt-scan-results" style="margin-bottom:24px">
+          <div style="padding:20px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="loading-spinner"></div>
+              <div>
+                <div style="font-weight:600;color:#3b82f6">Scanning Inventory...</div>
+                <div style="font-size:12px;color:var(--foreground-muted)">Checking your devices against known vulnerabilities</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Active Advisories Section -->
         <div class="card" style="border-left:3px solid #ef4444">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
@@ -8344,7 +8357,12 @@ app.get(UI_ROUTE, (_req, res) => {
         published: '2025-01-15',
         status: 'Patch Available',
         description: 'A vulnerability in the authentication mechanism could allow an unauthenticated attacker to bypass authentication controls.',
-        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2025-0001'
+        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2025-0001',
+        // Matching criteria for inventory scan
+        matchCriteria: {
+          productPatterns: ['XIQ', 'Cloud IQ'],
+          versionCheck: function(v) { return false; } // Cloud service - N/A for device scan
+        }
       },
       {
         id: 'SA-2025-002',
@@ -8356,7 +8374,18 @@ app.get(UI_ROUTE, (_req, res) => {
         published: '2025-01-20',
         status: 'Patch Available',
         description: 'A stack-based buffer overflow vulnerability in the CLI parser could allow an authenticated attacker to execute arbitrary code.',
-        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2025-0023'
+        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2025-0023',
+        matchCriteria: {
+          productPatterns: ['X435', 'X440', 'X450', 'X460', 'X465', 'X590', 'X620', 'X690', 'X695', 'X870', 'EXOS', '5320', '5420', '5520'],
+          versionCheck: function(v) {
+            if (!v) return false;
+            var match = v.match(/(\\d+)\\.(\\d+)/);
+            if (!match) return false;
+            var major = parseInt(match[1]);
+            var minor = parseInt(match[2]);
+            return (major === 31) || (major === 32 && minor < 4);
+          }
+        }
       },
       {
         id: 'SA-2025-003',
@@ -8368,7 +8397,19 @@ app.get(UI_ROUTE, (_req, res) => {
         published: '2025-01-28',
         status: 'Investigating',
         description: 'Improper certificate validation when connecting to RADIUS servers could allow man-in-the-middle attacks.',
-        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2025-0045'
+        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2025-0045',
+        matchCriteria: {
+          productPatterns: ['5420', '5520', 'FabricEngine', 'Fabric Engine', 'VSP'],
+          versionCheck: function(v) {
+            if (!v) return false;
+            var match = v.match(/(\\d+)\\.(\\d+)\\.(\\d+)/);
+            if (!match) return false;
+            var major = parseInt(match[1]);
+            var minor = parseInt(match[2]);
+            var patch = parseInt(match[3]);
+            return major === 8 && (minor < 10 || (minor === 10 && patch < 2));
+          }
+        }
       },
       {
         id: 'SA-2024-089',
@@ -8380,7 +8421,19 @@ app.get(UI_ROUTE, (_req, res) => {
         published: '2024-12-10',
         status: 'Patch Available',
         description: 'A vulnerability in firmware signature verification could allow installation of malicious firmware.',
-        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2024-8912'
+        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2024-8912',
+        matchCriteria: {
+          productPatterns: ['AP4000', 'AP-4000', 'AP_4000'],
+          versionCheck: function(v) {
+            if (!v) return false;
+            var match = v.match(/(\\d+)\\.(\\d+)\\.(\\d+)/);
+            if (!match) return false;
+            var major = parseInt(match[1]);
+            var minor = parseInt(match[2]);
+            var patch = parseInt(match[3]);
+            return major < 11 || (major === 11 && (minor < 2 || (minor === 2 && patch < 3)));
+          }
+        }
       },
       {
         id: 'SA-2024-078',
@@ -8392,22 +8445,233 @@ app.get(UI_ROUTE, (_req, res) => {
         published: '2024-11-22',
         status: 'Patch Available',
         description: 'A deserialization vulnerability could allow remote code execution by an authenticated administrator.',
-        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2024-7823'
+        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2024-7823',
+        matchCriteria: {
+          productPatterns: ['Site Engine', 'XIQ-SE'],
+          versionCheck: function(v) { return false; } // Server software - N/A for device scan
+        }
+      },
+      {
+        id: 'SA-2024-067',
+        title: 'AP3000/AP5000 Series WPA3 Implementation Flaw',
+        cve: 'CVE-2024-6734',
+        severity: 'High',
+        cvss: 7.8,
+        affected: 'AP3000/AP5000 series firmware before 10.6.2',
+        published: '2024-10-15',
+        status: 'Patch Available',
+        description: 'A flaw in the WPA3-SAE implementation could allow an attacker within wireless range to cause a denial of service.',
+        link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2024-6734',
+        matchCriteria: {
+          productPatterns: ['AP3000', 'AP-3000', 'AP_3000', 'AP5000', 'AP-5000', 'AP_5000', 'AP302', 'AP305', 'AP360', 'AP410', 'AP460'],
+          versionCheck: function(v) {
+            if (!v) return false;
+            var match = v.match(/(\\d+)\\.(\\d+)\\.(\\d+)/);
+            if (!match) return false;
+            var major = parseInt(match[1]);
+            var minor = parseInt(match[2]);
+            var patch = parseInt(match[3]);
+            return major < 10 || (major === 10 && (minor < 6 || (minor === 6 && patch < 2)));
+          }
+        }
       }
     ];
 
-    function loadPsirtAdvisories() {
+    // Store scanned inventory results
+    var psirtInventoryScan = {
+      devices: [],
+      lastScan: null,
+      affectedDevices: []
+    };
+
+    async function loadPsirtAdvisories() {
+      // First render advisories, then scan inventory
+      renderPsirtAdvisories();
+      await scanInventoryForCves();
+    }
+
+    async function refreshPsirtAdvisories() {
+      const list = document.getElementById('psirt-advisories-list');
+      const scanResults = document.getElementById('psirt-scan-results');
+
+      list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--foreground-muted)"><div class="loading-spinner" style="margin:0 auto 16px"></div><div>Scanning inventory for vulnerabilities...</div></div>';
+      if (scanResults) scanResults.innerHTML = '';
+
+      // Re-scan inventory
+      psirtInventoryScan.devices = [];
+      psirtInventoryScan.affectedDevices = [];
+
+      await scanInventoryForCves();
       renderPsirtAdvisories();
     }
 
-    function refreshPsirtAdvisories() {
-      const list = document.getElementById('psirt-advisories-list');
-      list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--foreground-muted)"><div class="loading-spinner" style="margin:0 auto 16px"></div><div>Refreshing advisories...</div></div>';
+    async function scanInventoryForCves() {
+      try {
+        // Fetch XIQ devices
+        var xiqRes = await fetch('/api/xiq/devices');
+        var xiqData = await xiqRes.json();
+        var xiqDevices = (xiqData && xiqData.data) ? xiqData.data : [];
 
-      // Simulate fetch delay
-      setTimeout(() => {
-        renderPsirtAdvisories();
-      }, 1000);
+        // Also try Meraki devices
+        var merakiDevices = [];
+        try {
+          var orgsRes = await fetch('/api/organizations');
+          var orgs = await orgsRes.json();
+          if (orgs && orgs.length > 0) {
+            var devRes = await fetch('/api/organizations/' + orgs[0].id + '/devices');
+            merakiDevices = await devRes.json() || [];
+          }
+        } catch (e) {
+          console.log('Meraki devices not available');
+        }
+
+        // Combine devices
+        psirtInventoryScan.devices = [
+          ...xiqDevices.map(function(d) {
+            return {
+              source: 'XIQ',
+              name: d.hostname || d.serial_number,
+              model: d.product_type,
+              version: d.software_version,
+              ip: d.ip_address,
+              serial: d.serial_number
+            };
+          }),
+          ...merakiDevices.map(function(d) {
+            return {
+              source: 'Meraki',
+              name: d.name || d.serial,
+              model: d.model,
+              version: d.firmware,
+              ip: d.lanIp,
+              serial: d.serial
+            };
+          })
+        ];
+
+        psirtInventoryScan.lastScan = new Date();
+
+        // Scan for matches
+        psirtInventoryScan.affectedDevices = [];
+
+        psirtInventoryScan.devices.forEach(function(device) {
+          psirtAdvisories.forEach(function(advisory) {
+            if (!advisory.matchCriteria) return;
+
+            var productMatch = false;
+            var versionMatch = false;
+
+            // Check product patterns
+            if (advisory.matchCriteria.productPatterns) {
+              var deviceStr = (device.model || '') + ' ' + (device.name || '');
+              advisory.matchCriteria.productPatterns.forEach(function(pattern) {
+                if (deviceStr.toLowerCase().indexOf(pattern.toLowerCase()) !== -1) {
+                  productMatch = true;
+                }
+              });
+            }
+
+            // Check version
+            if (productMatch && advisory.matchCriteria.versionCheck) {
+              versionMatch = advisory.matchCriteria.versionCheck(device.version);
+            }
+
+            if (productMatch && versionMatch) {
+              psirtInventoryScan.affectedDevices.push({
+                device: device,
+                advisory: advisory
+              });
+            }
+          });
+        });
+
+        renderPsirtScanResults();
+
+      } catch (e) {
+        console.error('Failed to scan inventory:', e);
+      }
+    }
+
+    function renderPsirtScanResults() {
+      var container = document.getElementById('psirt-scan-results');
+      if (!container) return;
+
+      var affected = psirtInventoryScan.affectedDevices;
+      var totalDevices = psirtInventoryScan.devices.length;
+
+      if (totalDevices === 0) {
+        container.innerHTML = '<div style="padding:20px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px">' +
+          '<div style="display:flex;align-items:center;gap:12px">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
+          '<div><div style="font-weight:600;color:#3b82f6">No Inventory Data</div>' +
+          '<div style="font-size:12px;color:var(--foreground-muted)">Connect to XIQ or add devices to scan for vulnerabilities</div></div>' +
+          '</div></div>';
+        return;
+      }
+
+      if (affected.length === 0) {
+        container.innerHTML = '<div style="padding:20px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px">' +
+          '<div style="display:flex;align-items:center;gap:12px">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
+          '<div><div style="font-weight:600;color:#22c55e">No Vulnerabilities Detected</div>' +
+          '<div style="font-size:12px;color:var(--foreground-muted)">Scanned ' + totalDevices + ' devices - all clear!</div></div>' +
+          '</div></div>';
+        return;
+      }
+
+      // Group by advisory
+      var byAdvisory = {};
+      affected.forEach(function(item) {
+        if (!byAdvisory[item.advisory.cve]) {
+          byAdvisory[item.advisory.cve] = {
+            advisory: item.advisory,
+            devices: []
+          };
+        }
+        byAdvisory[item.advisory.cve].devices.push(item.device);
+      });
+
+      var html = '<div style="padding:16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px">';
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
+      html += '<div style="display:flex;align-items:center;gap:12px">';
+      html += '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+      html += '<div><div style="font-weight:600;color:#ef4444">Vulnerable Devices Detected!</div>';
+      html += '<div style="font-size:12px;color:var(--foreground-muted)">' + affected.length + ' device(s) affected across ' + Object.keys(byAdvisory).length + ' CVE(s)</div></div>';
+      html += '</div>';
+      html += '<span style="padding:6px 12px;background:#ef4444;color:white;border-radius:20px;font-size:12px;font-weight:600">' + affected.length + ' AFFECTED</span>';
+      html += '</div>';
+
+      Object.keys(byAdvisory).forEach(function(cve) {
+        var item = byAdvisory[cve];
+        var colors = {
+          'Critical': '#ef4444',
+          'High': '#f97316',
+          'Medium': '#eab308'
+        };
+        var color = colors[item.advisory.severity] || '#eab308';
+
+        html += '<div style="background:var(--surface);border-radius:6px;padding:12px;margin-bottom:8px">';
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+        html += '<span style="padding:2px 8px;background:' + color + ';color:white;border-radius:4px;font-size:10px;font-weight:600">' + item.advisory.severity.toUpperCase() + '</span>';
+        html += '<span style="font-size:12px;font-weight:600;color:' + color + '">' + cve + '</span>';
+        html += '<span style="font-size:11px;color:var(--foreground-muted)">- ' + item.advisory.title + '</span>';
+        html += '</div>';
+        html += '<div style="font-size:11px;color:var(--foreground-muted);margin-bottom:8px">' + item.advisory.affected + '</div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+        item.devices.forEach(function(dev) {
+          html += '<div style="padding:6px 10px;background:rgba(255,255,255,0.05);border:1px solid ' + color + ';border-radius:4px;font-size:11px">';
+          html += '<div style="font-weight:500">' + dev.name + '</div>';
+          html += '<div style="color:var(--foreground-muted);font-size:10px">' + dev.model + ' · v' + (dev.version || 'unknown') + '</div>';
+          html += '</div>';
+        });
+        html += '</div>';
+        html += '</div>';
+      });
+
+      html += '<div style="font-size:11px;color:var(--foreground-muted);margin-top:12px">Last scan: ' + psirtInventoryScan.lastScan.toLocaleString() + ' · ' + totalDevices + ' devices scanned</div>';
+      html += '</div>';
+
+      container.innerHTML = html;
     }
 
     function renderPsirtAdvisories() {
@@ -8428,7 +8692,11 @@ app.get(UI_ROUTE, (_req, res) => {
         const colors = severityColors[advisory.severity] || severityColors['Medium'];
         const statusColor = advisory.status === 'Patch Available' ? '#22c55e' : advisory.status === 'Investigating' ? '#f97316' : '#eab308';
 
-        return '<a href="' + advisory.link + '" target="_blank" style="display:block;padding:16px;background:var(--surface);border:1px solid var(--border);border-left:3px solid ' + colors.border + ';border-radius:8px;text-decoration:none;transition:all 0.2s">' +
+        // Check if any devices are affected by this advisory
+        var affectedCount = psirtInventoryScan.affectedDevices.filter(function(a) { return a.advisory.cve === advisory.cve; }).length;
+        var affectedBadge = affectedCount > 0 ? '<span style="padding:4px 8px;background:#ef4444;color:white;border-radius:4px;font-size:10px;font-weight:600;animation:pulse 2s infinite">' + affectedCount + ' DEVICE' + (affectedCount > 1 ? 'S' : '') + ' AFFECTED</span>' : '';
+
+        return '<a href="' + advisory.link + '" target="_blank" style="display:block;padding:16px;background:var(--surface);border:1px solid ' + (affectedCount > 0 ? colors.border : 'var(--border)') + ';border-left:3px solid ' + colors.border + ';border-radius:8px;text-decoration:none;transition:all 0.2s;' + (affectedCount > 0 ? 'box-shadow:0 0 20px ' + colors.border + '40;' : '') + '">' +
           '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">' +
             '<div style="flex:1;min-width:0">' +
               '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">' +
@@ -8436,6 +8704,7 @@ app.get(UI_ROUTE, (_req, res) => {
                 '<span style="font-size:12px;color:var(--foreground-muted)">' + advisory.id + '</span>' +
                 '<span style="font-size:12px;padding:4px 8px;background:rgba(124,58,237,0.15);color:#a78bfa;border-radius:4px">' + advisory.cve + '</span>' +
                 '<span style="font-size:11px;color:' + statusColor + '">' + advisory.status + '</span>' +
+                affectedBadge +
               '</div>' +
               '<div style="font-weight:600;color:var(--foreground);margin-bottom:6px">' + advisory.title + '</div>' +
               '<div style="font-size:12px;color:var(--foreground-muted);margin-bottom:8px">' + advisory.description + '</div>' +
