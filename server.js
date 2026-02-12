@@ -8463,7 +8463,7 @@ app.get(UI_ROUTE, (_req, res) => {
         description: 'A flaw in the WPA3-SAE implementation could allow an attacker within wireless range to cause a denial of service.',
         link: 'https://extreme-networks.my.site.com/ExtrSearch#q=CVE-2024-6734',
         matchCriteria: {
-          productPatterns: ['AP3000', 'AP-3000', 'AP_3000', 'AP5000', 'AP-5000', 'AP_5000', 'AP302', 'AP305', 'AP360', 'AP410', 'AP460'],
+          productPatterns: ['AP3000', 'AP-3000', 'AP_3000', 'AP5000', 'AP-5000', 'AP_5000', 'AP_5010', 'AP_5020', 'AP302', 'AP305', 'AP360', 'AP410', 'AP460', 'AP_460'],
           versionCheck: function(v) {
             if (!v) return false;
             var match = v.match(/(\\d+)\\.(\\d+)\\.(\\d+)/);
