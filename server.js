@@ -7682,10 +7682,12 @@ app.get(UI_ROUTE, (_req, res) => {
     function openAiAgentDetail(agent) {
       if (agent.id === 'platform-one-mcp') {
         document.getElementById('mcp-detail-overlay').classList.add('active');
-      } else {
+      } else if (agent.id === 'testing-workflow') {
         document.getElementById('workflow-modal-title').textContent = agent.name;
         document.getElementById('workflow-modal-overlay').classList.add('active');
         initWorkflowBuilder();
+      } else {
+        alert('Agent: ' + agent.name + '\\nSource: ' + agent.subtitle + '\\nStatus: ' + (agent.status || 'Available'));
       }
     }
 
