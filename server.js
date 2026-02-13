@@ -6929,6 +6929,168 @@ app.get(UI_ROUTE, (_req, res) => {
         .ai-promo-btn:hover {
           background: rgba(255,255,255,0.25);
         }
+
+        /* Workflow Diagram Modal */
+        .workflow-modal-overlay {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.7);
+          z-index: 10000;
+          justify-content: center;
+          align-items: center;
+        }
+        .workflow-modal-overlay.active {
+          display: flex;
+        }
+        .workflow-modal {
+          background: #0f1219;
+          border-radius: 12px;
+          width: 92vw;
+          height: 70vh;
+          max-width: 1400px;
+          display: flex;
+          flex-direction: column;
+          border: 1px solid rgba(255,255,255,0.08);
+          overflow: hidden;
+          position: relative;
+        }
+        .workflow-modal-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 14px 20px;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+          flex-shrink: 0;
+        }
+        .workflow-modal-header-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .workflow-modal-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.9);
+        }
+        .workflow-modal-edit-icon {
+          color: rgba(255,255,255,0.4);
+          cursor: pointer;
+        }
+        .workflow-modal-edit-icon:hover {
+          color: rgba(255,255,255,0.7);
+        }
+        .workflow-modal-preview-btn {
+          padding: 6px 16px;
+          border-radius: 6px;
+          border: 1px solid rgba(255,255,255,0.15);
+          background: rgba(255,255,255,0.05);
+          color: rgba(255,255,255,0.8);
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          font-family: inherit;
+        }
+        .workflow-modal-preview-btn:hover {
+          background: rgba(255,255,255,0.1);
+        }
+        .workflow-modal-close {
+          position: absolute;
+          top: 12px;
+          right: 16px;
+          background: none;
+          border: none;
+          color: rgba(255,255,255,0.4);
+          font-size: 20px;
+          cursor: pointer;
+          z-index: 2;
+          padding: 4px 8px;
+        }
+        .workflow-modal-close:hover {
+          color: rgba(255,255,255,0.8);
+        }
+        .workflow-modal-body {
+          flex: 1;
+          position: relative;
+          overflow: hidden;
+          background:
+            radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0);
+          background-size: 24px 24px;
+        }
+        .workflow-add-btn {
+          position: absolute;
+          top: 16px;
+          left: 16px;
+          width: 32px;
+          height: 32px;
+          border-radius: 6px;
+          background: var(--primary);
+          border: none;
+          color: white;
+          font-size: 18px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 2;
+        }
+        .workflow-add-btn:hover {
+          opacity: 0.85;
+        }
+        .workflow-canvas {
+          width: 100%;
+          height: 100%;
+        }
+        .workflow-node {
+          position: absolute;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: default;
+          white-space: nowrap;
+        }
+        .workflow-node-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          border: 2px solid rgba(255,255,255,0.3);
+          background: #0f1219;
+          flex-shrink: 0;
+        }
+        .workflow-node-icon {
+          width: 28px;
+          height: 28px;
+          border-radius: 6px;
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.12);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .workflow-node-icon svg {
+          width: 14px;
+          height: 14px;
+          stroke: rgba(255,255,255,0.6);
+          fill: none;
+          stroke-width: 2;
+        }
+        .workflow-node-label {
+          font-size: 12px;
+          color: rgba(255,255,255,0.7);
+          font-weight: 500;
+        }
+        .workflow-node-dot-right {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          border: 2px solid rgba(255,255,255,0.3);
+          background: #0f1219;
+          flex-shrink: 0;
+        }
       </style>
 
       <!-- Banner -->
@@ -6952,6 +7114,29 @@ app.get(UI_ROUTE, (_req, res) => {
           <div class="ai-agents-section-title">Catalog</div>
         </div>
         <div class="ai-agents-grid" id="ai-catalog-agents"></div>
+      </div>
+
+      <!-- Workflow Diagram Modal -->
+      <div class="workflow-modal-overlay" id="workflow-modal-overlay" onclick="if(event.target===this)closeWorkflowModal()">
+        <div class="workflow-modal">
+          <div class="workflow-modal-header">
+            <div class="workflow-modal-header-left">
+              <span style="color:#8b5cf6;font-size:14px;">&#9671;</span>
+              <span class="workflow-modal-title" id="workflow-modal-title">Testing workflow</span>
+              <span class="workflow-modal-edit-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <button class="workflow-modal-preview-btn">Preview</button>
+              <button class="workflow-modal-close" onclick="closeWorkflowModal()">&times;</button>
+            </div>
+          </div>
+          <div class="workflow-modal-body" id="workflow-modal-body">
+            <button class="workflow-add-btn">+</button>
+            <svg class="workflow-canvas" id="workflow-canvas"></svg>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -7102,7 +7287,80 @@ app.get(UI_ROUTE, (_req, res) => {
     }
 
     function openAiAgentDetail(agent) {
-      alert('Agent: ' + agent.name + '\\nSource: ' + agent.subtitle + '\\nStatus: ' + (agent.status || 'Available'));
+      document.getElementById('workflow-modal-title').textContent = agent.name;
+      document.getElementById('workflow-modal-overlay').classList.add('active');
+      drawWorkflowDiagram();
+    }
+
+    function closeWorkflowModal() {
+      document.getElementById('workflow-modal-overlay').classList.remove('active');
+    }
+
+    function drawWorkflowDiagram() {
+      var body = document.getElementById('workflow-modal-body');
+      var svg = document.getElementById('workflow-canvas');
+      var w = body.offsetWidth;
+      var h = body.offsetHeight;
+      svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+
+      var nodes = [
+        { x: 0.06, y: 0.55, label: 'Start', iconType: 'start' },
+        { x: 0.22, y: 0.40, label: 'New Condition Agent Node', iconType: 'condition' },
+        { x: 0.40, y: 0.28, label: 'New Agent Node', iconType: 'agent' },
+        { x: 0.60, y: 0.45, label: 'New AI Agents MCP Server Node', iconType: 'mcp' },
+        { x: 0.82, y: 0.55, label: 'New Direct Reply Node', iconType: 'reply' }
+      ];
+
+      var points = nodes.map(function(n) { return { x: n.x * w, y: n.y * h }; });
+
+      // Build smooth path
+      var pathD = 'M ' + points[0].x + ' ' + points[0].y;
+      for (var i = 0; i < points.length - 1; i++) {
+        var curr = points[i];
+        var next = points[i + 1];
+        var cpx1 = curr.x + (next.x - curr.x) * 0.5;
+        var cpy1 = curr.y;
+        var cpx2 = curr.x + (next.x - curr.x) * 0.5;
+        var cpy2 = next.y;
+        pathD += ' C ' + cpx1 + ' ' + cpy1 + ', ' + cpx2 + ' ' + cpy2 + ', ' + next.x + ' ' + next.y;
+      }
+
+      svg.innerHTML =
+        '<defs>' +
+        '  <linearGradient id="pathGrad" x1="0%" y1="0%" x2="100%" y2="0%">' +
+        '    <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.6"/>' +
+        '    <stop offset="50%" stop-color="#a78bfa" stop-opacity="0.9"/>' +
+        '    <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.6"/>' +
+        '  </linearGradient>' +
+        '</defs>' +
+        '<path d="' + pathD + '" fill="none" stroke="url(#pathGrad)" stroke-width="3" stroke-linecap="round"/>';
+
+      // Remove old node elements
+      body.querySelectorAll('.workflow-node').forEach(function(el) { el.remove(); });
+
+      var icons = {
+        start: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>',
+        condition: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>',
+        agent: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>',
+        mcp: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4M4.22 4.22l2.83 2.83m9.9 9.9l2.83 2.83M1 12h4m14 0h4M4.22 19.78l2.83-2.83m9.9-9.9l2.83-2.83"/></svg>',
+        reply: '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+      };
+
+      nodes.forEach(function(n, idx) {
+        var el = document.createElement('div');
+        el.className = 'workflow-node';
+        var px = points[idx].x;
+        var py = points[idx].y;
+        el.style.left = px + 'px';
+        el.style.top = py + 'px';
+        el.style.transform = 'translate(-50%, -50%)';
+        el.innerHTML =
+          '<div class="workflow-node-dot"></div>' +
+          '<div class="workflow-node-icon">' + icons[n.iconType] + '</div>' +
+          '<span class="workflow-node-label">' + n.label + '</span>' +
+          '<div class="workflow-node-dot-right"></div>';
+        body.appendChild(el);
+      });
     }
 
     // Application Traffic Functions
