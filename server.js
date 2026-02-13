@@ -6723,66 +6723,96 @@ app.get(UI_ROUTE, (_req, res) => {
     <!-- AI Agents Marketplace View -->
     <div id="view-ai-agents" class="view-panel">
       <style>
-        .ai-agents-header {
-          background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #0d1421 100%);
-          padding: 48px 32px;
-          text-align: center;
-          margin: -24px -24px 24px -24px;
-          position: relative;
-          overflow: hidden;
-        }
-        .ai-agents-header::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 4px;
-          background: linear-gradient(90deg, #8b5cf6, #06b6d4, #8b5cf6);
-        }
-        .ai-agents-header h1 {
-          font-size: 28px;
-          font-weight: 700;
-          color: #fff;
-          margin: 0 0 8px 0;
-        }
-        .ai-agents-header p {
-          color: rgba(255,255,255,0.7);
-          font-size: 14px;
-          margin: 0;
-        }
-        .ai-agents-section {
-          margin-bottom: 32px;
-        }
-        .ai-agents-section-header {
+        .ai-agents-topbar {
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          margin-bottom: 16px;
+          padding: 14px 24px;
+          margin: -24px -24px 0 -24px;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+          background: rgba(255,255,255,0.02);
         }
-        .ai-agents-section-title {
-          font-size: 14px;
-          font-weight: 600;
-          color: rgba(255,255,255,0.6);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        .ai-agents-see-all {
-          font-size: 13px;
-          color: rgba(255,255,255,0.5);
-          text-decoration: none;
+        .ai-agents-topbar-logo {
           display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 15px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.95);
+          white-space: nowrap;
+        }
+        .ai-agents-topbar-logo-icon {
+          width: 28px;
+          height: 28px;
+          border-radius: 6px;
+          background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: 700;
+          font-size: 14px;
+          flex-shrink: 0;
+        }
+        .ai-agents-tabs {
+          display: flex;
+          gap: 4px;
+          margin-left: 24px;
+        }
+        .ai-agents-tab {
+          padding: 6px 16px;
+          border-radius: 20px;
+          font-size: 13px;
+          font-weight: 500;
+          color: rgba(255,255,255,0.6);
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          font-family: inherit;
+          transition: all 0.15s ease;
+        }
+        .ai-agents-tab:hover {
+          color: rgba(255,255,255,0.8);
+          background: rgba(255,255,255,0.05);
+        }
+        .ai-agents-tab.active {
+          background: var(--primary);
+          color: white;
+        }
+        .ai-agents-backlink {
+          display: inline-flex;
           align-items: center;
           gap: 4px;
+          font-size: 13px;
+          color: rgba(255,255,255,0.5);
           cursor: pointer;
+          margin: 20px 0 4px 0;
+          background: none;
+          border: none;
+          padding: 0;
+          font-family: inherit;
         }
-        .ai-agents-see-all:hover {
+        .ai-agents-backlink:hover {
           color: var(--primary);
+        }
+        .ai-agents-active-title {
+          font-size: 20px;
+          font-weight: 700;
+          color: rgba(255,255,255,0.95);
+          margin: 8px 0 20px 0;
         }
         .ai-agents-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          grid-template-columns: repeat(5, 1fr);
           gap: 16px;
+        }
+        @media (max-width: 1400px) {
+          .ai-agents-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        @media (max-width: 1100px) {
+          .ai-agents-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 800px) {
+          .ai-agents-grid { grid-template-columns: repeat(2, 1fr); }
         }
         .ai-agent-card {
           background: #1e2330;
@@ -6816,12 +6846,13 @@ app.get(UI_ROUTE, (_req, res) => {
           font-weight: 700;
           font-size: 14px;
           flex-shrink: 0;
+          background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+          color: white;
         }
-        .ai-agent-icon.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
-        .ai-agent-icon.cyan { background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; }
-        .ai-agent-icon.orange { background: linear-gradient(135deg, #f97316, #ea580c); color: white; }
-        .ai-agent-icon.green { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; }
-        .ai-agent-icon.pink { background: linear-gradient(135deg, #ec4899, #db2777); color: white; }
+        .ai-agent-icon.chevron {
+          font-size: 12px;
+          letter-spacing: -2px;
+        }
         .ai-agent-card-info {
           min-width: 0;
           overflow: hidden;
@@ -6831,11 +6862,9 @@ app.get(UI_ROUTE, (_req, res) => {
           font-weight: 600;
           color: rgba(255,255,255,0.95);
           margin-bottom: 4px;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
+          white-space: nowrap;
           overflow: hidden;
-          word-break: break-word;
+          text-overflow: ellipsis;
         }
         .ai-agent-subtitle {
           font-size: 12px;
@@ -6850,14 +6879,22 @@ app.get(UI_ROUTE, (_req, res) => {
         .ai-agent-tag {
           font-size: 11px;
           padding: 4px 10px;
-          border-radius: 4px;
+          border-radius: 12px;
           background: rgba(255,255,255,0.08);
           color: rgba(255,255,255,0.7);
           border: 1px solid rgba(255,255,255,0.1);
         }
-        .ai-agent-tag.agent { background: rgba(139, 92, 246, 0.2); color: #a78bfa; border-color: rgba(139, 92, 246, 0.3); }
-        .ai-agent-tag.workflow { background: rgba(6, 182, 212, 0.2); color: #22d3ee; border-color: rgba(6, 182, 212, 0.3); }
-        .ai-agent-tag.tool { background: rgba(236, 72, 153, 0.2); color: #f472b6; border-color: rgba(236, 72, 153, 0.3); }
+        .ai-agent-instances {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 11px;
+          padding: 4px 10px;
+          border-radius: 12px;
+          background: rgba(255,255,255,0.08);
+          color: rgba(255,255,255,0.7);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
         .ai-agent-status {
           margin-top: auto;
           padding-top: 12px;
@@ -6873,78 +6910,32 @@ app.get(UI_ROUTE, (_req, res) => {
           border-radius: 50%;
           background: var(--success);
         }
-        .ai-agent-description {
-          font-size: 12px;
-          color: rgba(255,255,255,0.5);
-          margin-top: 8px;
-          line-height: 1.5;
-          flex-grow: 1;
-        }
-        .ai-promo-card {
-          background: linear-gradient(135deg, #2d1b69 0%, #1e3a5f 100%);
-          border-radius: 12px;
-          padding: 24px;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          min-height: 140px;
-        }
-        .ai-promo-card h3 {
-          font-size: 16px;
-          font-weight: 700;
-          color: white;
-          margin: 0 0 8px 0;
-        }
-        .ai-promo-card p {
-          font-size: 13px;
-          color: rgba(255,255,255,0.7);
-          margin: 0 0 16px 0;
-        }
-        .ai-promo-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 10px 16px;
-          background: rgba(255,255,255,0.15);
-          border: 1px solid rgba(255,255,255,0.2);
-          border-radius: 6px;
-          color: white;
-          font-size: 13px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s;
-          width: fit-content;
-        }
-        .ai-promo-btn:hover {
-          background: rgba(255,255,255,0.25);
-        }
       </style>
 
-      <div class="ai-agents-header">
-        <h1>Extreme Exchange's AI Agents Supercharge Your Team</h1>
-        <p>Get AI-powered assistants to accelerate your team's efficiency and maximize your network's performance.</p>
-      </div>
-
-      <!-- Active Agents Section -->
-      <div class="ai-agents-section">
-        <div class="ai-agents-section-header">
-          <div class="ai-agents-section-title">Active</div>
-          <a class="ai-agents-see-all" id="ai-agents-see-all">See All Active (<span id="ai-active-count">0</span>)</a>
+      <!-- Top Navigation Bar -->
+      <div class="ai-agents-topbar">
+        <div class="ai-agents-topbar-logo">
+          <div class="ai-agents-topbar-logo-icon">E</div>
+          Extreme Exchange
         </div>
-        <div class="ai-agents-grid" id="ai-active-agents">
-          <!-- Active agents will be populated here -->
+        <div class="ai-agents-tabs">
+          <button class="ai-agents-tab active" onclick="switchAgentsTab(this)">Catalog</button>
+          <button class="ai-agents-tab" onclick="switchAgentsTab(this)">Dashboard</button>
+          <button class="ai-agents-tab" onclick="switchAgentsTab(this)">Agent Flow Builder</button>
         </div>
       </div>
 
-      <!-- Catalog Section -->
-      <div class="ai-agents-section">
-        <div class="ai-agents-section-header">
-          <div class="ai-agents-section-title">Catalog</div>
-        </div>
-        <div class="ai-agents-grid" id="ai-catalog-agents">
-          <!-- Catalog items will be populated here -->
-        </div>
-      </div>
+      <!-- Back link -->
+      <button class="ai-agents-backlink">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Catalog
+      </button>
+
+      <!-- Section Title -->
+      <div class="ai-agents-active-title">Active (<span id="ai-active-count">0</span>)</div>
+
+      <!-- Agent grid -->
+      <div class="ai-agents-grid" id="ai-agents-grid"></div>
     </div>
 
   </main>
@@ -6996,157 +6987,43 @@ app.get(UI_ROUTE, (_req, res) => {
     }
 
     // AI Agents Marketplace Data and Functions
-    var aiAgentsData = {
-      active: [
-        {
-          id: 'ai-expert',
-          name: 'AI Expert',
-          subtitle: 'Extreme Networks',
-          icon: 'E',
-          iconClass: 'purple',
-          tags: ['agent'],
-          status: 'active',
-          description: 'AI-powered network expert for troubleshooting and optimization'
-        },
-        {
-          id: 'interactive-network',
-          name: 'ExtremePlatformONE Interactive Network Assistant',
-          subtitle: 'User-Added',
-          icon: '>_',
-          iconClass: 'cyan',
-          tags: ['workflow'],
-          status: 'active',
-          description: 'Interactive natural language network management'
-        },
-        {
-          id: 'tools-natural',
-          name: 'ExtremePlatformONE Tools Natural Language',
-          subtitle: 'User-Added',
-          icon: '>_',
-          iconClass: 'cyan',
-          tags: ['workflow'],
-          status: null,
-          description: 'Natural language processing for network tools'
-        },
-        {
-          id: 'switch-health',
-          name: 'Proactive Switch Health Issues Notification',
-          subtitle: 'User-Added',
-          icon: '>_',
-          iconClass: 'orange',
-          tags: ['workflow'],
-          status: null,
-          description: 'Monitors switch health and sends proactive alerts'
-        },
-        {
-          id: 'rrm-channel',
-          name: 'AI Radio Resource Management Channel Optimization',
-          subtitle: 'User-Added',
-          icon: '>_',
-          iconClass: 'green',
-          tags: ['workflow'],
-          status: null,
-          description: 'AI-driven channel selection and RF optimization'
-        },
-        {
-          id: 'rrm-power',
-          name: 'AI Radio Resource Management Power Control',
-          subtitle: 'User-Added',
-          icon: '>_',
-          iconClass: 'green',
-          tags: ['workflow'],
-          status: null,
-          description: 'Intelligent transmit power management'
-        }
-      ],
-      catalog: [
-        {
-          id: 'servicenow-mcp',
-          name: 'ServiceNow MCP Server',
-          subtitle: 'Third Party',
-          icon: 'SN',
-          iconClass: 'pink',
-          tags: ['tool'],
-          description: 'Integrates with ServiceNow to automate IT service management workflows and incident handling.'
-        },
-        {
-          id: 'teams',
-          name: 'Microsoft Teams',
-          subtitle: 'Third Party',
-          icon: 'T',
-          iconClass: 'purple',
-          tags: ['tool'],
-          description: 'Enables integration with the Microsoft Teams application providing programmatic collaboration capabilities.'
-        },
-        {
-          id: 'outlook',
-          name: 'Microsoft Outlook',
-          subtitle: 'Third Party',
-          icon: 'O',
-          iconClass: 'cyan',
-          tags: ['tool'],
-          description: 'Automate email notifications and calendar integration for network maintenance and alert management.'
-        },
-        {
-          id: 'meraki-mcp',
-          name: 'Meraki Magic MCP',
-          subtitle: 'Third Party',
-          icon: 'M',
-          iconClass: 'green',
-          tags: ['tool'],
-          status: 'active',
-          description: 'Full Meraki Dashboard API access for network management and automation.'
-        },
-        {
-          id: 'xiq-mcp',
-          name: 'ExtremeCloud IQ MCP',
-          subtitle: 'Third Party',
-          icon: 'X',
-          iconClass: 'purple',
-          tags: ['tool'],
-          status: 'active',
-          description: 'ExtremeCloud IQ integration for device management and monitoring.'
-        }
-      ]
-    };
+    var aiAgentsData = [
+      { id: 'ai-expert', name: 'AI Expert', subtitle: 'Extreme Networks', icon: 'E', tags: ['agent'], status: 'active', instances: null },
+      { id: 'interactive-network', name: 'ExtremePlatformONE Interactive Network Assistant', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null, instances: null },
+      { id: 'tools-natural', name: 'ExtremePlatformONE Tools Natural Language', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null, instances: null },
+      { id: 'switch-health', name: 'Proactive Switch Health Issues Notification', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null, instances: null },
+      { id: 'rrm-channel', name: 'AI Radio Resource Management Channel Optimization', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null, instances: null },
+      { id: 'rrm-power', name: 'AI Radio Resource Management Power Control', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null, instances: null },
+      { id: 'rrm-power-channel', name: 'AI Resource Management Power Channel Optimization', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null, instances: null },
+      { id: 'rrm-main', name: 'AI Radio Resource Management', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null, instances: null },
+      { id: 'device-health-notif', name: 'Proactive Network DeviceHealth Issues Notification', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null, instances: null },
+      { id: 'support-case', name: 'Interactive Support case creation and tracking', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null, instances: null },
+      { id: 'platform-one-mcp', name: 'Platform ONE APIs MCP Server', subtitle: 'Third Party', icon: 'E', tags: ['tool'], status: 'active', instances: null },
+      { id: 'ashutosh-flow1', name: 'Ashutosh Flow1', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null, instances: null },
+      { id: 'radio-resource-intel', name: 'Radio Resource Intelligence', subtitle: 'Extreme Networks', icon: 'E', tags: ['agent'], status: 'active', instances: 7 },
+      { id: 'device-health-intel', name: 'Device Health Intelligence', subtitle: 'Extreme Networks', icon: 'E', tags: ['agent'], status: 'active', instances: 1 },
+      { id: 'testing-workflow', name: 'Testing workflow', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null, instances: null },
+      { id: 'ai-agents-mcp', name: 'AI Agents MCP Server', subtitle: 'Extreme Networks', icon: 'E', tags: ['tool'], status: 'active', instances: null },
+      { id: 'service-agent', name: 'Service Agent', subtitle: 'Extreme Networks', icon: 'E', tags: ['agent'], status: 'active', instances: null }
+    ];
 
     function initAiAgentsView() {
       renderAiAgents();
     }
 
     function renderAiAgents() {
-      var activeContainer = document.getElementById('ai-active-agents');
-      var catalogContainer = document.getElementById('ai-catalog-agents');
+      var container = document.getElementById('ai-agents-grid');
       var activeCount = document.getElementById('ai-active-count');
+      if (!container) return;
 
-      if (!activeContainer || !catalogContainer) return;
-
-      // Render active agents
-      activeContainer.innerHTML = '';
-      aiAgentsData.active.forEach(function(agent) {
-        activeContainer.appendChild(createAiAgentCard(agent));
+      container.innerHTML = '';
+      aiAgentsData.forEach(function(agent) {
+        container.appendChild(createAiAgentCard(agent));
       });
 
-      // Update count
       if (activeCount) {
-        activeCount.textContent = aiAgentsData.active.length;
+        activeCount.textContent = aiAgentsData.length;
       }
-
-      // Render catalog
-      catalogContainer.innerHTML = '';
-      aiAgentsData.catalog.forEach(function(agent) {
-        catalogContainer.appendChild(createAiAgentCard(agent));
-      });
-
-      // Add promo card
-      var promoCard = document.createElement('div');
-      promoCard.className = 'ai-promo-card';
-      promoCard.innerHTML = '<h3>Build AI Workflows in Minutes</h3>' +
-        '<p>Create custom, AI-driven workflows in a visual interface built for speed and scalability.</p>' +
-        '<button class="ai-promo-btn">' +
-        '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>' +
-        'Create with Agent Flow Builder</button>';
-      catalogContainer.appendChild(promoCard);
     }
 
     function createAiAgentCard(agent) {
@@ -7155,31 +7032,46 @@ app.get(UI_ROUTE, (_req, res) => {
       card.onclick = function() { openAiAgentDetail(agent); };
 
       var tagsHtml = agent.tags.map(function(tag) {
-        return '<span class="ai-agent-tag ' + tag + '">' +
+        return '<span class="ai-agent-tag">' +
           (tag === 'agent' ? 'Agent' : tag === 'workflow' ? 'Agent Workflow' : 'Tool') + '</span>';
       }).join('');
+
+      var instancesHtml = '';
+      if (agent.instances) {
+        instancesHtml = '<span class="ai-agent-instances">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg> ' +
+          agent.instances + ' Instance' + (agent.instances > 1 ? 's' : '') + '</span>';
+      }
 
       var statusHtml = agent.status === 'active' ?
         '<div class="ai-agent-status"><span class="ai-agent-status-dot"></span>Active</div>' : '';
 
+      var iconClass = agent.icon === '>>' ? 'ai-agent-icon chevron' : 'ai-agent-icon';
+
       card.innerHTML =
         '<div class="ai-agent-card-header">' +
-        '  <div class="ai-agent-icon ' + agent.iconClass + '">' + agent.icon + '</div>' +
+        '  <div class="' + iconClass + '">' + agent.icon + '</div>' +
         '  <div class="ai-agent-card-info">' +
         '    <div class="ai-agent-title">' + agent.name + '</div>' +
         '    <div class="ai-agent-subtitle">' + agent.subtitle + '</div>' +
         '  </div>' +
         '</div>' +
-        '<div class="ai-agent-tags">' + tagsHtml + '</div>' +
-        (agent.description ? '<div class="ai-agent-description">' + agent.description + '</div>' : '') +
+        '<div class="ai-agent-tags">' + instancesHtml + tagsHtml + '</div>' +
         statusHtml;
 
       return card;
     }
 
+    function switchAgentsTab(btn) {
+      document.querySelectorAll('.ai-agents-tab').forEach(function(t) {
+        t.classList.remove('active');
+      });
+      btn.classList.add('active');
+    }
+
     function openAiAgentDetail(agent) {
-      // Show agent detail modal or navigate to detail view
-      alert('Agent: ' + agent.name + '\\n\\nDescription: ' + agent.description + '\\n\\nStatus: ' + (agent.status || 'Available'));
+      var instanceText = agent.instances ? '\\nInstances: ' + agent.instances : '';
+      alert('Agent: ' + agent.name + '\\nSource: ' + agent.subtitle + instanceText + '\\nStatus: ' + (agent.status || 'Available'));
     }
 
     // Application Traffic Functions
