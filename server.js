@@ -7365,7 +7365,7 @@ app.get(UI_ROUTE, (_req, res) => {
             </div>
           </div>
 
-          <div class="mcp-detail-source">Third Party</div>
+          <div class="mcp-detail-source">Extreme Networks</div>
           <div class="mcp-detail-tag">Tool</div>
           <div class="mcp-detail-desc">Enables integration with Extreme Platform ONE APIs for enhanced network management and automation.</div>
 
@@ -7573,7 +7573,7 @@ app.get(UI_ROUTE, (_req, res) => {
         { id: 'rrm-main', name: 'AI Radio Resource Management', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null },
         { id: 'device-health-notif', name: 'Proactive Network DeviceHealth Issues Notification', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null },
         { id: 'support-case', name: 'Interactive Support case creation and tracking', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null },
-        { id: 'platform-one-mcp', name: 'Platform ONE APIs MCP Server', subtitle: 'Third Party', icon: 'E', tags: ['tool'], status: 'active' },
+        { id: 'platform-one-mcp', name: 'Platform ONE APIs MCP Server', subtitle: 'Extreme Networks', icon: 'E', tags: ['tool'], status: 'active' },
         { id: 'ashutosh-flow1', name: 'Ashutosh Flow1', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null },
         { id: 'radio-resource-intel', name: 'Radio Resource Intelligence', subtitle: 'Extreme Networks', icon: 'E', tags: ['agent'], status: 'active' },
         { id: 'device-health-intel', name: 'Device Health Intelligence', subtitle: 'Extreme Networks', icon: 'E', tags: ['agent'], status: 'active' },
