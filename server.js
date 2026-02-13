@@ -246,7 +246,7 @@ app.post("/api/claude-chat", express.json(), async (req, res) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5-20250514",
+        model: "claude-sonnet-4-5-20250929",
         max_tokens: 1024,
         system: "You are a helpful network operations AI assistant integrated into the Extreme Exchange platform. Help users with network management, troubleshooting, and automation tasks. Keep responses concise.",
         messages: messages,
