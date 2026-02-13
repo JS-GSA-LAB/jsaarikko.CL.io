@@ -6930,6 +6930,201 @@ app.get(UI_ROUTE, (_req, res) => {
           background: rgba(255,255,255,0.25);
         }
 
+        /* MCP Detail Page */
+        .mcp-detail-overlay {
+          display: none;
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: #0d1117;
+          z-index: 9999;
+          overflow-y: auto;
+        }
+        .mcp-detail-overlay.active { display: block; }
+        .mcp-detail-topbar {
+          display: flex;
+          align-items: center;
+          padding: 12px 24px;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+          background: rgba(255,255,255,0.02);
+        }
+        .mcp-detail-topbar-logo {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 15px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.95);
+        }
+        .mcp-detail-topbar-logo-icon {
+          width: 26px; height: 26px;
+          border-radius: 6px;
+          background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+          display: flex; align-items: center; justify-content: center;
+          color: white; font-weight: 700; font-size: 13px;
+        }
+        .mcp-detail-tabs {
+          display: flex; gap: 4px; margin-left: 24px;
+        }
+        .mcp-detail-tab {
+          padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500;
+          color: rgba(255,255,255,0.6); background: transparent; border: none;
+          cursor: pointer; font-family: inherit;
+        }
+        .mcp-detail-tab.active {
+          background: var(--primary); color: white;
+        }
+        .mcp-detail-content {
+          max-width: 960px; margin: 0 auto; padding: 24px 32px;
+        }
+        .mcp-detail-backlink {
+          display: inline-flex; align-items: center; gap: 4px;
+          font-size: 13px; color: rgba(255,255,255,0.5); cursor: pointer;
+          background: none; border: none; padding: 0; font-family: inherit;
+          margin-bottom: 20px;
+        }
+        .mcp-detail-backlink:hover { color: var(--primary); }
+        .mcp-detail-header {
+          display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px;
+        }
+        .mcp-detail-header-icon {
+          width: 40px; height: 40px; border-radius: 10px;
+          background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+          display: flex; align-items: center; justify-content: center;
+          color: white; font-weight: 700; font-size: 18px; flex-shrink: 0;
+        }
+        .mcp-detail-header h1 {
+          font-size: 24px; font-weight: 700; color: #fff; margin: 0 0 4px 0;
+        }
+        .mcp-detail-source {
+          font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 8px;
+        }
+        .mcp-detail-tag {
+          display: inline-block; font-size: 11px; padding: 3px 10px;
+          border-radius: 12px; background: rgba(255,255,255,0.08);
+          color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.1);
+          margin-bottom: 12px;
+        }
+        .mcp-detail-desc {
+          font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.6; margin-bottom: 20px;
+        }
+        .mcp-detail-actions {
+          display: flex; align-items: center; gap: 12px; margin-bottom: 28px;
+        }
+        .mcp-detail-status-badge {
+          display: inline-flex; align-items: center; gap: 6px;
+          font-size: 12px; color: var(--success);
+          padding: 5px 12px; border-radius: 20px;
+          background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.2);
+        }
+        .mcp-detail-status-dot {
+          width: 7px; height: 7px; border-radius: 50%; background: var(--success);
+        }
+        .mcp-detail-btn {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 500;
+          border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05);
+          color: rgba(255,255,255,0.8); cursor: pointer; font-family: inherit;
+        }
+        .mcp-detail-btn:hover { background: rgba(255,255,255,0.1); }
+        .mcp-detail-btn svg { width: 14px; height: 14px; }
+        .mcp-detail-pills {
+          display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 24px;
+          border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 16px;
+        }
+        .mcp-detail-pill {
+          padding: 5px 14px; border-radius: 6px; font-size: 11px; font-weight: 500;
+          background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5);
+          border: 1px solid rgba(255,255,255,0.08); cursor: pointer; font-family: inherit;
+        }
+        .mcp-detail-pill:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+        .mcp-detail-pill.active {
+          background: rgba(139,92,246,0.15); color: #a78bfa;
+          border-color: rgba(139,92,246,0.3);
+        }
+        .mcp-detail-meta {
+          display: flex; gap: 32px; margin-bottom: 28px;
+          font-size: 12px; color: rgba(255,255,255,0.4);
+        }
+        .mcp-detail-meta strong { color: rgba(255,255,255,0.6); }
+        .mcp-detail-section h2 {
+          font-size: 18px; font-weight: 600; color: rgba(255,255,255,0.9); margin: 0 0 12px 0;
+        }
+        .mcp-detail-section p {
+          font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.7; margin: 0 0 20px 0;
+        }
+        .mcp-detail-section h3 {
+          font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.85); margin: 0 0 14px 0;
+        }
+        .mcp-use-case {
+          margin-bottom: 16px; padding-left: 8px;
+        }
+        .mcp-use-case-title {
+          font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.8); margin-bottom: 4px;
+        }
+        .mcp-use-case-title span { margin-right: 6px; }
+        .mcp-use-case-desc {
+          font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.5;
+        }
+
+        /* Manage MCP Modal */
+        .mcp-manage-overlay {
+          display: none; position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.6); z-index: 10001;
+          justify-content: center; align-items: center;
+        }
+        .mcp-manage-overlay.active { display: flex; }
+        .mcp-manage-modal {
+          background: #1a1f2e; border-radius: 12px; width: 480px;
+          border: 1px solid rgba(255,255,255,0.1); padding: 24px;
+        }
+        .mcp-manage-header {
+          display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+        }
+        .mcp-manage-header h3 {
+          font-size: 16px; font-weight: 600; color: #fff; margin: 0;
+        }
+        .mcp-manage-close {
+          background: none; border: none; color: rgba(255,255,255,0.4);
+          font-size: 20px; cursor: pointer; padding: 0;
+        }
+        .mcp-manage-close:hover { color: rgba(255,255,255,0.8); }
+        .mcp-manage-field {
+          margin-bottom: 16px;
+        }
+        .mcp-manage-label {
+          font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 4px;
+          text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .mcp-manage-value {
+          font-size: 13px; color: rgba(255,255,255,0.8);
+        }
+        .mcp-manage-input {
+          width: 100%; padding: 10px 12px; border-radius: 6px;
+          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+          color: rgba(255,255,255,0.9); font-size: 13px; font-family: inherit;
+          box-sizing: border-box;
+        }
+        .mcp-manage-input:focus {
+          outline: none; border-color: var(--primary);
+        }
+        .mcp-manage-actions {
+          display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;
+        }
+        .mcp-manage-btn {
+          padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 500;
+          cursor: pointer; font-family: inherit; border: 1px solid rgba(255,255,255,0.15);
+          background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7);
+        }
+        .mcp-manage-btn:hover { background: rgba(255,255,255,0.1); }
+        .mcp-manage-btn.primary {
+          background: var(--primary); color: white; border-color: var(--primary);
+        }
+        .mcp-manage-btn.primary:hover { opacity: 0.9; }
+        .mcp-manage-btn.test {
+          background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8);
+        }
+
         /* Workflow Diagram Modal */
         .workflow-modal-overlay {
           display: none;
@@ -7116,6 +7311,117 @@ app.get(UI_ROUTE, (_req, res) => {
         <div class="ai-agents-grid" id="ai-catalog-agents"></div>
       </div>
 
+      <!-- MCP Detail Page -->
+      <div class="mcp-detail-overlay" id="mcp-detail-overlay">
+        <div class="mcp-detail-topbar">
+          <div class="mcp-detail-topbar-logo">
+            <div class="mcp-detail-topbar-logo-icon">E</div>
+            Extreme Exchange
+          </div>
+          <div class="mcp-detail-tabs">
+            <button class="mcp-detail-tab active">Catalog</button>
+            <button class="mcp-detail-tab">Dashboard</button>
+            <button class="mcp-detail-tab">Agent Flow Builder</button>
+          </div>
+        </div>
+        <div class="mcp-detail-content">
+          <button class="mcp-detail-backlink" onclick="closeMcpDetail()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Catalog
+          </button>
+
+          <div class="mcp-detail-header">
+            <div class="mcp-detail-header-icon">E</div>
+            <div>
+              <h1>Platform ONE APIs MCP Server</h1>
+            </div>
+          </div>
+
+          <div class="mcp-detail-source">Third Party</div>
+          <div class="mcp-detail-tag">Tool</div>
+          <div class="mcp-detail-desc">Enables integration with Extreme Platform ONE APIs for enhanced network management and automation.</div>
+
+          <div class="mcp-detail-actions">
+            <div class="mcp-detail-status-badge"><span class="mcp-detail-status-dot"></span>Active</div>
+            <button class="mcp-detail-btn" onclick="openMcpManageModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              Manage
+            </button>
+            <button class="mcp-detail-btn">Deactivate</button>
+          </div>
+
+          <div class="mcp-detail-pills">
+            <button class="mcp-detail-pill">Supported Agents</button>
+            <button class="mcp-detail-pill">General Model</button>
+            <button class="mcp-detail-pill">Service Agent</button>
+            <button class="mcp-detail-pill active">MCP</button>
+            <button class="mcp-detail-pill">Purpose</button>
+            <button class="mcp-detail-pill">Agent Configuration</button>
+            <button class="mcp-detail-pill">Agent Execution</button>
+            <button class="mcp-detail-pill">Standardization</button>
+          </div>
+
+          <div class="mcp-detail-meta">
+            <div><strong>Services:</strong> 1 API</div>
+            <div><strong>Last Updated:</strong> 2025.01.30</div>
+          </div>
+
+          <div class="mcp-detail-section">
+            <h2>Overview</h2>
+            <p>The Platform ONE APIs serve as a unified configuration and exposure layer for multiple operational agents such as Device Health, Service, and MCP agents. It provides a consistent interface to register, configure, and onboard agents while standardizing how their capabilities, use cases, and metadata are defined and discovered.</p>
+
+            <h3>Use Cases</h3>
+            <div class="mcp-use-case">
+              <div class="mcp-use-case-title"><span>1.</span> Unified agent exposure</div>
+              <div class="mcp-use-case-desc">Expose multiple agents through a single MCP entry point, enabling consistent discovery and configuration across the platform.</div>
+            </div>
+            <div class="mcp-use-case">
+              <div class="mcp-use-case-title"><span>2.</span> Centralized agent configuration</div>
+              <div class="mcp-use-case-desc">Define and manage agent configurations, actions, responses, and metadata in a standardized format.</div>
+            </div>
+            <div class="mcp-use-case">
+              <div class="mcp-use-case-title"><span>3.</span> Scalable agent onboarding</div>
+              <div class="mcp-use-case-desc">Easily onboard new agent types such as Device Health, Service, or MCP by reusing the same configuration schema.</div>
+            </div>
+            <div class="mcp-use-case">
+              <div class="mcp-use-case-title"><span>4.</span> Consistent UI and consumer integration</div>
+              <div class="mcp-use-case-desc">Ensure downstream consumers and UIs can fetch and interact with different agents in a uniform way.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manage MCP Modal -->
+      <div class="mcp-manage-overlay" id="mcp-manage-overlay" onclick="if(event.target===this)closeMcpManageModal()">
+        <div class="mcp-manage-modal">
+          <div class="mcp-manage-header">
+            <h3>Manage Platform ONE APIs MCP Server</h3>
+            <button class="mcp-manage-close" onclick="closeMcpManageModal()">&times;</button>
+          </div>
+          <div class="mcp-manage-field">
+            <div class="mcp-manage-label">Type</div>
+            <div class="mcp-manage-value">MCP Server</div>
+          </div>
+          <div class="mcp-manage-field">
+            <div class="mcp-manage-label">Name</div>
+            <div class="mcp-manage-value">Platform ONE APIs MCP Server</div>
+          </div>
+          <div class="mcp-manage-field">
+            <div class="mcp-manage-label">Server URL</div>
+            <input class="mcp-manage-input" type="text" value="https://mcp-server.sandbox.alore.team/mcp" readonly>
+          </div>
+          <div class="mcp-manage-field">
+            <div class="mcp-manage-label">API Key</div>
+            <input class="mcp-manage-input" type="password" value="sk-xxxxxxxxxxxx" readonly>
+          </div>
+          <div class="mcp-manage-actions">
+            <button class="mcp-manage-btn" onclick="closeMcpManageModal()">Cancel</button>
+            <button class="mcp-manage-btn test">Test Connection</button>
+            <button class="mcp-manage-btn primary">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Workflow Diagram Modal -->
       <div class="workflow-modal-overlay" id="workflow-modal-overlay" onclick="if(event.target===this)closeWorkflowModal()">
         <div class="workflow-modal">
@@ -7287,9 +7593,25 @@ app.get(UI_ROUTE, (_req, res) => {
     }
 
     function openAiAgentDetail(agent) {
-      document.getElementById('workflow-modal-title').textContent = agent.name;
-      document.getElementById('workflow-modal-overlay').classList.add('active');
-      drawWorkflowDiagram();
+      if (agent.id === 'platform-one-mcp') {
+        document.getElementById('mcp-detail-overlay').classList.add('active');
+      } else {
+        document.getElementById('workflow-modal-title').textContent = agent.name;
+        document.getElementById('workflow-modal-overlay').classList.add('active');
+        drawWorkflowDiagram();
+      }
+    }
+
+    function closeMcpDetail() {
+      document.getElementById('mcp-detail-overlay').classList.remove('active');
+    }
+
+    function openMcpManageModal() {
+      document.getElementById('mcp-manage-overlay').classList.add('active');
+    }
+
+    function closeMcpManageModal() {
+      document.getElementById('mcp-manage-overlay').classList.remove('active');
     }
 
     function closeWorkflowModal() {
