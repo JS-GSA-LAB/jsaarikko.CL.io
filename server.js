@@ -6822,14 +6822,20 @@ app.get(UI_ROUTE, (_req, res) => {
         .ai-agent-icon.orange { background: linear-gradient(135deg, #f97316, #ea580c); color: white; }
         .ai-agent-icon.green { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; }
         .ai-agent-icon.pink { background: linear-gradient(135deg, #ec4899, #db2777); color: white; }
+        .ai-agent-card-info {
+          min-width: 0;
+          overflow: hidden;
+        }
         .ai-agent-title {
           font-size: 14px;
           font-weight: 600;
           color: rgba(255,255,255,0.95);
           margin-bottom: 4px;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
           overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          word-break: break-word;
         }
         .ai-agent-subtitle {
           font-size: 12px;
@@ -7159,7 +7165,7 @@ app.get(UI_ROUTE, (_req, res) => {
       card.innerHTML =
         '<div class="ai-agent-card-header">' +
         '  <div class="ai-agent-icon ' + agent.iconClass + '">' + agent.icon + '</div>' +
-        '  <div>' +
+        '  <div class="ai-agent-card-info">' +
         '    <div class="ai-agent-title">' + agent.name + '</div>' +
         '    <div class="ai-agent-subtitle">' + agent.subtitle + '</div>' +
         '  </div>' +
