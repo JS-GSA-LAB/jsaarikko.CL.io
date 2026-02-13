@@ -6723,11 +6723,39 @@ app.get(UI_ROUTE, (_req, res) => {
     <!-- AI Agents Marketplace View -->
     <div id="view-ai-agents" class="view-panel">
       <style>
+        .ai-agents-banner {
+          background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #0d1421 100%);
+          padding: 28px 32px;
+          text-align: center;
+          margin: -24px -24px 0 -24px;
+          position: relative;
+          overflow: hidden;
+        }
+        .ai-agents-banner::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background: linear-gradient(90deg, #8b5cf6, #06b6d4, #8b5cf6);
+        }
+        .ai-agents-banner h2 {
+          font-size: 18px;
+          font-weight: 600;
+          color: #fff;
+          margin: 0 0 6px 0;
+        }
+        .ai-agents-banner p {
+          color: rgba(255,255,255,0.55);
+          font-size: 13px;
+          margin: 0;
+        }
         .ai-agents-topbar {
           display: flex;
           align-items: center;
           padding: 14px 24px;
-          margin: -24px -24px 0 -24px;
+          margin: 0 -24px 0 -24px;
           border-bottom: 1px solid rgba(255,255,255,0.08);
           background: rgba(255,255,255,0.02);
         }
@@ -6911,6 +6939,12 @@ app.get(UI_ROUTE, (_req, res) => {
           background: var(--success);
         }
       </style>
+
+      <!-- Banner -->
+      <div class="ai-agents-banner">
+        <h2>Extreme Exchange's AI Agents Supercharge Your Team</h2>
+        <p>Get AI powered assistants to accelerate your team's efficiency and maximize your network's performance.</p>
+      </div>
 
       <!-- Top Navigation Bar -->
       <div class="ai-agents-topbar">
