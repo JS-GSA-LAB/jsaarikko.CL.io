@@ -7125,167 +7125,159 @@ app.get(UI_ROUTE, (_req, res) => {
           background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8);
         }
 
-        /* Workflow Diagram Modal */
+        /* Workflow Builder Modal */
         .workflow-modal-overlay {
-          display: none;
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0,0,0,0.7);
-          z-index: 10000;
-          justify-content: center;
-          align-items: center;
+          display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.7); z-index: 10000;
+          justify-content: center; align-items: center;
         }
-        .workflow-modal-overlay.active {
-          display: flex;
-        }
+        .workflow-modal-overlay.active { display: flex; }
         .workflow-modal {
-          background: #0f1219;
-          border-radius: 12px;
-          width: 92vw;
-          height: 70vh;
-          max-width: 1400px;
-          display: flex;
-          flex-direction: column;
-          border: 1px solid rgba(255,255,255,0.08);
-          overflow: hidden;
-          position: relative;
+          background: #0f1219; border-radius: 12px; width: 92vw; height: 75vh;
+          max-width: 1400px; display: flex; flex-direction: column;
+          border: 1px solid rgba(255,255,255,0.08); overflow: hidden; position: relative;
         }
         .workflow-modal-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 14px 20px;
-          border-bottom: 1px solid rgba(255,255,255,0.08);
-          flex-shrink: 0;
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0;
         }
-        .workflow-modal-header-left {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .workflow-modal-title {
-          font-size: 14px;
-          font-weight: 600;
-          color: rgba(255,255,255,0.9);
-        }
-        .workflow-modal-edit-icon {
-          color: rgba(255,255,255,0.4);
-          cursor: pointer;
-        }
-        .workflow-modal-edit-icon:hover {
-          color: rgba(255,255,255,0.7);
-        }
+        .workflow-modal-header-left { display: flex; align-items: center; gap: 8px; }
+        .workflow-modal-title { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.9); }
         .workflow-modal-preview-btn {
-          padding: 6px 16px;
-          border-radius: 6px;
-          border: 1px solid rgba(255,255,255,0.15);
-          background: rgba(255,255,255,0.05);
-          color: rgba(255,255,255,0.8);
-          font-size: 12px;
-          font-weight: 500;
-          cursor: pointer;
-          font-family: inherit;
+          padding: 6px 16px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15);
+          background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.8);
+          font-size: 12px; font-weight: 500; cursor: pointer; font-family: inherit;
         }
-        .workflow-modal-preview-btn:hover {
-          background: rgba(255,255,255,0.1);
-        }
-        .workflow-modal-close {
-          position: absolute;
-          top: 12px;
-          right: 16px;
-          background: none;
-          border: none;
-          color: rgba(255,255,255,0.4);
-          font-size: 20px;
-          cursor: pointer;
-          z-index: 2;
-          padding: 4px 8px;
-        }
-        .workflow-modal-close:hover {
-          color: rgba(255,255,255,0.8);
-        }
+        .workflow-modal-preview-btn:hover { background: rgba(255,255,255,0.1); }
         .workflow-modal-body {
-          flex: 1;
-          position: relative;
-          overflow: hidden;
-          background:
-            radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0);
+          flex: 1; position: relative; overflow: hidden;
+          background: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0);
           background-size: 24px 24px;
         }
-        .workflow-add-btn {
-          position: absolute;
-          top: 16px;
-          left: 16px;
-          width: 32px;
-          height: 32px;
-          border-radius: 6px;
-          background: var(--primary);
-          border: none;
-          color: white;
-          font-size: 18px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 2;
+        .wf-add-btn {
+          position: absolute; top: 16px; left: 16px; width: 32px; height: 32px;
+          border-radius: 6px; background: var(--primary); border: none; color: white;
+          font-size: 18px; cursor: pointer; display: flex; align-items: center;
+          justify-content: center; z-index: 3;
         }
-        .workflow-add-btn:hover {
-          opacity: 0.85;
+        .wf-add-btn:hover { opacity: 0.85; }
+        .wf-dropdown {
+          display: none; position: absolute; top: 54px; left: 16px; z-index: 4;
+          background: #1a1f2e; border: 1px solid rgba(255,255,255,0.12);
+          border-radius: 8px; min-width: 240px; padding: 4px 0;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.4);
         }
-        .workflow-canvas {
-          width: 100%;
-          height: 100%;
+        .wf-dropdown.active { display: block; }
+        .wf-dropdown-item {
+          display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+          font-size: 13px; color: rgba(255,255,255,0.75); cursor: pointer;
+          border: none; background: none; width: 100%; text-align: left; font-family: inherit;
         }
-        .workflow-node {
-          position: absolute;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: default;
-          white-space: nowrap;
+        .wf-dropdown-item:hover { background: rgba(255,255,255,0.06); }
+        .wf-dropdown-item svg {
+          width: 16px; height: 16px; stroke: rgba(255,255,255,0.5);
+          fill: none; stroke-width: 2; flex-shrink: 0;
         }
-        .workflow-node-dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          border: 2px solid rgba(255,255,255,0.3);
-          background: #0f1219;
-          flex-shrink: 0;
+        .wf-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        .wf-node {
+          position: absolute; display: flex; align-items: center; gap: 8px;
+          cursor: grab; white-space: nowrap; z-index: 2; user-select: none;
         }
-        .workflow-node-icon {
-          width: 28px;
-          height: 28px;
-          border-radius: 6px;
-          background: rgba(255,255,255,0.08);
-          border: 1px solid rgba(255,255,255,0.12);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
+        .wf-node:active { cursor: grabbing; }
+        .wf-node-port {
+          width: 10px; height: 10px; border-radius: 50%;
+          border: 2px solid rgba(255,255,255,0.3); background: #0f1219;
+          flex-shrink: 0; cursor: crosshair;
         }
-        .workflow-node-icon svg {
-          width: 14px;
-          height: 14px;
-          stroke: rgba(255,255,255,0.6);
-          fill: none;
-          stroke-width: 2;
+        .wf-node-port:hover { border-color: var(--primary); background: rgba(139,92,246,0.2); }
+        .wf-node-icon {
+          width: 28px; height: 28px; border-radius: 6px;
+          background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+          display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
-        .workflow-node-label {
-          font-size: 12px;
-          color: rgba(255,255,255,0.7);
-          font-weight: 500;
+        .wf-node-icon svg {
+          width: 14px; height: 14px; stroke: rgba(255,255,255,0.6); fill: none; stroke-width: 2;
         }
-        .workflow-node-dot-right {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          border: 2px solid rgba(255,255,255,0.3);
-          background: #0f1219;
-          flex-shrink: 0;
+        .wf-node-label { font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 500; }
+        .wf-node.start-node { cursor: pointer; }
+        .wf-node.start-node .wf-node-icon {
+          background: rgba(139,92,246,0.15); border-color: rgba(139,92,246,0.3);
         }
+
+        /* Chat Input Panel */
+        .wf-chat-overlay {
+          display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.5); z-index: 10002;
+          justify-content: center; align-items: center;
+        }
+        .wf-chat-overlay.active { display: flex; }
+        .wf-chat-panel {
+          background: #151922; border-radius: 12px; width: 380px;
+          border: 1px solid rgba(255,255,255,0.1); overflow: hidden;
+          display: flex; flex-direction: column; max-height: 70vh;
+        }
+        .wf-chat-header {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .wf-chat-header-left { display: flex; align-items: center; gap: 8px; }
+        .wf-chat-header-title { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.9); }
+        .wf-chat-header-icon {
+          width: 24px; height: 24px; border-radius: 6px;
+          background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3);
+          display: flex; align-items: center; justify-content: center;
+        }
+        .wf-chat-header-icon svg { width: 12px; height: 12px; stroke: #a78bfa; fill: none; stroke-width: 2; }
+        .wf-chat-close {
+          background: none; border: none; color: rgba(255,255,255,0.4);
+          font-size: 18px; cursor: pointer;
+        }
+        .wf-chat-close:hover { color: rgba(255,255,255,0.8); }
+        .wf-chat-type-row {
+          padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .wf-chat-type-label {
+          font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 6px;
+          text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .wf-chat-type-select {
+          width: 100%; padding: 8px 10px; border-radius: 6px;
+          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+          color: rgba(255,255,255,0.8); font-size: 13px; font-family: inherit;
+          appearance: auto;
+        }
+        .wf-chat-messages {
+          flex: 1; padding: 16px; overflow-y: auto; min-height: 200px;
+          display: flex; flex-direction: column; gap: 12px;
+        }
+        .wf-chat-msg {
+          font-size: 13px; line-height: 1.5; max-width: 85%; padding: 10px 14px;
+          border-radius: 10px;
+        }
+        .wf-chat-msg.user {
+          background: var(--primary); color: white; align-self: flex-end;
+          border-bottom-right-radius: 4px;
+        }
+        .wf-chat-msg.assistant {
+          background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85);
+          align-self: flex-start; border-bottom-left-radius: 4px;
+        }
+        .wf-chat-input-row {
+          display: flex; gap: 8px; padding: 12px 16px;
+          border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .wf-chat-input {
+          flex: 1; padding: 10px 12px; border-radius: 8px;
+          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+          color: rgba(255,255,255,0.9); font-size: 13px; font-family: inherit;
+        }
+        .wf-chat-input:focus { outline: none; border-color: var(--primary); }
+        .wf-chat-send {
+          padding: 8px 14px; border-radius: 8px; background: var(--primary);
+          border: none; color: white; cursor: pointer; font-family: inherit;
+          font-size: 13px; font-weight: 500;
+        }
+        .wf-chat-send:hover { opacity: 0.9; }
       </style>
 
       <!-- Banner -->
@@ -7422,25 +7414,63 @@ app.get(UI_ROUTE, (_req, res) => {
         </div>
       </div>
 
-      <!-- Workflow Diagram Modal -->
+      <!-- Workflow Builder Modal -->
       <div class="workflow-modal-overlay" id="workflow-modal-overlay" onclick="if(event.target===this)closeWorkflowModal()">
         <div class="workflow-modal">
           <div class="workflow-modal-header">
             <div class="workflow-modal-header-left">
               <span style="color:#8b5cf6;font-size:14px;">&#9671;</span>
               <span class="workflow-modal-title" id="workflow-modal-title">Testing workflow</span>
-              <span class="workflow-modal-edit-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </div>
             <div style="display:flex;align-items:center;gap:12px;">
               <button class="workflow-modal-preview-btn">Preview</button>
-              <button class="workflow-modal-close" onclick="closeWorkflowModal()">&times;</button>
+              <button style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:20px;cursor:pointer" onclick="closeWorkflowModal()">&times;</button>
             </div>
           </div>
           <div class="workflow-modal-body" id="workflow-modal-body">
-            <button class="workflow-add-btn">+</button>
-            <svg class="workflow-canvas" id="workflow-canvas"></svg>
+            <button class="wf-add-btn" onclick="toggleWfDropdown()">+</button>
+            <div class="wf-dropdown" id="wf-dropdown">
+              <button class="wf-dropdown-item" onclick="addWfNode('condition')">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>
+                New Condition Agent Node
+              </button>
+              <button class="wf-dropdown-item" onclick="addWfNode('mcp')">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4M4.22 4.22l2.83 2.83m9.9 9.9l2.83 2.83M1 12h4m14 0h4M4.22 19.78l2.83-2.83m9.9-9.9l2.83-2.83"/></svg>
+                New AI Agents MCP Node
+              </button>
+              <button class="wf-dropdown-item" onclick="addWfNode('reply')">
+                <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                New Direct Reply Node
+              </button>
+            </div>
+            <svg class="wf-canvas" id="wf-canvas"></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Input Panel -->
+      <div class="wf-chat-overlay" id="wf-chat-overlay" onclick="if(event.target===this)closeWfChat()">
+        <div class="wf-chat-panel">
+          <div class="wf-chat-header">
+            <div class="wf-chat-header-left">
+              <div class="wf-chat-header-icon">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+              </div>
+              <span class="wf-chat-header-title">Start</span>
+            </div>
+            <button class="wf-chat-close" onclick="closeWfChat()">&times;</button>
+          </div>
+          <div class="wf-chat-type-row">
+            <div class="wf-chat-type-label">Chat Input</div>
+            <select class="wf-chat-type-select">
+              <option>Chat Input</option>
+            </select>
+          </div>
+          <div class="wf-chat-messages" id="wf-chat-messages"></div>
+          <div class="wf-chat-input-row">
+            <input class="wf-chat-input" id="wf-chat-input" type="text" placeholder="Chat Input" onkeydown="if(event.key==='Enter')sendWfChat()">
+            <button class="wf-chat-send" onclick="sendWfChat()">Send</button>
           </div>
         </div>
       </div>
@@ -7592,97 +7622,224 @@ app.get(UI_ROUTE, (_req, res) => {
       return card;
     }
 
+    // --- Workflow Builder State ---
+    var wfNodes = [];
+    var wfConnections = [];
+    var wfDragNode = null;
+    var wfDragOffset = { x: 0, y: 0 };
+    var wfConnecting = null; // {fromIdx}
+
+    var wfIcons = {
+      start: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>',
+      condition: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>',
+      mcp: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4M4.22 4.22l2.83 2.83m9.9 9.9l2.83 2.83M1 12h4m14 0h4M4.22 19.78l2.83-2.83m9.9-9.9l2.83-2.83"/></svg>',
+      reply: '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+    };
+
+    var wfNodeLabels = {
+      start: 'Start',
+      condition: 'New Condition Agent Node',
+      mcp: 'New AI Agents MCP Node',
+      reply: 'New Direct Reply Node'
+    };
+
     function openAiAgentDetail(agent) {
       if (agent.id === 'platform-one-mcp') {
         document.getElementById('mcp-detail-overlay').classList.add('active');
       } else {
         document.getElementById('workflow-modal-title').textContent = agent.name;
         document.getElementById('workflow-modal-overlay').classList.add('active');
-        drawWorkflowDiagram();
+        initWorkflowBuilder();
       }
     }
 
     function closeMcpDetail() {
       document.getElementById('mcp-detail-overlay').classList.remove('active');
     }
-
     function openMcpManageModal() {
       document.getElementById('mcp-manage-overlay').classList.add('active');
     }
-
     function closeMcpManageModal() {
       document.getElementById('mcp-manage-overlay').classList.remove('active');
     }
-
     function closeWorkflowModal() {
       document.getElementById('workflow-modal-overlay').classList.remove('active');
+      document.getElementById('wf-dropdown').classList.remove('active');
     }
 
-    function drawWorkflowDiagram() {
+    function initWorkflowBuilder() {
+      wfNodes = [{ type: 'start', x: 80, y: 0 }];
+      wfConnections = [];
+      wfConnecting = null;
+      // Center start node vertically after render
+      setTimeout(function() {
+        var body = document.getElementById('workflow-modal-body');
+        if (body) {
+          wfNodes[0].y = body.offsetHeight / 2 - 14;
+          renderWfNodes();
+        }
+      }, 50);
+    }
+
+    function toggleWfDropdown() {
+      document.getElementById('wf-dropdown').classList.toggle('active');
+    }
+
+    function addWfNode(type) {
+      document.getElementById('wf-dropdown').classList.remove('active');
       var body = document.getElementById('workflow-modal-body');
-      var svg = document.getElementById('workflow-canvas');
+      var lastNode = wfNodes[wfNodes.length - 1];
+      var newX = lastNode.x + 220;
+      var newY = lastNode.y + (Math.random() - 0.5) * 60;
+      newY = Math.max(30, Math.min(body.offsetHeight - 50, newY));
+      var newIdx = wfNodes.length;
+      wfNodes.push({ type: type, x: newX, y: newY });
+      // Auto-connect from last node
+      wfConnections.push({ from: newIdx - 1, to: newIdx });
+      renderWfNodes();
+    }
+
+    function renderWfNodes() {
+      var body = document.getElementById('workflow-modal-body');
+      var svg = document.getElementById('wf-canvas');
+      if (!body || !svg) return;
       var w = body.offsetWidth;
       var h = body.offsetHeight;
       svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
 
-      var nodes = [
-        { x: 0.06, y: 0.55, label: 'Start', iconType: 'start' },
-        { x: 0.22, y: 0.40, label: 'New Condition Agent Node', iconType: 'condition' },
-        { x: 0.40, y: 0.28, label: 'New Agent Node', iconType: 'agent' },
-        { x: 0.60, y: 0.45, label: 'New AI Agents MCP Server Node', iconType: 'mcp' },
-        { x: 0.82, y: 0.55, label: 'New Direct Reply Node', iconType: 'reply' }
-      ];
+      // Draw connections
+      var pathsHtml = '<defs><linearGradient id="wfGrad" x1="0%" y1="0%" x2="100%" y2="0%">' +
+        '<stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.6"/>' +
+        '<stop offset="50%" stop-color="#a78bfa" stop-opacity="0.9"/>' +
+        '<stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.6"/>' +
+        '</linearGradient></defs>';
+      wfConnections.forEach(function(c) {
+        var fn = wfNodes[c.from];
+        var tn = wfNodes[c.to];
+        if (!fn || !tn) return;
+        var fx = fn.x + 100, fy = fn.y + 14;
+        var tx = tn.x, ty = tn.y + 14;
+        var mx = (fx + tx) / 2;
+        pathsHtml += '<path d="M' + fx + ' ' + fy + ' C' + mx + ' ' + fy + ',' + mx + ' ' + ty + ',' + tx + ' ' + ty +
+          '" fill="none" stroke="url(#wfGrad)" stroke-width="3" stroke-linecap="round"/>';
+      });
+      svg.innerHTML = pathsHtml;
 
-      var points = nodes.map(function(n) { return { x: n.x * w, y: n.y * h }; });
+      // Remove old node els
+      body.querySelectorAll('.wf-node').forEach(function(el) { el.remove(); });
 
-      // Build smooth path
-      var pathD = 'M ' + points[0].x + ' ' + points[0].y;
-      for (var i = 0; i < points.length - 1; i++) {
-        var curr = points[i];
-        var next = points[i + 1];
-        var cpx1 = curr.x + (next.x - curr.x) * 0.5;
-        var cpy1 = curr.y;
-        var cpx2 = curr.x + (next.x - curr.x) * 0.5;
-        var cpy2 = next.y;
-        pathD += ' C ' + cpx1 + ' ' + cpy1 + ', ' + cpx2 + ' ' + cpy2 + ', ' + next.x + ' ' + next.y;
-      }
-
-      svg.innerHTML =
-        '<defs>' +
-        '  <linearGradient id="pathGrad" x1="0%" y1="0%" x2="100%" y2="0%">' +
-        '    <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.6"/>' +
-        '    <stop offset="50%" stop-color="#a78bfa" stop-opacity="0.9"/>' +
-        '    <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.6"/>' +
-        '  </linearGradient>' +
-        '</defs>' +
-        '<path d="' + pathD + '" fill="none" stroke="url(#pathGrad)" stroke-width="3" stroke-linecap="round"/>';
-
-      // Remove old node elements
-      body.querySelectorAll('.workflow-node').forEach(function(el) { el.remove(); });
-
-      var icons = {
-        start: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>',
-        condition: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>',
-        agent: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>',
-        mcp: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4M4.22 4.22l2.83 2.83m9.9 9.9l2.83 2.83M1 12h4m14 0h4M4.22 19.78l2.83-2.83m9.9-9.9l2.83-2.83"/></svg>',
-        reply: '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
-      };
-
-      nodes.forEach(function(n, idx) {
+      wfNodes.forEach(function(n, idx) {
         var el = document.createElement('div');
-        el.className = 'workflow-node';
-        var px = points[idx].x;
-        var py = points[idx].y;
-        el.style.left = px + 'px';
-        el.style.top = py + 'px';
-        el.style.transform = 'translate(-50%, -50%)';
+        el.className = 'wf-node' + (n.type === 'start' ? ' start-node' : '');
+        el.style.left = n.x + 'px';
+        el.style.top = n.y + 'px';
+        el.setAttribute('data-idx', idx);
+
+        var portLeft = '<div class="wf-node-port" data-port="in" data-idx="' + idx + '"></div>';
+        var portRight = '<div class="wf-node-port" data-port="out" data-idx="' + idx + '"></div>';
         el.innerHTML =
-          '<div class="workflow-node-dot"></div>' +
-          '<div class="workflow-node-icon">' + icons[n.iconType] + '</div>' +
-          '<span class="workflow-node-label">' + n.label + '</span>' +
-          '<div class="workflow-node-dot-right"></div>';
+          (idx > 0 ? portLeft : '') +
+          '<div class="wf-node-icon">' + wfIcons[n.type] + '</div>' +
+          '<span class="wf-node-label">' + wfNodeLabels[n.type] + '</span>' +
+          portRight;
+
+        // Click Start to open chat
+        if (n.type === 'start') {
+          el.onclick = function(e) {
+            if (e.target.classList.contains('wf-node-port')) return;
+            openWfChat();
+          };
+        }
+
+        // Drag to move
+        el.onmousedown = function(e) {
+          if (e.target.classList.contains('wf-node-port')) {
+            // Start connection
+            var portType = e.target.getAttribute('data-port');
+            if (portType === 'out') {
+              wfConnecting = { fromIdx: idx };
+              body.style.cursor = 'crosshair';
+            }
+            e.stopPropagation();
+            return;
+          }
+          if (n.type === 'start') return; // start node click handled above
+          wfDragNode = idx;
+          var rect = el.getBoundingClientRect();
+          var bodyRect = body.getBoundingClientRect();
+          wfDragOffset.x = e.clientX - rect.left;
+          wfDragOffset.y = e.clientY - rect.top;
+          e.preventDefault();
+        };
+
         body.appendChild(el);
       });
+    }
+
+    // Mouse move/up on body for dragging & connecting
+    document.addEventListener('mousemove', function(e) {
+      if (wfDragNode !== null) {
+        var body = document.getElementById('workflow-modal-body');
+        if (!body) return;
+        var rect = body.getBoundingClientRect();
+        wfNodes[wfDragNode].x = Math.max(0, e.clientX - rect.left - wfDragOffset.x);
+        wfNodes[wfDragNode].y = Math.max(0, e.clientY - rect.top - wfDragOffset.y);
+        renderWfNodes();
+      }
+    });
+    document.addEventListener('mouseup', function(e) {
+      if (wfDragNode !== null) {
+        wfDragNode = null;
+      }
+      if (wfConnecting) {
+        // Check if dropped on an input port
+        var target = e.target;
+        if (target.classList && target.classList.contains('wf-node-port') && target.getAttribute('data-port') === 'in') {
+          var toIdx = parseInt(target.getAttribute('data-idx'));
+          if (toIdx !== wfConnecting.fromIdx) {
+            // Check no duplicate
+            var exists = wfConnections.some(function(c) { return c.from === wfConnecting.fromIdx && c.to === toIdx; });
+            if (!exists) {
+              wfConnections.push({ from: wfConnecting.fromIdx, to: toIdx });
+              renderWfNodes();
+            }
+          }
+        }
+        wfConnecting = null;
+        var body = document.getElementById('workflow-modal-body');
+        if (body) body.style.cursor = '';
+      }
+    });
+
+    // --- Chat Input Panel ---
+    function openWfChat() {
+      document.getElementById('wf-chat-overlay').classList.add('active');
+      document.getElementById('wf-chat-input').focus();
+    }
+    function closeWfChat() {
+      document.getElementById('wf-chat-overlay').classList.remove('active');
+    }
+    function sendWfChat() {
+      var input = document.getElementById('wf-chat-input');
+      var msg = input.value.trim();
+      if (!msg) return;
+      var container = document.getElementById('wf-chat-messages');
+      // User message
+      var userEl = document.createElement('div');
+      userEl.className = 'wf-chat-msg user';
+      userEl.textContent = msg;
+      container.appendChild(userEl);
+      input.value = '';
+      container.scrollTop = container.scrollHeight;
+
+      // Simulate assistant reply
+      setTimeout(function() {
+        var botEl = document.createElement('div');
+        botEl.className = 'wf-chat-msg assistant';
+        botEl.textContent = 'Processing your request: "' + msg + '"...';
+        container.appendChild(botEl);
+        container.scrollTop = container.scrollHeight;
+      }, 600);
     }
 
     // Application Traffic Functions
