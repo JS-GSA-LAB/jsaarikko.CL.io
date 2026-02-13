@@ -30,6 +30,7 @@ try {
  * - UI_ROUTE                (optional) default "/"
  * - BASIC_AUTH_USER         (optional) if set, enables Basic Auth for UI + proxy
  * - BASIC_AUTH_PASS         (optional) required if BASIC_AUTH_USER set
+ * - ANTHROPIC_API_KEY       (optional) Anthropic API key for Claude chat integration
  * - FORWARD_AUTH_HEADER     (optional) default "true" => forward Authorization header to upstream
  *
  * Notes:
@@ -37,6 +38,8 @@ try {
  * - Your Claude/clients can point to: https://<your-railway-domain>/mcp
  * - Your existing Meraki MCP server remains where it is; Railway just fronts it with a UI + stable URL.
  */
+
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
 
 const MERAKI_API_BASE = "https://api.meraki.com/api/v1";
 const MERAKI_API_KEY = process.env.MERAKI_API_KEY || "";
@@ -227,6 +230,39 @@ app.use(basicAuth);
 
 // Health
 app.get("/healthz", (_req, res) => res.json({ ok: true }));
+
+// Claude Chat API
+app.post("/api/claude-chat", express.json(), async (req, res) => {
+  if (!ANTHROPIC_API_KEY) {
+    return res.status(500).json({ error: "ANTHROPIC_API_KEY not configured" });
+  }
+  try {
+    const { messages } = req.body;
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-5-20250514",
+        max_tokens: 1024,
+        system: "You are a helpful network operations AI assistant integrated into the Extreme Exchange platform. Help users with network management, troubleshooting, and automation tasks. Keep responses concise.",
+        messages: messages,
+      }),
+    });
+    if (!response.ok) {
+      const errBody = await response.text();
+      return res.status(response.status).json({ error: errBody });
+    }
+    const data = await response.json();
+    const text = data.content && data.content[0] ? data.content[0].text : "No response";
+    res.json({ reply: text });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Meraki API: List Organizations
 app.get("/api/organizations", async (_req, res) => {
@@ -7814,32 +7850,74 @@ app.get(UI_ROUTE, (_req, res) => {
     // --- Chat Input Panel ---
     function openWfChat() {
       document.getElementById('wf-chat-overlay').classList.add('active');
+      document.getElementById('wf-chat-messages').innerHTML = '';
+      wfChatHistory = [];
       document.getElementById('wf-chat-input').focus();
     }
     function closeWfChat() {
       document.getElementById('wf-chat-overlay').classList.remove('active');
     }
+    var wfChatHistory = [];
+
     function sendWfChat() {
       var input = document.getElementById('wf-chat-input');
       var msg = input.value.trim();
       if (!msg) return;
       var container = document.getElementById('wf-chat-messages');
+
       // User message
       var userEl = document.createElement('div');
       userEl.className = 'wf-chat-msg user';
       userEl.textContent = msg;
       container.appendChild(userEl);
       input.value = '';
+      input.disabled = true;
       container.scrollTop = container.scrollHeight;
 
-      // Simulate assistant reply
-      setTimeout(function() {
+      wfChatHistory.push({ role: 'user', content: msg });
+
+      // Show typing indicator
+      var typingEl = document.createElement('div');
+      typingEl.className = 'wf-chat-msg assistant';
+      typingEl.textContent = 'Thinking...';
+      typingEl.id = 'wf-typing';
+      container.appendChild(typingEl);
+      container.scrollTop = container.scrollHeight;
+
+      fetch('/api/claude-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: wfChatHistory })
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        var typing = document.getElementById('wf-typing');
+        if (typing) typing.remove();
+
         var botEl = document.createElement('div');
         botEl.className = 'wf-chat-msg assistant';
-        botEl.textContent = 'Processing your request: "' + msg + '"...';
+        botEl.textContent = data.reply || data.error || 'No response';
         container.appendChild(botEl);
         container.scrollTop = container.scrollHeight;
-      }, 600);
+
+        if (data.reply) {
+          wfChatHistory.push({ role: 'assistant', content: data.reply });
+        }
+        input.disabled = false;
+        input.focus();
+      })
+      .catch(function(err) {
+        var typing = document.getElementById('wf-typing');
+        if (typing) typing.remove();
+
+        var errEl = document.createElement('div');
+        errEl.className = 'wf-chat-msg assistant';
+        errEl.textContent = 'Error: ' + err.message;
+        container.appendChild(errEl);
+        container.scrollTop = container.scrollHeight;
+        input.disabled = false;
+        input.focus();
+      });
     }
 
     // Application Traffic Functions
