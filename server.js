@@ -6725,7 +6725,7 @@ app.get(UI_ROUTE, (_req, res) => {
       <style>
         .ai-agents-banner {
           background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #0d1421 100%);
-          padding: 36px 32px;
+          padding: 40px 35px;
           text-align: center;
           margin: -24px -24px 24px -24px;
           position: relative;
@@ -6741,14 +6741,14 @@ app.get(UI_ROUTE, (_req, res) => {
           background: linear-gradient(90deg, #8b5cf6, #06b6d4, #8b5cf6);
         }
         .ai-agents-banner h1 {
-          font-size: 24px;
+          font-size: 26px;
           font-weight: 700;
           color: #fff;
-          margin: 0 0 8px 0;
+          margin: 0 0 9px 0;
         }
         .ai-agents-banner p {
           color: rgba(255,255,255,0.6);
-          font-size: 13px;
+          font-size: 14px;
           margin: 0;
         }
         .ai-agents-section {
