@@ -1,9 +1,12 @@
 import express from "express";
 import helmet from "helmet";
 import { createProxyMiddleware } from "http-proxy-middleware";
-import { readFileSync } from "fs";
+import { readFileSync, mkdirSync, existsSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import Database from "better-sqlite3";
+import bcrypt from "bcryptjs";
+import session from "express-session";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,6 +21,39 @@ try {
   console.warn("Could not load assets.json:", err.message);
 }
 
+// ── SQLite user database ────────────────────────────────────────────
+const DATA_DIR = process.env.DATA_DIR || join(__dirname, "data");
+if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+
+const db = new Database(join(DATA_DIR, "users.db"));
+db.pragma("journal_mode = WAL");
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    username      TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+    password_hash TEXT    NOT NULL,
+    display_name  TEXT,
+    role          TEXT    NOT NULL DEFAULT 'admin',
+    created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
+    updated_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+  )
+`);
+
+// Seed admin account from env vars when table is empty
+const userCount = db.prepare("SELECT COUNT(*) AS cnt FROM users").get().cnt;
+if (userCount === 0) {
+  const adminUser = process.env.ADMIN_USER || "admin";
+  const adminPass = process.env.ADMIN_PASS;
+  if (adminPass) {
+    const hash = bcrypt.hashSync(adminPass, 10);
+    db.prepare("INSERT INTO users (username, password_hash, display_name, role) VALUES (?, ?, ?, ?)")
+      .run(adminUser, hash, "Administrator", "admin");
+    console.log(`Seeded admin user "${adminUser}"`);
+  } else {
+    console.warn("No ADMIN_PASS set — no admin user seeded. Login will be unavailable.");
+  }
+}
+
 /**
  * ENV VARS (set these in Railway):
  * - UPSTREAM_MCP_URL        (required) e.g. "http://134.141.116.46:8000"  (no trailing slash)
@@ -28,8 +64,10 @@ try {
  * - PEPLINK_CLIENT_SECRET   (optional) PepLink InControl2 OAuth Client Secret
  * - PROXY_ROUTE             (optional) default "/mcp"
  * - UI_ROUTE                (optional) default "/"
- * - BASIC_AUTH_USER         (optional) if set, enables Basic Auth for UI + proxy
- * - BASIC_AUTH_PASS         (optional) required if BASIC_AUTH_USER set
+ * - ADMIN_USER              (optional) default "admin" — username seeded on first run
+ * - ADMIN_PASS              (required on first deploy) password for seeded admin account
+ * - SESSION_SECRET           (required) random string for cookie signing
+ * - DATA_DIR                (optional) path to SQLite data directory, default "./data"
  * - ANTHROPIC_API_KEY       (optional) Anthropic API key for Claude chat integration
  * - FORWARD_AUTH_HEADER     (optional) default "true" => forward Authorization header to upstream
  *
@@ -205,31 +243,102 @@ if (!UPSTREAM) {
 app.disable("x-powered-by");
 app.use(helmet({ contentSecurityPolicy: false }));
 
-// Optional Basic Auth for everything
-const BASIC_USER = process.env.BASIC_AUTH_USER;
-const BASIC_PASS = process.env.BASIC_AUTH_PASS;
+// ── Session auth ────────────────────────────────────────────────────
+app.use(express.urlencoded({ extended: false }));
 
-function basicAuth(req, res, next) {
-  if (!BASIC_USER) return next();
-  if (!BASIC_PASS) return res.status(500).send("Server misconfigured: BASIC_AUTH_PASS missing.");
+const SESSION_SECRET = process.env.SESSION_SECRET || "dev-secret-change-me";
+app.use(session({
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    secure: !!process.env.RAILWAY_ENVIRONMENT,
+    httpOnly: true,
+    sameSite: "lax",
+  },
+}));
 
-  const header = req.headers.authorization || "";
-  const [scheme, value] = header.split(" ");
-  if (scheme !== "Basic" || !value) {
-    res.setHeader("WWW-Authenticate", 'Basic realm="Meraki MCP Proxy"');
-    return res.status(401).send("Auth required.");
-  }
-  const decoded = Buffer.from(value, "base64").toString("utf8");
-  const [u, p] = decoded.split(":");
-  if (u === BASIC_USER && p === BASIC_PASS) return next();
-  res.setHeader("WWW-Authenticate", 'Basic realm="Meraki MCP Proxy"');
-  return res.status(401).send("Invalid credentials.");
+function requireAuth(req, res, next) {
+  if (req.path === "/login" || req.path === "/healthz") return next();
+  if (req.session && req.session.userId) return next();
+  const accept = req.headers.accept || "";
+  if (accept.includes("text/html")) return res.redirect("/login");
+  return res.status(401).json({ error: "Authentication required" });
 }
-
-app.use(basicAuth);
+app.use(requireAuth);
 
 // Health
 app.get("/healthz", (_req, res) => res.json({ ok: true }));
+
+// ── Auth routes ─────────────────────────────────────────────────────
+app.get("/login", (req, res) => {
+  if (req.session && req.session.userId) return res.redirect("/");
+  const error = req.query.error ? "Invalid username or password." : "";
+  res.send(`<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign In — MCP Exchange</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:#0d1117;color:#e6edf3;display:flex;align-items:center;justify-content:center;min-height:100vh}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:40px;width:100%;max-width:380px}
+  .logo{width:48px;height:48px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border-radius:10px;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;color:#fff;margin:0 auto 16px}
+  h1{text-align:center;font-size:20px;margin-bottom:4px}
+  .sub{text-align:center;font-size:13px;color:#8b949e;margin-bottom:24px}
+  label{display:block;font-size:13px;color:#8b949e;margin-bottom:6px}
+  input{width:100%;padding:10px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;
+    color:#e6edf3;font-size:14px;margin-bottom:16px;outline:none}
+  input:focus{border-color:#7c3aed}
+  button{width:100%;padding:10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;
+    border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer}
+  button:hover{opacity:0.9}
+  .error{background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.4);color:#f85149;
+    border-radius:6px;padding:8px 12px;font-size:13px;margin-bottom:16px;text-align:center}
+</style></head><body>
+<div class="card">
+  <div class="logo">E</div>
+  <h1>MCP Exchange</h1>
+  <p class="sub">Sign in to continue</p>
+  ${error ? '<div class="error">' + error + '</div>' : ''}
+  <form method="POST" action="/login">
+    <label for="username">Username</label>
+    <input id="username" name="username" type="text" required autofocus>
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" required>
+    <button type="submit">Sign In</button>
+  </form>
+</div>
+</body></html>`);
+});
+
+app.post("/login", (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.redirect("/login?error=1");
+
+  const user = db.prepare("SELECT * FROM users WHERE username = ?").get(username);
+  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+    return res.redirect("/login?error=1");
+  }
+
+  req.session.regenerate((err) => {
+    if (err) return res.redirect("/login?error=1");
+    req.session.userId = user.id;
+    req.session.username = user.username;
+    req.session.displayName = user.display_name;
+    req.session.role = user.role;
+    res.redirect("/");
+  });
+});
+
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.clearCookie("connect.sid");
+    res.redirect("/login");
+  });
+});
 
 // Claude Chat API
 app.post("/api/claude-chat", express.json(), async (req, res) => {
@@ -4669,7 +4778,10 @@ app.get(UI_ROUTE, (_req, res) => {
         <span style="width:8px;height:8px;background:var(--success);border-radius:50%"></span>
         <span style="color:var(--success)">Service Active</span>
       </div>
-      <div>Route: ${PROXY_ROUTE}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span>Route: ${PROXY_ROUTE}</span>
+        <a href="/logout" style="color:rgba(255,255,255,0.4);text-decoration:none;font-size:11px" onmouseover="this.style.color='#f85149'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">Sign Out</a>
+      </div>
     </div>
   </nav>
 
