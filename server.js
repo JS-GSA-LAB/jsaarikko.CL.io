@@ -266,7 +266,7 @@ app.get("/login", (req, res) => {
   res.send(`<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sign In — MCP Exchange</title>
+<title>Sign In — GSA VC Portal</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
@@ -288,7 +288,7 @@ app.get("/login", (req, res) => {
 </style></head><body>
 <div class="card">
   <div class="logo">E</div>
-  <h1>MCP Exchange</h1>
+  <h1>GSA VC Portal</h1>
   <p class="sub">Sign in to continue</p>
   ${error ? '<div class="error">' + error + '</div>' : ''}
   <form method="POST" action="/login">
