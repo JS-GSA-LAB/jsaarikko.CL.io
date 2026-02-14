@@ -92,6 +92,14 @@ const RAILWAY_PROJECT_ID = process.env.RAILWAY_PROJECT_ID || "";
 const RAILWAY_ENVIRONMENT_ID = process.env.RAILWAY_ENVIRONMENT_ID || "";
 const RAILWAY_SERVICE_ID = process.env.RAILWAY_SERVICE_ID || "";
 
+console.log("[Railway sync diagnostics]",
+  "API_TOKEN:", RAILWAY_API_TOKEN ? "set" : "MISSING",
+  "| PROJECT_ID:", RAILWAY_PROJECT_ID || "MISSING",
+  "| ENV_ID:", RAILWAY_ENVIRONMENT_ID || "MISSING",
+  "| SERVICE_ID:", RAILWAY_SERVICE_ID || "MISSING",
+  "| PORTAL_USERS env:", process.env.PORTAL_USERS ? `loaded (${process.env.PORTAL_USERS.length} chars)` : "empty"
+);
+
 async function syncPortalUsersToRailway() {
   if (!RAILWAY_API_TOKEN) {
     console.warn("PORTAL_USERS sync skipped: RAILWAY_API_TOKEN not set. Generate one at Railway → Account Settings → Tokens.");
