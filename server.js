@@ -4847,10 +4847,12 @@ app.get(UI_ROUTE, (_req, res) => {
       top: 40px;
       right: 0;
       width: 280px;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: #1c2028;
+      border: 1px solid rgba(124,58,237,0.3);
       border-radius: 12px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,0,0,0.3);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       padding: 12px;
       display: none;
       z-index: 1000;
@@ -4861,7 +4863,7 @@ app.get(UI_ROUTE, (_req, res) => {
     .app-launcher-title {
       font-size: 10px;
       font-weight: 600;
-      color: var(--foreground-muted);
+      color: rgba(255,255,255,0.5);
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 10px;
@@ -4885,7 +4887,7 @@ app.get(UI_ROUTE, (_req, res) => {
       color: var(--foreground);
     }
     .app-launcher-item:hover {
-      background: rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.08);
     }
     .app-launcher-icon {
       width: 36px;
@@ -4898,7 +4900,8 @@ app.get(UI_ROUTE, (_req, res) => {
     .app-launcher-label {
       font-size: 10px;
       text-align: center;
-      color: var(--foreground-muted);
+      color: rgba(255,255,255,0.8);
+      font-weight: 500;
     }
     .app-launcher-divider {
       height: 1px;
@@ -5093,6 +5096,12 @@ app.get(UI_ROUTE, (_req, res) => {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                   </div>
                   <span class="app-launcher-label">RCA</span>
+                </a>
+                <a class="app-launcher-item" href="https://bobkit-production.up.railway.app/" target="_blank" onclick="closeAppLauncher()">
+                  <div class="app-launcher-icon" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                  </div>
+                  <span class="app-launcher-label">BOBKit</span>
                 </a>
               </div>
             </div>
