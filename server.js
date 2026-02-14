@@ -11086,8 +11086,6 @@ app.get(UI_ROUTE, (req, res) => {
         }
         h += '</tbody></table></div>';
 
-        // Restore focus to search after render
-        h += '<script>setTimeout(function(){var el=document.getElementById("imx-search");if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}},0);<\/script>';
       }
 
       // ── Render into container ──
@@ -11095,6 +11093,10 @@ app.get(UI_ROUTE, (req, res) => {
         c.innerHTML = '<div id="imx-root">' + h + '</div>';
       } else {
         document.getElementById('imx-root').innerHTML = h;
+      }
+      // Restore focus to search after render
+      if (_imxSubTab === 'full') {
+        setTimeout(function(){ var el=document.getElementById('imx-search'); if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);} },0);
       }
     }
 
