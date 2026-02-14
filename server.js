@@ -7161,6 +7161,69 @@ app.get(UI_ROUTE, (_req, res) => {
           background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8);
         }
 
+        /* Create Agent Flow Modal */
+        .create-flow-overlay {
+          display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.6); z-index: 10001;
+          justify-content: center; align-items: center;
+        }
+        .create-flow-overlay.active { display: flex; }
+        .create-flow-modal {
+          background: #1a1f2e; border-radius: 12px; width: 540px;
+          border: 1px solid rgba(255,255,255,0.1); padding: 32px;
+        }
+        .create-flow-header {
+          display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;
+        }
+        .create-flow-header h2 {
+          font-size: 22px; font-weight: 600; color: rgba(255,255,255,0.9); margin: 0;
+        }
+        .create-flow-close {
+          background: none; border: none; color: rgba(255,255,255,0.4);
+          font-size: 22px; cursor: pointer;
+        }
+        .create-flow-close:hover { color: rgba(255,255,255,0.8); }
+        .create-flow-field { margin-bottom: 8px; }
+        .create-flow-input {
+          width: 100%; padding: 14px 16px; border-radius: 8px;
+          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.15);
+          color: rgba(255,255,255,0.9); font-size: 15px; font-family: inherit;
+          box-sizing: border-box;
+        }
+        .create-flow-input::placeholder { color: rgba(255,255,255,0.3); }
+        .create-flow-input:focus { outline: none; border-color: rgba(139,92,246,0.5); }
+        .create-flow-textarea {
+          width: 100%; padding: 14px 16px; border-radius: 8px; min-height: 120px; resize: vertical;
+          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.15);
+          color: rgba(255,255,255,0.9); font-size: 15px; font-family: inherit;
+          box-sizing: border-box;
+        }
+        .create-flow-textarea::placeholder { color: rgba(255,255,255,0.3); }
+        .create-flow-textarea:focus { outline: none; border-color: rgba(139,92,246,0.5); }
+        .create-flow-hint {
+          font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 8px; line-height: 1.5;
+        }
+        .create-flow-hint-row {
+          display: flex; justify-content: space-between; align-items: flex-start;
+        }
+        .create-flow-counter {
+          font-size: 12px; color: rgba(255,255,255,0.35); white-space: nowrap; margin-left: 12px; margin-top: 8px;
+        }
+        .create-flow-actions {
+          display: flex; justify-content: flex-end; gap: 12px; margin-top: 28px;
+        }
+        .create-flow-btn {
+          padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 500;
+          cursor: pointer; font-family: inherit;
+          border: 1px solid rgba(255,255,255,0.2); background: transparent;
+          color: rgba(255,255,255,0.8);
+        }
+        .create-flow-btn:hover { background: rgba(255,255,255,0.05); }
+        .create-flow-btn.save {
+          background: #8b5cf6; color: white; border-color: #8b5cf6;
+        }
+        .create-flow-btn.save:hover { background: #7c3aed; }
+
         /* Workflow Builder Modal */
         .workflow-modal-overlay {
           display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -7450,6 +7513,31 @@ app.get(UI_ROUTE, (_req, res) => {
         </div>
       </div>
 
+      <!-- Create Agent Flow Modal -->
+      <div class="create-flow-overlay" id="create-flow-overlay" onclick="if(event.target===this)closeCreateFlow()">
+        <div class="create-flow-modal">
+          <div class="create-flow-header">
+            <h2>Create Agent Flow</h2>
+            <button class="create-flow-close" onclick="closeCreateFlow()">&times;</button>
+          </div>
+          <div class="create-flow-field">
+            <input class="create-flow-input" id="create-flow-name" type="text" placeholder="Name" maxlength="100">
+          </div>
+          <div class="create-flow-hint">Give your flow a name that is intuitive and easy to understand.</div>
+          <div class="create-flow-field" style="margin-top:20px">
+            <textarea class="create-flow-textarea" id="create-flow-desc" placeholder="Description" maxlength="250" oninput="updateFlowCounter()"></textarea>
+          </div>
+          <div class="create-flow-hint-row">
+            <div class="create-flow-hint">Provide a description of your flow that includes the purpose of the flow, the context it will be used in, and any other relevant information..</div>
+            <div class="create-flow-counter" id="create-flow-counter">0/250</div>
+          </div>
+          <div class="create-flow-actions">
+            <button class="create-flow-btn" onclick="closeCreateFlow()">Cancel</button>
+            <button class="create-flow-btn save" onclick="saveCreateFlow()">Save</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Workflow Builder Modal -->
       <div class="workflow-modal-overlay" id="workflow-modal-overlay" onclick="if(event.target===this)closeWorkflowModal()">
         <div class="workflow-modal">
@@ -7617,7 +7705,7 @@ app.get(UI_ROUTE, (_req, res) => {
       promoCard.className = 'ai-promo-card';
       promoCard.innerHTML = '<h3>Build AI Workflows in Minutes</h3>' +
         '<p>Create custom, AI-driven workflows in a visual interface built for speed and scalability.</p>' +
-        '<button class="ai-promo-btn">' +
+        '<button class="ai-promo-btn" onclick="openCreateFlow()">' +
         '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>' +
         ' Create with Agent Flow Builder</button>';
       catalogContainer.appendChild(promoCard);
@@ -7700,6 +7788,37 @@ app.get(UI_ROUTE, (_req, res) => {
     function closeMcpManageModal() {
       document.getElementById('mcp-manage-overlay').classList.remove('active');
     }
+
+    // Create Agent Flow
+    function openCreateFlow() {
+      document.getElementById('create-flow-name').value = '';
+      document.getElementById('create-flow-desc').value = '';
+      updateFlowCounter();
+      document.getElementById('create-flow-overlay').classList.add('active');
+      document.getElementById('create-flow-name').focus();
+    }
+    function closeCreateFlow() {
+      document.getElementById('create-flow-overlay').classList.remove('active');
+    }
+    function updateFlowCounter() {
+      var desc = document.getElementById('create-flow-desc');
+      var counter = document.getElementById('create-flow-counter');
+      counter.textContent = desc.value.length + '/250';
+    }
+    function saveCreateFlow() {
+      var name = document.getElementById('create-flow-name').value.trim();
+      if (!name) {
+        document.getElementById('create-flow-name').focus();
+        return;
+      }
+      var id = 'user-flow-' + Date.now();
+      aiAgentsData.active.push({
+        id: id, name: name, subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null
+      });
+      closeCreateFlow();
+      renderAiAgents();
+    }
+
     function closeWorkflowModal() {
       document.getElementById('workflow-modal-overlay').classList.remove('active');
       document.getElementById('wf-dropdown').classList.remove('active');
