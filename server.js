@@ -11821,44 +11821,46 @@ app.get(UI_ROUTE, (req, res) => {
       // TAB: MEET OVERVIEW
       // ────────────────────────────────────────────────
       if (_imxSubTab === 'overview') {
-        // Compute team standings
-        var teamStats = {};
+        // Official meet team scores
+        var imxMeetScores = [
+          {code:'757',pts:164},
+          {code:'NCSC',pts:161},
+          {code:'BASS',pts:109},
+          {code:'PSI',pts:72},
+          {code:'MSAC',pts:67}
+        ];
+        // Compute swim counts per team
         var teamSwimmers = {};
+        var teamSwims = {};
         for (var i = 0; i < IMX_DATA.length; i++) {
           var d = IMX_DATA[i];
           var tc = d[2];
-          if (!teamStats[tc]) { teamStats[tc] = {pts:0,swims:0}; teamSwimmers[tc] = {}; }
-          teamStats[tc].pts += d[5];
-          teamStats[tc].swims += 1;
+          if (!teamSwimmers[tc]) { teamSwimmers[tc] = {}; teamSwims[tc] = 0; }
+          teamSwims[tc] += 1;
           teamSwimmers[tc][d[1]] = true;
         }
-        // Sort teams by total pts
-        var teamKeys = Object.keys(teamStats);
-        teamKeys.sort(function(a,b){ return teamStats[b].pts - teamStats[a].pts; });
 
         // Stat cards
         h += '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px">';
         h += statCard('Total Performances', '599', '#a78bfa');
         h += statCard('Teams', '5', '#38bdf8');
-        h += statCard('Top Score', '837', '#fbbf24');
-        h += statCard('Top Swimmer', 'Julian Francisco', '#22c55e');
+        h += statCard('1st Place', '757 Swim', '#fbbf24');
+        h += statCard('Total Meet Pts', '573', '#22c55e');
         h += '</div>';
 
         // Team standings
         h += '<div style="margin-bottom:18px"><div style="font-size:15px;font-weight:700;color:#e2e8f0;margin-bottom:8px">Team Standings</div>';
         h += '<table style="' + tableS + '"><thead><tr>';
-        h += '<th style="' + thS + '">Rank</th><th style="' + thS + '">Team</th><th style="' + thS + '">Total Pts</th><th style="' + thS + '">Avg Pts</th><th style="' + thS + '">Swims</th><th style="' + thS + '">Swimmers</th>';
+        h += '<th style="' + thS + '">Rank</th><th style="' + thS + '">Team</th><th style="' + thS + '">Meet Score</th><th style="' + thS + '">Swims</th><th style="' + thS + '">Swimmers</th>';
         h += '</tr></thead><tbody>';
-        for (var k = 0; k < teamKeys.length; k++) {
-          var tk = teamKeys[k];
-          var ts = teamStats[tk];
-          var numSwimmers = Object.keys(teamSwimmers[tk]).length;
-          var avg = Math.round(ts.pts / ts.swims);
+        for (var k = 0; k < imxMeetScores.length; k++) {
+          var tk = imxMeetScores[k].code;
+          var numSwimmers = teamSwimmers[tk] ? Object.keys(teamSwimmers[tk]).length : 0;
+          var swims = teamSwims[tk] || 0;
           h += '<tr><td style="' + tdS + '">' + placeBadge(k+1) + '</td>';
           h += '<td style="' + tdS + '">' + teamBadge(tk) + '</td>';
-          h += '<td style="' + tdS + ';font-weight:700;color:#a78bfa">' + ts.pts.toLocaleString() + '</td>';
-          h += '<td style="' + tdS + '">' + avg + '</td>';
-          h += '<td style="' + tdS + '">' + ts.swims + '</td>';
+          h += '<td style="' + tdS + ';font-weight:700;color:#a78bfa">' + imxMeetScores[k].pts + '</td>';
+          h += '<td style="' + tdS + '">' + swims + '</td>';
           h += '<td style="' + tdS + '">' + numSwimmers + '</td></tr>';
         }
         h += '</tbody></table></div>';
