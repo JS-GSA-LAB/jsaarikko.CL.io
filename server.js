@@ -10324,7 +10324,7 @@ app.get(UI_ROUTE, (req, res) => {
       [136,'Landon Lawrence','757','400 Y IM','4:58.03',511],
       [137,'Will Hartig','757','200 Y Back','2:06.86',508],
       [138,'Greyson White','NCSC','200 Y Back','2:06.89',507],
-      [139,'Knox O\'Brien','757','200 Y IM','2:18.86',507],
+      [139,'Knox O\\'Brien','757','200 Y IM','2:18.86',507],
       [140,'Reid Kessel','757','200 Y Free','2:38.36',507],
       [141,'Peyton Skipper','BASS','400 Y IM','4:34.50',507],
       [142,'Cole Brenner','757','500 Y Free','5:07.99',507],
@@ -10337,7 +10337,7 @@ app.get(UI_ROUTE, (req, res) => {
       [149,'Geo Garcia','NCSC','200 Y Breast','2:28.28',502],
       [150,'Reid Kessel','757','200 Y IM','3:00.55',502],
       [151,'Isaac Hsu','MSAC','200 Y IM','2:19.35',498],
-      [152,'Knox O\'Brien','757','400 Y IM','4:59.62',498],
+      [152,'Knox O\\'Brien','757','400 Y IM','4:59.62',498],
       [153,'Jimmy Jacobs','757','400 Y IM','4:41.35',497],
       [154,'Nathan George','NCSC','200 Y Back','2:18.84',496],
       [155,'Braxton Cobbs','MSAC','200 Y Fly','2:08.08',495],
@@ -10409,7 +10409,7 @@ app.get(UI_ROUTE, (req, res) => {
       [221,'Preston Rall','NCSC','200 Y Fly','2:24.45',440],
       [222,'David Adame','NCSC','400 Y IM','4:54.53',440],
       [223,'Brennan Bermudez','757','400 Y IM','5:07.14',440],
-      [224,'Knox O\'Brien','757','200 Y Breast','2:43.63',439],
+      [224,'Knox O\\'Brien','757','200 Y Breast','2:43.63',439],
       [225,'Ben Sleeth','757','50 Y Fly','35.98',438],
       [226,'Cole Brenner','757','400 Y IM','4:42.80',437],
       [227,'Chase Laine','NCSC','500 Y Free','5:14.04',436],
@@ -10425,12 +10425,12 @@ app.get(UI_ROUTE, (req, res) => {
       [237,'Brennan Bermudez','757','200 Y Back','2:23.09',425],
       [238,'Peyton Skipper','BASS','200 Y Fly','2:13.65',424],
       [239,'Travis Wen','MSAC','100 Y Back','1:17.05',420],
-      [240,'Knox O\'Brien','757','500 Y Free','5:41.65',420],
+      [240,'Knox O\\'Brien','757','500 Y Free','5:41.65',420],
       [241,'Noah Levin','757','500 Y Free','5:30.32',419],
       [242,'Noah Levin','757','400 Y IM','4:57.34',418],
       [243,'Anson Butler','757','200 Y IM','2:12.80',416],
       [244,'Logan Sumrow','MSAC','400 Y IM','5:10.31',416],
-      [245,'Knox O\'Brien','757','200 Y Back','2:23.76',415],
+      [245,'Knox O\\'Brien','757','200 Y Back','2:23.76',415],
       [246,'Oliver Voss','757','100 Y Breast','1:21.53',414],
       [247,'Logan Sumrow','MSAC','200 Y Breast','2:45.54',414],
       [248,'Feynman Zheng','757','50 Y Back','36.04',411],
@@ -10444,7 +10444,7 @@ app.get(UI_ROUTE, (req, res) => {
       [256,'X Pangilinan','NCSC','200 Y Breast','2:41.28',407],
       [257,'Noah Levin','757','200 Y Breast','2:41.30',407],
       [258,'Nathan George','NCSC','200 Y IM','2:24.78',406],
-      [259,'Knox O\'Brien','757','200 Y Fly','2:26.71',405],
+      [259,'Knox O\\'Brien','757','200 Y Fly','2:26.71',405],
       [260,'Preston Rall','NCSC','200 Y Breast','2:46.28',405],
       [261,'Mason Hibbard','757','400 Y IM','4:45.60',405],
       [262,'Rhodes Barrell','757','400 Y IM','5:11.97',404],
@@ -10804,7 +10804,7 @@ app.get(UI_ROUTE, (req, res) => {
       h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px">';
       for (var t = 0; t < tabs.length; t++) {
         var active = _imxSubTab === tabs[t][0];
-        h += '<button onclick="_imxSubTab=\'' + tabs[t][0] + '\';_imxSearch=\'\';render757Performance(document.getElementById(\'imx-root\'))" style="padding:7px 16px;border-radius:8px;border:1px solid ' + (active ? '#a78bfa' : '#334155') + ';background:' + (active ? '#a78bfa' : '#1e293b') + ';color:' + (active ? '#fff' : '#94a3b8') + ';cursor:pointer;font-size:13px;font-weight:600">' + tabs[t][1] + '</button>';
+        h += '<button onclick="_imxSubTab=\\'' + tabs[t][0] + '\\';_imxSearch=\\'\\';render757Performance(document.getElementById(\\'imx-root\\'))" style="padding:7px 16px;border-radius:8px;border:1px solid ' + (active ? '#a78bfa' : '#334155') + ';background:' + (active ? '#a78bfa' : '#1e293b') + ';color:' + (active ? '#fff' : '#94a3b8') + ';cursor:pointer;font-size:13px;font-weight:600">' + tabs[t][1] + '</button>';
       }
       h += '</div>';
 
@@ -11058,7 +11058,7 @@ app.get(UI_ROUTE, (req, res) => {
       // TAB: FULL RESULTS
       // ────────────────────────────────────────────────
       else if (_imxSubTab === 'full') {
-        h += '<div style="margin-bottom:12px"><input id="imx-search" type="text" placeholder="Search by name, team, or event..." value="' + _imxSearch.replace(/"/g, '&quot;') + '" oninput="_imxSearch=this.value;render757Performance(document.getElementById(\'imx-root\'))" style="width:100%;max-width:400px;padding:9px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:13px;outline:none"></div>';
+        h += '<div style="margin-bottom:12px"><input id="imx-search" type="text" placeholder="Search by name, team, or event..." value="' + _imxSearch.replace(/"/g, '&quot;') + '" oninput="_imxSearch=this.value;render757Performance(document.getElementById(\\'imx-root\\'))" style="width:100%;max-width:400px;padding:9px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:13px;outline:none"></div>';
 
         var filtered = IMX_DATA;
         if (_imxSearch) {
