@@ -93,7 +93,14 @@ const RAILWAY_ENVIRONMENT_ID = process.env.RAILWAY_ENVIRONMENT_ID || "";
 const RAILWAY_SERVICE_ID = process.env.RAILWAY_SERVICE_ID || "";
 
 async function syncPortalUsersToRailway() {
-  if (!RAILWAY_API_TOKEN || !RAILWAY_PROJECT_ID || !RAILWAY_ENVIRONMENT_ID || !RAILWAY_SERVICE_ID) return;
+  if (!RAILWAY_API_TOKEN) {
+    console.warn("PORTAL_USERS sync skipped: RAILWAY_API_TOKEN not set. Generate one at Railway → Account Settings → Tokens.");
+    return;
+  }
+  if (!RAILWAY_PROJECT_ID || !RAILWAY_ENVIRONMENT_ID || !RAILWAY_SERVICE_ID) {
+    console.warn("PORTAL_USERS sync skipped: missing RAILWAY_PROJECT_ID, RAILWAY_ENVIRONMENT_ID, or RAILWAY_SERVICE_ID (these are auto-injected by Railway at runtime).");
+    return;
+  }
   const adminUser = (process.env.ADMIN_USER || "admin").toLowerCase();
   const portalUsers = [];
   for (const u of users.values()) {
