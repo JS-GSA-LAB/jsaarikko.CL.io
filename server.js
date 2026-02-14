@@ -66,10 +66,11 @@ let nextUserId = 2;
     try {
       const extraUsers = JSON.parse(portalUsersEnv);
       for (const u of extraUsers) {
-        if (!u.username || !u.password) continue;
+        if (!u.username) continue;
+        if (!u.password && !u.password_hash) continue;
         const key = u.username.toLowerCase();
         if (users.has(key)) continue; // don't overwrite admin
-        const hash = bcrypt.hashSync(u.password, 10);
+        const hash = u.password_hash || bcrypt.hashSync(u.password, 10);
         users.set(key, {
           id: nextUserId++,
           username: u.username,
@@ -82,6 +83,43 @@ let nextUserId = 2;
     } catch (e) {
       console.warn("Failed to parse PORTAL_USERS:", e.message);
     }
+  }
+}
+
+// ── Sync portal users to Railway env var for persistence ─────────────
+const RAILWAY_API_TOKEN = process.env.RAILWAY_API_TOKEN || "";
+const RAILWAY_PROJECT_ID = process.env.RAILWAY_PROJECT_ID || "";
+const RAILWAY_ENVIRONMENT_ID = process.env.RAILWAY_ENVIRONMENT_ID || "";
+const RAILWAY_SERVICE_ID = process.env.RAILWAY_SERVICE_ID || "";
+
+async function syncPortalUsersToRailway() {
+  if (!RAILWAY_API_TOKEN || !RAILWAY_PROJECT_ID || !RAILWAY_ENVIRONMENT_ID || !RAILWAY_SERVICE_ID) return;
+  const adminUser = (process.env.ADMIN_USER || "admin").toLowerCase();
+  const portalUsers = [];
+  for (const u of users.values()) {
+    if (u.username.toLowerCase() === adminUser) continue; // admin is managed by ADMIN_USER/ADMIN_PASS
+    portalUsers.push({
+      username: u.username,
+      password_hash: u.password_hash,
+      display_name: u.display_name,
+      role: u.role,
+    });
+  }
+  const value = JSON.stringify(portalUsers);
+  try {
+    const res = await fetch("https://backboard.railway.app/graphql/v2", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${RAILWAY_API_TOKEN}` },
+      body: JSON.stringify({
+        query: `mutation($input: VariableUpsertInput!) { variableUpsert(input: $input) }`,
+        variables: { input: { projectId: RAILWAY_PROJECT_ID, environmentId: RAILWAY_ENVIRONMENT_ID, serviceId: RAILWAY_SERVICE_ID, name: "PORTAL_USERS", value } },
+      }),
+    });
+    const body = await res.json();
+    if (body.errors) console.warn("Railway env sync warning:", body.errors[0].message);
+    else console.log("Synced PORTAL_USERS to Railway env var");
+  } catch (e) {
+    console.warn("Failed to sync PORTAL_USERS to Railway:", e.message);
   }
 }
 
@@ -103,7 +141,8 @@ let nextUserId = 2;
  * - FORWARD_AUTH_HEADER     (optional) default "true" => forward Authorization header to upstream
  * - RP_ID                   (optional) WebAuthn relying party ID — defaults to RAILWAY_PUBLIC_DOMAIN or "localhost"
  * - WEBAUTHN_CREDENTIAL     (optional) JSON-stringified WebAuthn credential for passkey login
- * - PORTAL_USERS            (optional) JSON array of additional users: [{"username":"x","password":"y","display_name":"X","role":"viewer"},...]
+ * - PORTAL_USERS            (optional) JSON array of additional users (supports password or password_hash)
+ * - RAILWAY_API_TOKEN       (optional) Railway API token — enables auto-sync of portal users across deploys
  *
  * Notes:
  * - This app provides a simple web UI and a reverse-proxy endpoint.
@@ -647,6 +686,7 @@ app.post("/api/portal-users", express.json(), (req, res) => {
   const hash = bcrypt.hashSync(password, 10);
   const newUser = { id: nextUserId++, username, password_hash: hash, display_name: display_name || username, role: role || "viewer" };
   users.set(key, newUser);
+  syncPortalUsersToRailway();
   res.status(201).json({ id: newUser.id, username: newUser.username, display_name: newUser.display_name, role: newUser.role });
 });
 
@@ -660,6 +700,7 @@ app.put("/api/portal-users/:id", express.json(), (req, res) => {
   if (display_name !== undefined) target.display_name = display_name;
   if (role !== undefined) target.role = role;
   if (password) target.password_hash = bcrypt.hashSync(password, 10);
+  syncPortalUsersToRailway();
   res.json({ id: target.id, username: target.username, display_name: target.display_name, role: target.role });
 });
 
@@ -671,6 +712,7 @@ app.delete("/api/portal-users/:id", (req, res) => {
   for (const [key, u] of users.entries()) { if (u.id === targetId) { targetKey = key; break; } }
   if (!targetKey) return res.status(404).json({ error: "User not found" });
   users.delete(targetKey);
+  syncPortalUsersToRailway();
   res.json({ ok: true });
 });
 
