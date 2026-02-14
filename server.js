@@ -624,6 +624,7 @@ app.post("/webauthn/auth/verify", express.json(), async (req, res) => {
 
 // ── Portal Users CRUD API ────────────────────────────────────────────
 app.get("/api/portal-users", (req, res) => {
+  if (req.session.role !== "admin") return res.status(403).json({ error: "Admin access required" });
   const list = [];
   for (const u of users.values()) {
     list.push({
@@ -4446,7 +4447,7 @@ app.get("/api/assets/stats", (req, res) => {
 });
 
 // UI
-app.get(UI_ROUTE, (_req, res) => {
+app.get(UI_ROUTE, (req, res) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(`<!doctype html>
 <html lang="en">
@@ -5162,13 +5163,13 @@ app.get(UI_ROUTE, (_req, res) => {
           AI Agents
         </button>
       </div>
-      <div class="nav-section">
+      ${req.session.role === "admin" ? `<div class="nav-section">
         <div class="nav-section-title">Administration</div>
         <button class="nav-item" onclick="showView('portal-users')">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Portal Users
         </button>
-      </div>
+      </div>` : ""}
     </div>
     <div class="sidebar-footer">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
