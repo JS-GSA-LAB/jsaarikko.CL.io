@@ -5250,6 +5250,10 @@ app.get(UI_ROUTE, (req, res) => {
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20c2-1 4-2 6-2s4 1 6 2 4 1 6 0"/><path d="M2 16c2-1 4-2 6-2s4 1 6 2 4 1 6 0"/><circle cx="12" cy="8" r="2"/><path d="M16 12l-3-4-3 4"/></svg>
           Swim Analytics
         </button>
+        <button class="nav-item" onclick="showView('757swim')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          757Swim
+        </button>
       </div>
       ${req.session.role === "admin" ? `<div class="nav-section">
         <div class="nav-section-title">Administration</div>
@@ -8835,6 +8839,27 @@ app.get(UI_ROUTE, (req, res) => {
       </div>
     </div>
 
+    <!-- 757Swim Team View -->
+    <div id="view-757swim" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">757Swim</h1>
+          <div class="page-subtitle">Williamsburg, VA &mdash; Virginia Swimming (LSC) &mdash; 2025-2026 Season</div>
+        </div>
+        <div class="header-actions">
+          <select id="s7-perspective" onchange="render757View()" style="padding:8px 12px;border-radius:6px;background:var(--background-sidebar);border:1px solid var(--border);color:var(--foreground);font-size:13px;font-family:inherit">
+            <option value="overview">Team Overview</option>
+            <option value="men-rankings">Men's Event Rankings</option>
+            <option value="women-rankings">Women's Event Rankings</option>
+            <option value="top-performers">Top Performers</option>
+            <option value="roster">Full Roster</option>
+            <option value="meets">Meets & Schedule</option>
+          </select>
+        </div>
+      </div>
+      <div class="page-content" id="s7-content"></div>
+    </div>
+
     <!-- Swim Analytics View -->
     <div id="view-swimmer" class="view-panel">
       <div class="page-header">
@@ -8905,6 +8930,8 @@ app.get(UI_ROUTE, (req, res) => {
         loadPortalUsers();
       } else if (viewId === 'swimmer') {
         renderSwimView();
+      } else if (viewId === '757swim') {
+        render757View();
       }
     }
 
@@ -9603,6 +9630,554 @@ app.get(UI_ROUTE, (req, res) => {
         input.disabled = false;
         input.focus();
       });
+    }
+
+    // ── 757Swim Team Dashboard ─────────────────────────────────────
+    var S7_MEN_EVENTS = [
+      { event:'50 Free', swimmers:[
+        {name:'Finnegan Leggett',time:'21.70',pts:536,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Cole Brenner',time:'22.11',pts:507,meet:'SRVA Commonwealth Cup'},
+        {name:'Jimmy Jacobs',time:'22.18',pts:502,meet:'757swim Splash and Dash'},
+        {name:'Josh Reed',time:'22.60',pts:475,meet:'SRVA Commonwealth Cup'}]},
+      { event:'100 Free', swimmers:[
+        {name:'Finnegan Leggett',time:'46.41',pts:632,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Cole Brenner',time:'48.40',pts:557,meet:'SRVA Commonwealth Cup'},
+        {name:'Josh Reed',time:'49.49',pts:521,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Mason Hibbard',time:'49.77',pts:513,meet:'TAC Titans Blizzard Blitz'}]},
+      { event:'200 Free', swimmers:[
+        {name:'Lucas Landers',time:'1:42.45',pts:641,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Finnegan Leggett',time:'1:43.26',pts:626,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Cole Brenner',time:'1:45.83',pts:581,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Josh Reed',time:'1:46.71',pts:567,meet:'TAC Titans Blizzard Blitz'}]},
+      { event:'500 Free', swimmers:[
+        {name:'Will Hartig',time:'4:32.13',pts:706,meet:'Winter Junior Championship East'},
+        {name:'Colin Conn',time:'4:34.77',pts:686,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Cole Brenner',time:'4:53.52',pts:563,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Owen Quinn',time:'4:58.21',pts:536,meet:'TAC Titans Blizzard Blitz'}]},
+      { event:'1650 Free', swimmers:[
+        {name:'Will Hartig',time:'15:31.60',pts:765,meet:'SRVA Commonwealth Cup'},
+        {name:'Colin Conn',time:'15:54.44',pts:712,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Wyatt Sylvester',time:'15:56.64',pts:707,meet:'SRVA Commonwealth Cup'},
+        {name:'Owen Quinn',time:'17:23.27',pts:545,meet:'TAC Titans Blizzard Blitz'}]},
+      { event:'100 Back', swimmers:[
+        {name:'Jimmy Jacobs',time:'50.49',pts:626,meet:'Winter Junior Championship East'},
+        {name:'Lucas Landers',time:'52.72',pts:550,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Finnegan Leggett',time:'55.74',pts:466,meet:'SRVA Commonwealth Cup'},
+        {name:'Anson Butler',time:'58.40',pts:405,meet:'SwimRVA Heavyweight Battle'}]},
+      { event:'200 Back', swimmers:[
+        {name:'Jimmy Jacobs',time:'1:58.66',pts:500,meet:'SwimRVA Heavyweight Battle'},
+        {name:'Landon Lawrence',time:'2:04.93',pts:429,meet:'757 Grand Illumination'},
+        {name:'Jiayi Qi',time:'2:10.09',pts:380,meet:'757 Grand Illumination'},
+        {name:'Noah Levin',time:'2:10.20',pts:379,meet:'SRVA Commonwealth Cup'}]},
+      { event:'100 Breast', swimmers:[
+        {name:'Anson Butler',time:'59.07',pts:589,meet:'SRVA Commonwealth Cup'},
+        {name:'Mason Hibbard',time:'59.75',pts:569,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Luke Haskin',time:'1:03.04',pts:484,meet:'757 Grand Illumination'},
+        {name:'Evan Petrie',time:'1:03.62',pts:471,meet:'757 Grand Illumination'}]},
+      { event:'200 Breast', swimmers:[
+        {name:'Mason Hibbard',time:'2:10.39',pts:543,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Anson Butler',time:'2:15.68',pts:482,meet:'SwimRVA Heavyweight Battle'},
+        {name:'Evan Petrie',time:'2:16.81',pts:470,meet:'757 Grand Illumination'},
+        {name:'Luke Haskin',time:'2:17.00',pts:468,meet:'757 Grand Illumination'}]},
+      { event:'100 Fly', swimmers:[
+        {name:'Lucas Landers',time:'50.47',pts:610,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Jimmy Jacobs',time:'51.37',pts:578,meet:'Winter Junior Championship East'},
+        {name:'Josh Reed',time:'53.36',pts:516,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Anson Butler',time:'54.26',pts:491,meet:'757 Grand Illumination'}]},
+      { event:'200 Fly', swimmers:[
+        {name:'Wyatt Sylvester',time:'1:50.79',pts:659,meet:'SRVA Commonwealth Cup'},
+        {name:'Will Hartig',time:'1:51.34',pts:650,meet:'SRVA Commonwealth Cup'},
+        {name:'Lucas Landers',time:'1:51.96',pts:639,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Colin Conn',time:'1:55.73',pts:578,meet:'SRVA Commonwealth Cup'}]},
+      { event:'200 IM', swimmers:[
+        {name:'Wyatt Sylvester',time:'1:52.99',pts:620,meet:'Winter Junior Championship East'},
+        {name:'Mason Hibbard',time:'1:59.91',pts:519,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Evan Petrie',time:'2:03.56',pts:474,meet:'757 Grand Illumination'},
+        {name:'Luke Haskin',time:'2:07.62',pts:430,meet:'757 Grand Illumination'}]},
+      { event:'400 IM', swimmers:[
+        {name:'Will Hartig',time:'3:56.44',pts:689,meet:'SRVA Commonwealth Cup'},
+        {name:'Wyatt Sylvester',time:'3:57.24',pts:682,meet:'Winter Junior Championship East'},
+        {name:'Colin Conn',time:'4:05.63',pts:614,meet:'TAC Titans Blizzard Blitz'},
+        {name:'Evan Petrie',time:'4:25.00',pts:489,meet:'SwimRVA Heavyweight Battle'}]}
+    ];
+    var S7_MEN_RELAYS = [
+      {event:'400 Free Relay',time:'3:09.08',pts:632,meet:'SRVA Commonwealth Cup'},
+      {event:'800 Free Relay',time:'6:56.47',pts:645,meet:'SRVA Commonwealth Cup'},
+      {event:'400 Medley Relay',time:'3:30.97',pts:577,meet:'SRVA Commonwealth Cup'}
+    ];
+    var S7_WOMEN_EVENTS = [
+      { event:'50 Free', swimmers:[
+        {name:'Bella Lorack',time:'23.75',pts:631,meet:''},
+        {name:'Campbell Daniel',time:'23.83',pts:625,meet:''},
+        {name:'Alyssa White',time:'24.35',pts:585,meet:''},
+        {name:'Peyton Cleary',time:'24.65',pts:564,meet:''}]},
+      { event:'100 Free', swimmers:[
+        {name:'Bella Lorack',time:'51.35',pts:660,meet:''},
+        {name:'Campbell Daniel',time:'51.44',pts:657,meet:''},
+        {name:'Alyssa White',time:'52.71',pts:610,meet:''},
+        {name:'Charlotte Basic',time:'52.94',pts:602,meet:''}]},
+      { event:'200 Free', swimmers:[
+        {name:'Brooke Quinn',time:'1:51.94',pts:694,meet:''},
+        {name:'Lilly Younica',time:'1:52.34',pts:686,meet:''},
+        {name:'Alyssa White',time:'1:54.20',pts:653,meet:''},
+        {name:'Moira Sokolowsky',time:'1:55.04',pts:639,meet:''}]},
+      { event:'500 Free', swimmers:[
+        {name:'Brooke Quinn',time:'4:58.49',pts:692,meet:''},
+        {name:'Alyssa White',time:'5:03.42',pts:659,meet:''},
+        {name:'Moira Sokolowsky',time:'5:04.10',pts:655,meet:''},
+        {name:'Brooke Ericsson',time:'5:05.61',pts:645,meet:''}]},
+      { event:'1650 Free', swimmers:[
+        {name:'Brooke Ericsson',time:'17:41.98',pts:612,meet:''},
+        {name:'Brooke Quinn',time:'17:43.83',pts:608,meet:''},
+        {name:'Jaclynn Buzek',time:'17:57.09',pts:586,meet:''},
+        {name:'Moira Sokolowsky',time:'18:12.16',pts:562,meet:''}]},
+      { event:'100 Back', swimmers:[
+        {name:'Lilly Younica',time:'56.48',pts:618,meet:''},
+        {name:'Peyton Cleary',time:'59.69',pts:523,meet:''},
+        {name:'Bella Levin',time:'1:00.24',pts:509,meet:''},
+        {name:'Chloe Banks',time:'1:01.58',pts:477,meet:''}]},
+      { event:'200 Back', swimmers:[
+        {name:'Lilly Younica',time:'2:00.53',pts:696,meet:''},
+        {name:'Brooke Ericsson',time:'2:08.77',pts:571,meet:''},
+        {name:'Kayla Eckhoff',time:'2:13.17',pts:516,meet:''},
+        {name:'Bella Levin',time:'2:13.81',pts:509,meet:''}]},
+      { event:'100 Breast', swimmers:[
+        {name:'Jaclynn Buzek',time:'1:04.59',pts:642,meet:''},
+        {name:'Finley Dameron',time:'1:06.81',pts:580,meet:''},
+        {name:'Emerson Henshaw',time:'1:07.72',pts:557,meet:''},
+        {name:'Charlotte Basic',time:'1:08.80',pts:531,meet:''}]},
+      { event:'200 Breast', swimmers:[
+        {name:'Jaclynn Buzek',time:'2:20.46',pts:644,meet:''},
+        {name:'Finley Dameron',time:'2:23.51',pts:604,meet:''},
+        {name:'Emerson Henshaw',time:'2:27.17',pts:560,meet:''},
+        {name:'Charlotte Basic',time:'2:30.09',pts:528,meet:''}]},
+      { event:'100 Fly', swimmers:[
+        {name:'Campbell Daniel',time:'55.77',pts:597,meet:''},
+        {name:'Bella Lorack',time:'56.21',pts:583,meet:''},
+        {name:'Bella Levin',time:'59.64',pts:488,meet:''},
+        {name:'Chloe Banks',time:'59.73',pts:486,meet:''}]},
+      { event:'200 Fly', swimmers:[
+        {name:'Moira Sokolowsky',time:'2:07.65',pts:611,meet:''},
+        {name:'Campbell Daniel',time:'2:08.91',pts:593,meet:''},
+        {name:'Charlotte Basic',time:'2:16.82',pts:496,meet:''},
+        {name:'Bella Levin',time:'2:17.40',pts:490,meet:''}]},
+      { event:'200 IM', swimmers:[
+        {name:'Brooke Quinn',time:'2:07.44',pts:615,meet:''},
+        {name:'Brooke Ericsson',time:'2:11.72',pts:557,meet:''},
+        {name:'Finley Dameron',time:'2:13.02',pts:541,meet:''},
+        {name:'Emerson Henshaw',time:'2:15.19',pts:515,meet:''}]},
+      { event:'400 IM', swimmers:[
+        {name:'Lilly Younica',time:'4:40.00',pts:588,meet:''},
+        {name:'Jaclynn Buzek',time:'4:43.66',pts:566,meet:''},
+        {name:'Emerson Henshaw',time:'4:45.75',pts:553,meet:''},
+        {name:'Finley Dameron',time:'4:46.96',pts:546,meet:''}]}
+    ];
+    var S7_WOMEN_RELAYS = [
+      {event:'400 Free Relay',time:'3:28.97',pts:703,meet:''},
+      {event:'800 Free Relay',time:'7:42.44',pts:667,meet:''},
+      {event:'400 Medley Relay',time:'3:53.39',pts:625,meet:''}
+    ];
+
+    var S7_TOP_MEN = [
+      {name:'Will Hartig',score:747.55,hometown:'Williamsburg, VA'},
+      {name:'Colin Conn',score:711.35,hometown:'Williamsburg, VA'},
+      {name:'Wyatt Sylvester',score:704.85,hometown:'Williamsburg, VA'},
+      {name:'Finnegan Leggett',score:618.50,hometown:'Providence Forge, VA'},
+      {name:'Lucas Landers',score:638.20,hometown:'Williamsburg, VA'},
+      {name:'Jimmy Jacobs',score:617.55,hometown:'Williamsburg, VA'},
+      {name:'Anson Butler',score:593.35,hometown:'Williamsburg, VA'},
+      {name:'Cole Brenner',score:571.10,hometown:'Williamsburg, VA'},
+      {name:'Owen Quinn',score:557.30,hometown:'Williamsburg, VA'},
+      {name:'Mason Hibbard',score:553.25,hometown:'Williamsburg, VA'},
+      {name:'Josh Reed',score:541.55,hometown:'Williamsburg, VA'},
+      {name:'Evan Petrie',score:479.35,hometown:'Yorktown, VA'}
+    ];
+    var S7_TOP_WOMEN = [
+      {name:'Brooke Quinn',score:689.25,hometown:'Williamsburg, VA'},
+      {name:'Lilly Younica',score:678.50,hometown:'Williamsburg, VA'},
+      {name:'Moira Sokolowsky',score:652.00,hometown:'Williamsburg, VA'},
+      {name:'Alyssa White',score:649.80,hometown:'Williamsburg, VA'},
+      {name:'Campbell Daniel',score:643.10,hometown:'Williamsburg, VA'},
+      {name:'Brooke Ericsson',score:642.45,hometown:'Williamsburg, VA'},
+      {name:'Jaclynn Buzek',score:640.20,hometown:'Toano, VA'},
+      {name:'Bella Lorack',score:635.70,hometown:'Toano, VA'},
+      {name:'Finley Dameron',score:607.00,hometown:'Williamsburg, VA'},
+      {name:'Charlotte Basic',score:564.85,hometown:'Williamsburg, VA'},
+      {name:'Emerson Henshaw',score:557.35,hometown:'Williamsburg, VA'},
+      {name:'Kayla Eckhoff',score:551.65,hometown:'Ridgefield, CT'}
+    ];
+
+    var S7_ROSTER_MEN = [
+      {name:'Georgie Aponte',score:null},{name:'Ryder Argo',score:null},{name:'Lars Arne',score:312.80},{name:'Shawn Arne',score:null},{name:'Asl Arslan',score:null},{name:'Grayson Asbell',score:null},
+      {name:'Christian Ballin',score:149.15},{name:'Rhodes Barrell',score:371.95},{name:'Joel Barrell',score:130.30},{name:'Brennan Bermudez',score:434.55},{name:'Sebastian Bet',score:null},{name:'Nicholas Braddick',score:null},
+      {name:'Cole Brenner',score:571.10},{name:'Cooper Butcher',score:71.30},{name:'Anson Butler',score:593.35},{name:'Rowan Buzek',score:91.95},{name:'Parker Carnevale',score:20.29},{name:'Grant Carstarphen',score:null},
+      {name:'Gabriel Champion',score:54.78},{name:'Beau Cockrill',score:223.10},{name:'Hunter Cockrill',score:152.55},{name:'Colin Conn',score:711.35},{name:'Bryson Cory',score:null},{name:'Ben Cox',score:98.50},
+      {name:'Robi Cox',score:null},{name:'Andy Dang',score:null},{name:'Ata Dogu',score:57.84},{name:'Shepard Doherty',score:null},{name:'Evan Dwyer',score:275.00},{name:'Nate Dye',score:174.55},
+      {name:'Cameron Finley',score:148.10},{name:'Jonathan Finley',score:320.35},{name:'Teddy Fleming',score:null},{name:'Brayden Foster',score:null},{name:'Aiden Franck',score:221.15},{name:'Bryce Grimm',score:null},
+      {name:'Lucas Guillen',score:147.20},{name:'Brooks Haas',score:null},{name:'Makai Hamilton',score:222.10},{name:'Ronan Hamilton',score:107.30},{name:'Max Han',score:180.20},{name:'Miles Han',score:17.81},
+      {name:'Caleb Harrell',score:395.30},{name:'Will Hartig',score:747.55},{name:'Luke Haskin',score:491.80},{name:'Nikolas Hatjis',score:null},{name:'Timothy Hatjis',score:79.75},{name:'Dean Heilman',score:69.70},
+      {name:'Logan Herron',score:38.43},{name:'Mason Hibbard',score:553.25},{name:'Adam Hughes',score:null},{name:'Alexander Hunley',score:81.50},{name:'Christian Hunley',score:123.60},{name:'Nikolai Ilardi',score:131.61},
+      {name:'Jimmy Jacobs',score:617.55},{name:'Calum James',score:202.60},{name:'Desmond James',score:188.10},{name:'Andrea Kabala',score:64.85},{name:'Jostin Keithley',score:null},{name:'Thadd Kerns',score:179.70},
+      {name:'Reid Kessel',score:203.95},{name:'Stefan Kocev',score:35.82},{name:'Pierce Kohler',score:72.80},{name:'Stevie Kohler',score:201.15},{name:'Andrew Kolar',score:179.55},{name:'James Kolar',score:null},
+      {name:'Markus Koller',score:null},{name:'Kaleb Kurowski',score:183.95},{name:'Ryan Kurowski',score:119.70},{name:'Robert Lamerdin',score:null},{name:'Lucas Landers',score:638.20},{name:'Thomas Lane',score:null},
+      {name:'Parker Lantz',score:null},{name:'Everett Larimer',score:null},{name:'Caleb Lassiter',score:86.15},{name:'Eli Laurenzo',score:115.90},{name:'Landon Lawrence',score:438.40},{name:'Finnegan Lawson',score:null},
+      {name:'Benjamin Lecker',score:null},{name:'Henry Lecker',score:40.67},{name:'Finn Leggett',score:618.50},{name:'Jacob Levin',score:134.95},{name:'Noah Levin',score:412.90},{name:'Tucker Long',score:114.01},
+      {name:'Matthew Long',score:382.20},{name:'Ziggy Maak',score:105.55},{name:'Adrian Magbag',score:93.45},{name:'Alexander Magbag',score:70.75},{name:'Ujaan Majumdar',score:null},{name:'Ethan Mazzitti',score:70.44},
+      {name:'Jamie McCloud',score:null},{name:'Matthew McHose',score:74.40},{name:'Devon McKinney',score:315.10},{name:'Landon Mitchell',score:null},{name:'Mateo Mogrovejo',score:90.10},{name:'Max Mogrovejo',score:null},
+      {name:'Brendan Moser',score:null},{name:'Alex Musteata',score:118.15},{name:'Batman Myslak',score:71.45},{name:'Jay Myslak',score:162.60},{name:'Tanner Norman',score:null},{name:'Knox O\\'Brien',score:449.25},
+      {name:'Ollie O\\'Connell',score:null},{name:'Sebastian Olds',score:89.70},{name:'Jorge Oquendo',score:null},{name:'Santiago Ospina Alvis',score:187.45},{name:'Tommy Owen',score:101.45},{name:'Davis Parker',score:84.75},
+      {name:'Lawson Parkhouse',score:null},{name:'Reddick Perkins',score:303.70},{name:'Evan Petrie',score:479.35},{name:'Maksym Poltorak',score:null},{name:'Ollie Porter',score:37.26},{name:'Jiarei Qi',score:28.63},
+      {name:'Jiayi Qi',score:400.90},{name:'Owen Quinn',score:557.30},{name:'Andrey Radkevich',score:null},{name:'Misha Radkevich',score:null},{name:'Josh Reed',score:541.55},{name:'Bash Reed',score:null},
+      {name:'Brody Rich',score:277.50},{name:'Nate Riley',score:188.70},{name:'Maximus Ruskin',score:null},{name:'Eddie Russell',score:92.30},{name:'Mason Saless',score:212.80},{name:'Robby Saul',score:400.30},
+      {name:'Mason Schroth',score:206.95},{name:'Spencer Shelton',score:143.95},{name:'Tripp Sherman',score:null},{name:'Kevin Shin',score:null},{name:'Minki Shin',score:235.10},{name:'Luke Shnowske',score:250.90},
+      {name:'Sam Shnowske',score:458.15},{name:'Liam Simakhov',score:112.70},{name:'Reese Simmons',score:156.05},{name:'Iver Simpson-Emory',score:42.96},{name:'Ben Sleeth',score:194.55},{name:'Jack Sleeth',score:197.55},
+      {name:'Levi Smith',score:null},{name:'Calvin Sorrell',score:56.10},{name:'Brooks St. George',score:null},{name:'Parker Storck',score:null},{name:'Franklin Stovall',score:157.05},{name:'Patrick Stovall',score:37.40},
+      {name:'Mikah Sun',score:null},{name:'Wyatt Sylvester',score:704.85},{name:'Noah Taliaferro',score:266.15},{name:'Micah Thrash',score:76.85},{name:'Nehemiah Thrash',score:273.55},{name:'Barrett Treiber',score:null},
+      {name:'Graf Treiber',score:null},{name:'Vaughn Treiber',score:null},{name:'William Vick',score:36.26},{name:'Oliver Voss',score:426.10},{name:'Brodie Walker',score:null},{name:'Edgar Walsh',score:77.35},
+      {name:'Anthony Wang',score:97.80},{name:'Gabe Wang',score:null},{name:'Connor Willis',score:null},{name:'Oliver Wyles',score:186.30},{name:'Ivan Yeriemieiev',score:164.85},{name:'Feynman Zheng',score:231.30},
+      {name:'Ryan Zheng',score:303.95},{name:'Jiming Zhou',score:210.95}
+    ];
+    var S7_ROSTER_WOMEN = [
+      {name:'Zoe Ackerman',score:null},{name:'Mackenzie Allen',score:null},{name:'Skyler Austin',score:494.35},{name:'Kailynn Baker',score:null},{name:'Alivia Ballin',score:446.10},{name:'Chloe Banks',score:510.45},
+      {name:'Jenica Barba',score:84.80},{name:'Charlotte Basic',score:564.85},{name:'Camerian Battle',score:null},{name:'Kayleigh Beatley',score:null},{name:'Annie Beckhusen Challener',score:null},{name:'Mya Benitez',score:111.21},
+      {name:'Reese Blanchard',score:null},{name:'Emily Boates',score:122.55},{name:'Taraneh Bonyadlou',score:467.45},{name:'Evelyn Bowen',score:null},{name:'Lily Braddick',score:null},{name:'Frankie Bravo',score:66.80},
+      {name:'JoJo Bravo',score:null},{name:'Bethany Brisson',score:null},{name:'Collins Brooks',score:null},{name:'Zoe Bruhl',score:402.85},{name:'Holly Brundage',score:null},{name:'Cate Burchett',score:182.60},
+      {name:'Ella Burchett',score:211.80},{name:'Charlotte Butarbutar',score:89.65},{name:'Jaclynn Buzek',score:640.20},{name:'Eleanora Cason',score:null},{name:'Sonya Cason',score:null},{name:'Elise Chaw',score:null},
+      {name:'Hadley Chen',score:null},{name:'Peyton Cleary',score:544.05},{name:'CeCe Cockrill',score:61.13},{name:'Cora Condon',score:null},{name:'Maggie Cook',score:179.70},{name:'Chloe Cupp',score:168.55},
+      {name:'Riley Curtis',score:null},{name:'Finley Dameron',score:607.00},{name:'Molly Dameron',score:25.94},{name:'Campbell Daniel',score:643.10},{name:'Ellie Davis',score:331.80},{name:'Lyla Davis',score:null},
+      {name:'Lottie Dean',score:null},{name:'Maria Diaz Contreras',score:null},{name:'Tatiana Dwyer',score:247.70},{name:'Kayla Eckhoff',score:551.65},{name:'Brooke Ericsson',score:642.45},{name:'Annabelle Evans',score:275.25},
+      {name:'Elizabeth Evans',score:380.20},{name:'Eloise Evans',score:46.03},{name:'Camryn Fischer',score:97.41},{name:'Harper Fly',score:363.60},{name:'Ava Foster',score:91.52},{name:'Ellie Fountain',score:null},
+      {name:'Nora Fountain',score:449.85},{name:'Browning Freeman',score:102.25},{name:'Kimber Freeman',score:null},{name:'Remington Freeman',score:471.30},{name:'Wynter Golinski',score:null},{name:'Naomi Green',score:26.09},
+      {name:'Kyra Gregory',score:null},{name:'Ryleigh Guillen',score:178.95},{name:'Natalie Haas',score:495.90},{name:'Keller Hamilton',score:474.10},{name:'Amelia Harboe',score:null},{name:'Kallie Harper',score:null},
+      {name:'Rhilynne Harris',score:313.00},{name:'Lydia Hatjis',score:null},{name:'Mia Heavens',score:null},{name:'Brooke Heilman',score:null},{name:'Aminah Henry',score:49.45},{name:'Emerson Henshaw',score:557.35},
+      {name:'Wyn Herzog',score:307.30},{name:'Addy Heyward',score:null},{name:'Brixten Hinton',score:null},{name:'Scarlett Holley',score:null},{name:'Ava Jackson',score:null},{name:'Olivia Jackson',score:null},
+      {name:'Josie Jacobs',score:null},{name:'Hadley James',score:467.65},{name:'Kyoko James',score:null},{name:'Zarina Johnston',score:161.63},{name:'Ella Jones',score:76.10},{name:'Elliette Jones',score:195.90},
+      {name:'Lilly Jones',score:205.50},{name:'Callie Kerstetter',score:null},{name:'Evie Kessel',score:269.95},{name:'Anna Klear',score:null},{name:'Charlotte Knoth',score:null},{name:'Mila Kocev',score:160.95},
+      {name:'Olivia Kolar',score:465.55},{name:'Sena Korkmaz',score:64.22},{name:'Clara Lantz',score:null},{name:'Violet Lantz',score:null},{name:'Lucy Lapetina',score:null},{name:'Julia Leong',score:null},
+      {name:'Bella Levin',score:533.75},{name:'Emma Liebler',score:null},{name:'Bergen Lofgren',score:343.90},{name:'Elin Lofgren',score:null},{name:'Libby Long',score:270.70},{name:'Tessa Long',score:475.80},
+      {name:'Bella Lorack',score:635.70},{name:'Andrea Manning',score:null},{name:'Victoria Margiano',score:492.75},{name:'Aerial McCormick',score:null},{name:'Eleanore McCulley',score:null},{name:'Leyla McGrath',score:null},
+      {name:'Eleanor McHose',score:447.40},{name:'Jay Miller',score:505.85},{name:'Charlie Mills',score:null},{name:'Sydney Mills',score:null},{name:'Nora Moffitt',score:278.00},{name:'Emma Montgomery',score:175.35},
+      {name:'Ophelia Moore',score:23.23},{name:'Gracie Mortier',score:456.30},{name:'Julia Mortier',score:299.35},{name:'Violet Mortier',score:null},{name:'Elizabeth Moulton',score:null},{name:'Grace Muskus',score:null},
+      {name:'Amelia Musteata',score:14.26},{name:'Zoe Norkunas',score:202.10},{name:'Afton Norman',score:null},{name:'Ellie O\\'Brien',score:null},{name:'Sophia Olds',score:263.10},{name:'Charlotte Ouzts',score:174.25},
+      {name:'Charlotte Overbeck',score:98.00},{name:'Parker Patanella',score:null},{name:'Abigail Pate',score:180.70},{name:'Lila Porter',score:null},{name:'Kahlan Quinlan',score:100.50},{name:'Brooke Quinn',score:689.25},
+      {name:'Ashleigh Rayca',score:178.15},{name:'Merola Rizk',score:168.95},{name:'Brinn Rogers',score:68.99},{name:'Hanley Rolando',score:115.85},{name:'Blanka Rosler',score:348.80},{name:'Quinn Russell',score:null},
+      {name:'Mirabel Saarikko',score:468.15},{name:'Penelope Sablan',score:168.75},{name:'Kassidy Sader',score:null},{name:'Josie Schleicher',score:251.65},{name:'Kaylynn Schleicher',score:507.85},{name:'Blaire Schroth',score:null},
+      {name:'Caroline Schultz',score:268.60},{name:'Gina Scianandre',score:387.75},{name:'Gwen Segeleon',score:null},{name:'Savannah Shank',score:null},{name:'Reagan Shaw',score:null},{name:'Anna Shnowske',score:null},
+      {name:'Lincoln Slayton',score:96.75},{name:'Hailey Snyder',score:null},{name:'Wren Snyder',score:161.10},{name:'Moira Sokolowsky',score:652.00},{name:'Gabby Stalnaker',score:null},{name:'Autumn Takach',score:null},
+      {name:'Natalie Takach',score:null},{name:'Emma Thomas',score:null},{name:'Avery Walker',score:239.25},{name:'Madison Wall',score:254.90},{name:'Anna Wang',score:326.95},{name:'Hayden Watkins',score:null},
+      {name:'Annalise Watts',score:182.10},{name:'Ali Weisiger',score:null},{name:'Lydia Wennrich',score:null},{name:'Chandler West',score:null},{name:'Lawson West',score:null},{name:'Wren West',score:null},
+      {name:'Izzy Weyant',score:248.20},{name:'Gwen Wheeler',score:null},{name:'Alyssa White',score:649.80},{name:'Delaynie Wilkins',score:22.26},{name:'Mallory Grace Williams',score:null},{name:'Alexa Willis',score:null},
+      {name:'Hannah Yatsko',score:null},{name:'Lilly Younica',score:678.50}
+    ];
+
+    var S7_MEETS = [
+      {name:'Speedo Sectionals — St. Mary\\'s City',date:'Mar 26–29, 2026',location:'St. Mary\\'s City, VA',status:'upcoming'},
+      {name:'USA Swimming National Championships',date:'Jul 28–Aug 1, 2026',location:'Irvine, CA',status:'upcoming'},
+      {name:'SwimRVA Heavyweight Battle',date:'Jan 31–Feb 1, 2026',location:'Richmond, VA',status:'completed'},
+      {name:'IMX Games',date:'Jan 23–25, 2026',location:'College Park, MD',status:'completed'},
+      {name:'757swim Splash and Dash',date:'Jan 9–11, 2026',location:'Williamsburg, VA',status:'completed'}
+    ];
+
+    var S7_RECENT_PBS = [
+      {name:'Oliver Voss',event:'100 Fly',time:'1:04.03',drop:-1.27},
+      {name:'Oliver Voss',event:'200 Back',time:'2:10.25',drop:-0.70},
+      {name:'Sam Shnowske',event:'200 Breast',time:'2:31.60',drop:-0.46},
+      {name:'Sam Shnowske',event:'500 Free',time:'5:17.24',drop:-1.29},
+      {name:'Finnegan Leggett',event:'50 Back',time:'25.58',drop:-0.55}
+    ];
+
+    function s7Bar(val, max, color) {
+      var pct = Math.round((val / max) * 100);
+      return '<div style="width:100%;background:rgba(255,255,255,0.06);border-radius:4px;height:20px;position:relative;overflow:hidden">'
+        + '<div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:4px;opacity:0.7"></div>'
+        + '<span style="position:absolute;right:6px;top:2px;font-size:11px;color:rgba(255,255,255,0.7)">' + val + '</span></div>';
+    }
+
+    function render757View() {
+      var p = document.getElementById('s7-perspective').value;
+      var c = document.getElementById('s7-content');
+      if (p === 'overview') render757Overview(c);
+      else if (p === 'men-rankings') render757Rankings(c, 'men');
+      else if (p === 'women-rankings') render757Rankings(c, 'women');
+      else if (p === 'top-performers') render757TopPerformers(c);
+      else if (p === 'roster') render757Roster(c);
+      else if (p === 'meets') render757Meets(c);
+    }
+
+    function render757Overview(c) {
+      var menScored = S7_ROSTER_MEN.filter(function(r){return r.score!==null});
+      var womenScored = S7_ROSTER_WOMEN.filter(function(r){return r.score!==null});
+      var menAvg = Math.round(menScored.reduce(function(s,r){return s+r.score},0) / menScored.length);
+      var womenAvg = Math.round(womenScored.reduce(function(s,r){return s+r.score},0) / womenScored.length);
+      var topMenScore = S7_TOP_MEN[0].score;
+      var topWomenScore = S7_TOP_WOMEN[0].score;
+
+      c.innerHTML = ''
+        // Team stat cards
+        + '<div class="stat-cards">'
+        + '<div class="stat-card"><div class="stat-card-label">Total Athletes</div><div class="stat-card-value">' + (S7_ROSTER_MEN.length + S7_ROSTER_WOMEN.length) + '</div><div class="stat-card-sub">' + S7_ROSTER_MEN.length + ' men &middot; ' + S7_ROSTER_WOMEN.length + ' women</div></div>'
+        + '<div class="stat-card"><div class="stat-card-label">Regional Ranking</div><div class="stat-card-value" style="color:#fbbf24">6th / 7th</div><div class="stat-card-sub">VA Swimming &middot; Men / Women</div></div>'
+        + '<div class="stat-card"><div class="stat-card-label">Team Power Score</div><div class="stat-card-value">559.66</div><div class="stat-card-sub">Men avg: ' + menAvg + ' &middot; Women avg: ' + womenAvg + '</div></div>'
+        + '<div class="stat-card"><div class="stat-card-label">Top Performer</div><div class="stat-card-value" style="color:#a78bfa">' + topMenScore + '</div><div class="stat-card-sub">' + S7_TOP_MEN[0].name + '</div></div>'
+        + '</div>'
+        // Top Men and Women side by side
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">'
+        // Top Men
+        + '<div class="data-table-container"><div class="data-table-header"><div><div class="data-table-title">Top Men</div><div class="data-table-subtitle">By power score</div></div></div>'
+        + '<table class="data-table"><thead><tr><th>#</th><th>Athlete</th><th>Score</th></tr></thead><tbody>'
+        + S7_TOP_MEN.map(function(a,i) {
+            return '<tr><td>' + (i+1) + '</td><td>' + a.name + '</td><td>' + s7Bar(a.score, 800, '#a78bfa') + '</td></tr>';
+          }).join('')
+        + '</tbody></table></div>'
+        // Top Women
+        + '<div class="data-table-container"><div class="data-table-header"><div><div class="data-table-title">Top Women</div><div class="data-table-subtitle">By power score</div></div></div>'
+        + '<table class="data-table"><thead><tr><th>#</th><th>Athlete</th><th>Score</th></tr></thead><tbody>'
+        + S7_TOP_WOMEN.map(function(a,i) {
+            return '<tr><td>' + (i+1) + '</td><td>' + a.name + '</td><td>' + s7Bar(a.score, 800, '#38bdf8') + '</td></tr>';
+          }).join('')
+        + '</tbody></table></div>'
+        + '</div>'
+        // Recent PBs
+        + '<div class="data-table-container" style="margin-bottom:24px"><div class="data-table-header"><div><div class="data-table-title">Recent Personal Bests</div><div class="data-table-subtitle">Latest time drops</div></div></div>'
+        + '<table class="data-table"><thead><tr><th>Athlete</th><th>Event</th><th>Time</th><th>Time Drop</th></tr></thead><tbody>'
+        + S7_RECENT_PBS.map(function(p) {
+            return '<tr><td>' + p.name + '</td><td>' + p.event + '</td><td style="font-family:monospace">' + p.time + '</td><td style="color:#22c55e;font-weight:600">' + p.drop.toFixed(2) + 's</td></tr>';
+          }).join('')
+        + '</tbody></table></div>'
+        // Score distribution overview
+        + '<div class="data-table-container"><div class="data-table-header"><div><div class="data-table-title">Roster Score Distribution</div><div class="data-table-subtitle">Athletes grouped by power score tier</div></div></div>'
+        + '<div style="padding:20px">'
+        + (function() {
+            var tiers = [{label:'700+',color:'#fbbf24',min:700},{label:'600-699',color:'#22c55e',min:600},{label:'500-599',color:'#38bdf8',min:500},{label:'400-499',color:'#a78bfa',min:400},{label:'300-399',color:'#fb923c',min:300},{label:'200-299',color:'#f472b6',min:200},{label:'Under 200',color:'rgba(255,255,255,0.3)',min:0}];
+            var all = S7_ROSTER_MEN.concat(S7_ROSTER_WOMEN).filter(function(r){return r.score!==null});
+            return tiers.map(function(t) {
+              var max = t.min === 700 ? 9999 : t.min + 99.99;
+              var count = all.filter(function(r){return r.score>=t.min&&r.score<=max}).length;
+              var pct = Math.round(count / all.length * 100);
+              return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">'
+                + '<div style="width:80px;font-size:12px;color:var(--foreground-muted);text-align:right">' + t.label + '</div>'
+                + '<div style="flex:1;background:rgba(255,255,255,0.04);border-radius:4px;height:24px;overflow:hidden;position:relative">'
+                + '<div style="width:' + Math.max(2,pct) + '%;height:100%;background:' + t.color + ';border-radius:4px;opacity:0.6"></div>'
+                + '</div>'
+                + '<div style="width:60px;font-size:12px;color:var(--foreground)">' + count + ' <span style="color:var(--foreground-muted)">(' + pct + '%)</span></div></div>';
+            }).join('');
+          })()
+        + '</div></div>';
+    }
+
+    function render757Rankings(c, gender) {
+      var events = gender === 'men' ? S7_MEN_EVENTS : S7_WOMEN_EVENTS;
+      var relays = gender === 'men' ? S7_MEN_RELAYS : S7_WOMEN_RELAYS;
+      var color = gender === 'men' ? '#a78bfa' : '#38bdf8';
+      var title = gender === 'men' ? "Men's" : "Women's";
+
+      c.innerHTML = ''
+        + events.map(function(ev) {
+            return '<div class="data-table-container" style="margin-bottom:16px">'
+              + '<div class="data-table-header"><div><div class="data-table-title">' + ev.event + '</div>'
+              + '<div class="data-table-subtitle">Top ' + ev.swimmers.length + ' ' + title.toLowerCase() + ' performers</div></div></div>'
+              + '<table class="data-table"><thead><tr><th>Rank</th><th>Athlete</th><th>Time</th><th>Meet</th><th>Power Score</th></tr></thead><tbody>'
+              + ev.swimmers.map(function(s,i) {
+                  var rowBg = i === 0 ? ' style="background:rgba(139,92,246,0.05)"' : '';
+                  var medal = i === 0 ? '<span style="color:#fbbf24;margin-left:6px;font-size:10px">TEAM BEST</span>' : '';
+                  return '<tr' + rowBg + '><td>' + (i+1) + '</td><td>' + s.name + medal + '</td><td style="font-family:monospace">' + s.time + '</td>'
+                    + '<td style="font-size:12px;color:var(--foreground-muted)">' + (s.meet||'—') + '</td>'
+                    + '<td>' + s7Bar(s.pts, 800, color) + '</td></tr>';
+                }).join('')
+              + '</tbody></table></div>';
+          }).join('')
+        // Relays
+        + '<div class="data-table-container" style="margin-bottom:16px"><div class="data-table-header"><div><div class="data-table-title">Relay Events</div></div></div>'
+        + '<table class="data-table"><thead><tr><th>Event</th><th>Time</th><th>Meet</th><th>Power Score</th></tr></thead><tbody>'
+        + relays.map(function(r) {
+            return '<tr><td>' + r.event + '</td><td style="font-family:monospace">' + r.time + '</td>'
+              + '<td style="font-size:12px;color:var(--foreground-muted)">' + (r.meet||'—') + '</td>'
+              + '<td>' + s7Bar(r.pts, 800, color) + '</td></tr>';
+          }).join('')
+        + '</tbody></table></div>';
+    }
+
+    function render757TopPerformers(c) {
+      // Find who leads the most events
+      var menLeaders = {}; var womenLeaders = {};
+      S7_MEN_EVENTS.forEach(function(ev) {
+        var leader = ev.swimmers[0].name;
+        menLeaders[leader] = (menLeaders[leader] || 0) + 1;
+      });
+      S7_WOMEN_EVENTS.forEach(function(ev) {
+        var leader = ev.swimmers[0].name;
+        womenLeaders[leader] = (womenLeaders[leader] || 0) + 1;
+      });
+
+      // Build event presence map (which events each top athlete appears in)
+      var menPresence = {};
+      S7_TOP_MEN.forEach(function(a){menPresence[a.name]=[]});
+      S7_MEN_EVENTS.forEach(function(ev) {
+        ev.swimmers.forEach(function(s) {
+          if (menPresence[s.name]) menPresence[s.name].push({event:ev.event,pts:s.pts,rank:ev.swimmers.indexOf(s)+1});
+        });
+      });
+      var womenPresence = {};
+      S7_TOP_WOMEN.forEach(function(a){womenPresence[a.name]=[]});
+      S7_WOMEN_EVENTS.forEach(function(ev) {
+        ev.swimmers.forEach(function(s) {
+          if (womenPresence[s.name]) womenPresence[s.name].push({event:ev.event,pts:s.pts,rank:ev.swimmers.indexOf(s)+1});
+        });
+      });
+
+      c.innerHTML = ''
+        // Event leaders
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">'
+        + '<div class="data-table-container"><div class="data-table-header"><div><div class="data-table-title">Men\\'s Event Leaders</div><div class="data-table-subtitle">Athletes with most #1 event rankings</div></div></div>'
+        + '<table class="data-table"><thead><tr><th>Athlete</th><th>Events Led</th><th>Power Score</th></tr></thead><tbody>'
+        + Object.keys(menLeaders).sort(function(a,b){return menLeaders[b]-menLeaders[a]}).map(function(name) {
+            var topInfo = S7_TOP_MEN.find(function(t){return t.name===name});
+            return '<tr><td>' + name + '</td><td style="font-weight:600;color:#fbbf24">' + menLeaders[name] + '</td><td>' + (topInfo ? topInfo.score : '—') + '</td></tr>';
+          }).join('')
+        + '</tbody></table></div>'
+        + '<div class="data-table-container"><div class="data-table-header"><div><div class="data-table-title">Women\\'s Event Leaders</div><div class="data-table-subtitle">Athletes with most #1 event rankings</div></div></div>'
+        + '<table class="data-table"><thead><tr><th>Athlete</th><th>Events Led</th><th>Power Score</th></tr></thead><tbody>'
+        + Object.keys(womenLeaders).sort(function(a,b){return womenLeaders[b]-womenLeaders[a]}).map(function(name) {
+            var topInfo = S7_TOP_WOMEN.find(function(t){return t.name===name});
+            return '<tr><td>' + name + '</td><td style="font-weight:600;color:#fbbf24">' + womenLeaders[name] + '</td><td>' + (topInfo ? topInfo.score : '—') + '</td></tr>';
+          }).join('')
+        + '</tbody></table></div>'
+        + '</div>'
+        // Men's versatility profiles
+        + '<div class="data-table-container" style="margin-bottom:24px"><div class="data-table-header"><div><div class="data-table-title">Men\\'s Versatility Profiles</div><div class="data-table-subtitle">Event presence in top-4 rankings</div></div></div>'
+        + '<div style="padding:16px 20px">'
+        + S7_TOP_MEN.slice(0,8).map(function(a) {
+            var evts = menPresence[a.name] || [];
+            return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">'
+              + '<div style="width:140px"><div style="font-size:13px;font-weight:600;color:var(--foreground)">' + a.name + '</div><div style="font-size:11px;color:var(--foreground-muted)">' + a.score + ' pts</div></div>'
+              + '<div style="flex:1;display:flex;gap:6px;flex-wrap:wrap">'
+              + evts.map(function(e) {
+                  var bg = e.rank===1?'rgba(251,191,36,0.2)':e.rank===2?'rgba(192,192,192,0.15)':'rgba(255,255,255,0.06)';
+                  var fg = e.rank===1?'#fbbf24':e.rank===2?'#c0c0c0':'rgba(255,255,255,0.6)';
+                  return '<span style="padding:3px 8px;border-radius:6px;font-size:11px;background:'+bg+';color:'+fg+'" title="'+e.pts+' pts">#' + e.rank + ' ' + e.event + '</span>';
+                }).join('')
+              + '</div></div>';
+          }).join('')
+        + '</div></div>'
+        // Women's versatility profiles
+        + '<div class="data-table-container"><div class="data-table-header"><div><div class="data-table-title">Women\\'s Versatility Profiles</div><div class="data-table-subtitle">Event presence in top-4 rankings</div></div></div>'
+        + '<div style="padding:16px 20px">'
+        + S7_TOP_WOMEN.slice(0,8).map(function(a) {
+            var evts = womenPresence[a.name] || [];
+            return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">'
+              + '<div style="width:140px"><div style="font-size:13px;font-weight:600;color:var(--foreground)">' + a.name + '</div><div style="font-size:11px;color:var(--foreground-muted)">' + a.score + ' pts</div></div>'
+              + '<div style="flex:1;display:flex;gap:6px;flex-wrap:wrap">'
+              + evts.map(function(e) {
+                  var bg = e.rank===1?'rgba(56,189,248,0.2)':e.rank===2?'rgba(192,192,192,0.15)':'rgba(255,255,255,0.06)';
+                  var fg = e.rank===1?'#38bdf8':e.rank===2?'#c0c0c0':'rgba(255,255,255,0.6)';
+                  return '<span style="padding:3px 8px;border-radius:6px;font-size:11px;background:'+bg+';color:'+fg+'" title="'+e.pts+' pts">#' + e.rank + ' ' + e.event + '</span>';
+                }).join('')
+              + '</div></div>';
+          }).join('')
+        + '</div></div>';
+    }
+
+    function render757Roster(c) {
+      var gender = 'all';
+      var search = '';
+      function renderRoster() {
+        var men = S7_ROSTER_MEN.slice();
+        var women = S7_ROSTER_WOMEN.slice();
+        if (search) {
+          var q = search.toLowerCase();
+          men = men.filter(function(r){return r.name.toLowerCase().indexOf(q)>=0});
+          women = women.filter(function(r){return r.name.toLowerCase().indexOf(q)>=0});
+        }
+        var showMen = gender==='all'||gender==='men';
+        var showWomen = gender==='all'||gender==='women';
+        var menScored = men.filter(function(r){return r.score!==null}).sort(function(a,b){return b.score-a.score});
+        var menUnscored = men.filter(function(r){return r.score===null}).sort(function(a,b){return a.name.localeCompare(b.name)});
+        var womenScored = women.filter(function(r){return r.score!==null}).sort(function(a,b){return b.score-a.score});
+        var womenUnscored = women.filter(function(r){return r.score===null}).sort(function(a,b){return a.name.localeCompare(b.name)});
+
+        var html = '';
+        if (showMen) {
+          html += '<div class="data-table-container" style="margin-bottom:24px"><div class="data-table-header"><div><div class="data-table-title">Men\\'s Roster</div><div class="data-table-subtitle">' + men.length + ' athletes &middot; ' + menScored.length + ' with scores</div></div></div>'
+            + '<table class="data-table"><thead><tr><th>#</th><th>Athlete</th><th>Power Score</th></tr></thead><tbody>'
+            + menScored.concat(menUnscored).map(function(r,i) {
+                var scoreCell = r.score!==null ? s7Bar(r.score, 800, '#a78bfa') : '<span style="color:rgba(255,255,255,0.25)">—</span>';
+                return '<tr><td>' + (i+1) + '</td><td>' + r.name + '</td><td>' + scoreCell + '</td></tr>';
+              }).join('')
+            + '</tbody></table></div>';
+        }
+        if (showWomen) {
+          html += '<div class="data-table-container"><div class="data-table-header"><div><div class="data-table-title">Women\\'s Roster</div><div class="data-table-subtitle">' + women.length + ' athletes &middot; ' + womenScored.length + ' with scores</div></div></div>'
+            + '<table class="data-table"><thead><tr><th>#</th><th>Athlete</th><th>Power Score</th></tr></thead><tbody>'
+            + womenScored.concat(womenUnscored).map(function(r,i) {
+                var scoreCell = r.score!==null ? s7Bar(r.score, 800, '#38bdf8') : '<span style="color:rgba(255,255,255,0.25)">—</span>';
+                return '<tr><td>' + (i+1) + '</td><td>' + r.name + '</td><td>' + scoreCell + '</td></tr>';
+              }).join('')
+            + '</tbody></table></div>';
+        }
+        document.getElementById('s7-roster-body').innerHTML = html;
+      }
+
+      c.innerHTML = '<div style="display:flex;gap:12px;margin-bottom:16px;align-items:center">'
+        + '<div class="search-box" style="min-width:240px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+        + '<input type="text" id="s7-roster-search" placeholder="Search athletes..." oninput="document.dispatchEvent(new CustomEvent(\\'s7search\\'))"></div>'
+        + '<select id="s7-roster-gender" onchange="document.dispatchEvent(new CustomEvent(\\'s7search\\'))" style="padding:8px 12px;border-radius:6px;background:var(--background-sidebar);border:1px solid var(--border);color:var(--foreground);font-size:13px;font-family:inherit">'
+        + '<option value="all">All Athletes</option><option value="men">Men Only</option><option value="women">Women Only</option></select>'
+        + '<div style="margin-left:auto;font-size:13px;color:var(--foreground-muted)">' + S7_ROSTER_MEN.length + ' men &middot; ' + S7_ROSTER_WOMEN.length + ' women &middot; ' + (S7_ROSTER_MEN.length+S7_ROSTER_WOMEN.length) + ' total</div>'
+        + '</div><div id="s7-roster-body"></div>';
+
+      document.addEventListener('s7search', function handler() {
+        search = document.getElementById('s7-roster-search').value;
+        gender = document.getElementById('s7-roster-gender').value;
+        renderRoster();
+      });
+      renderRoster();
+    }
+
+    function render757Meets(c) {
+      var upcoming = S7_MEETS.filter(function(m){return m.status==='upcoming'});
+      var completed = S7_MEETS.filter(function(m){return m.status==='completed'});
+
+      c.innerHTML = ''
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">'
+        // Upcoming
+        + '<div class="data-table-container"><div class="data-table-header"><div><div class="data-table-title">Upcoming Meets</div><div class="data-table-subtitle">' + upcoming.length + ' scheduled</div></div></div>'
+        + '<div style="padding:0">'
+        + upcoming.map(function(m) {
+            return '<div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">'
+              + '<div style="width:40px;height:40px;border-radius:8px;background:rgba(56,189,248,0.15);display:flex;align-items:center;justify-content:center">'
+              + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>'
+              + '<div><div style="font-size:13px;font-weight:600;color:var(--foreground)">' + m.name + '</div>'
+              + '<div style="font-size:12px;color:var(--foreground-muted)">' + m.date + ' &middot; ' + m.location + '</div></div>'
+              + '<span style="margin-left:auto;padding:3px 10px;border-radius:10px;background:rgba(56,189,248,0.15);color:#38bdf8;font-size:11px;font-weight:600">UPCOMING</span>'
+              + '</div>';
+          }).join('')
+        + '</div></div>'
+        // Completed
+        + '<div class="data-table-container"><div class="data-table-header"><div><div class="data-table-title">Completed Meets</div><div class="data-table-subtitle">2026 season</div></div></div>'
+        + '<div style="padding:0">'
+        + completed.map(function(m) {
+            return '<div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">'
+              + '<div style="width:40px;height:40px;border-radius:8px;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center">'
+              + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>'
+              + '<div><div style="font-size:13px;font-weight:600;color:var(--foreground)">' + m.name + '</div>'
+              + '<div style="font-size:12px;color:var(--foreground-muted)">' + m.date + ' &middot; ' + m.location + '</div></div>'
+              + '<span style="margin-left:auto;padding:3px 10px;border-radius:10px;background:rgba(34,197,94,0.15);color:#22c55e;font-size:11px;font-weight:600">COMPLETED</span>'
+              + '</div>';
+          }).join('')
+        + '</div></div>'
+        + '</div>'
+        // Season timeline
+        + '<div class="data-table-container"><div class="data-table-header"><div><div class="data-table-title">2026 Season at a Glance</div><div class="data-table-subtitle">Williamsburg, VA &mdash; Virginia Swimming LSC</div></div></div>'
+        + '<div style="padding:20px;display:flex;gap:0;position:relative">'
+        + '<div style="position:absolute;top:38px;left:40px;right:40px;height:2px;background:rgba(255,255,255,0.1)"></div>'
+        + S7_MEETS.slice().reverse().map(function(m, i) {
+            var dotColor = m.status === 'upcoming' ? '#38bdf8' : '#22c55e';
+            return '<div style="flex:1;text-align:center;position:relative;z-index:1">'
+              + '<div style="width:12px;height:12px;border-radius:50%;background:' + dotColor + ';margin:0 auto 8px;border:2px solid var(--background-sidebar)"></div>'
+              + '<div style="font-size:11px;font-weight:600;color:var(--foreground)">' + m.name.split('—')[0].split('–')[0].trim().substring(0,20) + '</div>'
+              + '<div style="font-size:10px;color:var(--foreground-muted)">' + m.date.split(',')[0] + '</div></div>';
+          }).join('')
+        + '</div></div>';
     }
 
     // ── Swim Analytics ──────────────────────────────────────────────
