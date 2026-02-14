@@ -228,6 +228,7 @@ if (!UPSTREAM) {
 }
 
 app.disable("x-powered-by");
+if (process.env.RAILWAY_ENVIRONMENT) app.set("trust proxy", 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 
 // ── Session auth ────────────────────────────────────────────────────
