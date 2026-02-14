@@ -7914,6 +7914,87 @@ app.get(UI_ROUTE, (req, res) => {
         }
         .outlook-activate-btn-activate:hover { opacity: 0.9; }
 
+        /* Teams Activate Modal */
+        .teams-activate-overlay {
+          display: none; position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.6); z-index: 10002;
+          justify-content: center; align-items: center;
+        }
+        .teams-activate-overlay.active { display: flex; }
+        .teams-activate-modal {
+          background: #1e2235; border-radius: 12px; width: 620px;
+          border: 1px solid rgba(255,255,255,0.1); padding: 28px 32px;
+        }
+        .teams-activate-header {
+          display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
+        }
+        .teams-activate-header h3 {
+          font-size: 18px; font-weight: 600; color: #fff; margin: 0;
+        }
+        .teams-activate-close {
+          background: none; border: none; color: rgba(255,255,255,0.4);
+          font-size: 22px; cursor: pointer; padding: 0; line-height: 1;
+        }
+        .teams-activate-close:hover { color: rgba(255,255,255,0.8); }
+        .teams-activate-meta {
+          display: flex; gap: 0; flex-direction: column; margin-bottom: 20px;
+        }
+        .teams-activate-meta-row {
+          display: flex; align-items: center; padding: 6px 0;
+        }
+        .teams-activate-meta-label {
+          font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.9); width: 120px;
+        }
+        .teams-activate-meta-value {
+          font-size: 14px; color: rgba(255,255,255,0.6);
+        }
+        .teams-activate-field {
+          position: relative; margin-bottom: 18px;
+        }
+        .teams-activate-field label {
+          position: absolute; top: -9px; left: 12px;
+          background: #1e2235; padding: 0 6px;
+          font-size: 11px; color: rgba(255,255,255,0.45);
+          pointer-events: none;
+        }
+        .teams-activate-field input {
+          width: 100%; padding: 14px 14px; border-radius: 8px;
+          background: transparent; border: 1px solid rgba(255,255,255,0.2);
+          color: rgba(255,255,255,0.85); font-size: 13px; font-family: inherit;
+          box-sizing: border-box;
+        }
+        .teams-activate-field input:focus {
+          outline: none; border-color: var(--primary);
+        }
+        .teams-activate-field input::placeholder {
+          color: rgba(255,255,255,0.3);
+        }
+        .teams-activate-footer {
+          display: flex; align-items: center; justify-content: space-between; margin-top: 28px;
+        }
+        .teams-activate-cancel {
+          background: none; border: none; color: var(--primary);
+          font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;
+          padding: 0;
+        }
+        .teams-activate-cancel:hover { opacity: 0.8; }
+        .teams-activate-footer-right {
+          display: flex; gap: 10px;
+        }
+        .teams-activate-btn-test {
+          padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500;
+          cursor: pointer; font-family: inherit; border: 1px solid rgba(255,255,255,0.2);
+          background: transparent; color: rgba(255,255,255,0.7);
+        }
+        .teams-activate-btn-test:hover { background: rgba(255,255,255,0.06); }
+        .teams-activate-btn-activate {
+          padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 500;
+          cursor: pointer; font-family: inherit; border: none;
+          background: var(--primary); color: white;
+        }
+        .teams-activate-btn-activate:hover { opacity: 0.9; }
+
         /* Create Agent Flow Modal */
         .create-flow-overlay {
           display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -8283,7 +8364,7 @@ app.get(UI_ROUTE, (req, res) => {
               <div class="tool-detail-source" id="tool-detail-source">Third Party</div>
               <div class="tool-detail-tag" id="tool-detail-tag">Tool</div>
               <div class="tool-detail-desc" id="tool-detail-desc">Microsoft Outlook APIs to manage Messages, Channels and Chats</div>
-              <button class="tool-detail-activate" onclick="openOutlookActivate()">
+              <button class="tool-detail-activate" id="tool-detail-activate-btn" onclick="openOutlookActivate()">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 Activate
               </button>
@@ -8377,6 +8458,47 @@ app.get(UI_ROUTE, (req, res) => {
             <div class="outlook-activate-footer-right">
               <button class="outlook-activate-btn-test" onclick="testOutlookConnection()">Test Connection</button>
               <button class="outlook-activate-btn-activate" onclick="activateOutlookConnection()">Activate</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Teams Activate Modal -->
+      <div class="teams-activate-overlay" id="teams-activate-overlay" onclick="if(event.target===this)closeTeamsActivate()">
+        <div class="teams-activate-modal">
+          <div class="teams-activate-header">
+            <h3>Activate Microsoft Teams</h3>
+            <button class="teams-activate-close" onclick="closeTeamsActivate()">&times;</button>
+          </div>
+          <div class="teams-activate-meta">
+            <div class="teams-activate-meta-row">
+              <div class="teams-activate-meta-label">Type</div>
+              <div class="teams-activate-meta-value">Tool</div>
+            </div>
+            <div class="teams-activate-meta-row">
+              <div class="teams-activate-meta-label">Name</div>
+              <div class="teams-activate-meta-value">Microsoft Teams</div>
+            </div>
+          </div>
+          <div class="teams-activate-field">
+            <label>Access Token URL</label>
+            <input type="text" id="teams-token-url" value="https://login.microsoftonline.com/<tenantId>/oauth2/v2.0/token">
+          </div>
+          <div class="teams-activate-field">
+            <label>Authorization URL</label>
+            <input type="text" id="teams-auth-url" value="https://login.microsoftonline.com/<tenantId>/oauth2/v2.0/authorize">
+          </div>
+          <div class="teams-activate-field">
+            <input type="text" id="teams-client-id" placeholder="Client ID">
+          </div>
+          <div class="teams-activate-field">
+            <input type="password" id="teams-client-secret" placeholder="Client Secret">
+          </div>
+          <div class="teams-activate-footer">
+            <button class="teams-activate-cancel" onclick="closeTeamsActivate()">Cancel</button>
+            <div class="teams-activate-footer-right">
+              <button class="teams-activate-btn-test" onclick="testTeamsConnection()">Test Connection</button>
+              <button class="teams-activate-btn-activate" onclick="activateTeamsConnection()">Activate</button>
             </div>
           </div>
         </div>
@@ -8846,6 +8968,39 @@ app.get(UI_ROUTE, (req, res) => {
       reply: 'New Direct Reply Node'
     };
 
+    var toolDetailContent = {
+      outlook: {
+        icon: 'O',
+        iconClass: 'purple',
+        title: 'Microsoft Outlook',
+        source: 'Third Party',
+        tag: 'Tool',
+        desc: 'Microsoft Outlook APIs to manage Messages, Events and Calendar',
+        overview: 'Use these tools to perform Create/Read/Update/Delete operations on your Microsoft Outlook Messages, Events and Calendar.',
+        usecases: [
+          { title: 'Email Messages', desc: 'List Messages, Get Message, Create Draft Message, Send Message, Update Message, Delete Message, Copy Message, Move Message, Reply to Message, Forward Message.' },
+          { title: 'Events', desc: 'List Events, Get Event, Create Event, Update Event, Delete Event' },
+          { title: 'Calendar', desc: 'List Events, Get Event, Create Event. Update Event, Delete Event' }
+        ],
+        activateFn: 'openOutlookActivate'
+      },
+      teams: {
+        icon: 'T',
+        iconClass: 'cyan',
+        title: 'Microsoft Teams',
+        source: 'Third Party',
+        tag: 'Tool',
+        desc: 'Microsoft Teams APIs to manage Messages, Channels and Chats',
+        overview: 'Use these tools to perform Create/Read/Update/Delete operations on your Microsoft Teams Channels, Chats and Chat Messages.',
+        usecases: [
+          { title: 'Microsoft Teams Messaging', desc: 'List Messages, Get Message, Send Message, Update Message, Delete Message, Reply to Message, Set Reaction, Unset Reaction, Get All Messages.' },
+          { title: 'Microsoft Teams Chat', desc: 'List Chats, Get Chat, Create Chat, Update Chat, Delete Chat, List Chat Members, Add Chat Member, Remove Chat Member, Pin Message, Unpin Message.' },
+          { title: 'Microsoft Teams Channel', desc: 'List Channels, Get Channel, Create Channel, Update Channel, Delete Channel, Archive Channel, Unarchive Channel, List Channel Members, Add Channel Member, Remove Channel Member.' }
+        ],
+        activateFn: 'openTeamsActivate'
+      }
+    };
+
     function openAiAgentDetail(agent) {
       if (agent.id === 'platform-one-mcp') {
         document.getElementById('mcp-detail-overlay').classList.add('active');
@@ -8853,7 +9008,30 @@ app.get(UI_ROUTE, (req, res) => {
         document.getElementById('workflow-modal-title').textContent = agent.name;
         document.getElementById('workflow-modal-overlay').classList.add('active');
         initWorkflowBuilder();
-      } else if (agent.id === 'outlook') {
+      } else if (toolDetailContent[agent.id]) {
+        var data = toolDetailContent[agent.id];
+        var iconEl = document.getElementById('tool-detail-icon');
+        iconEl.textContent = data.icon;
+        iconEl.className = 'tool-detail-icon';
+        if (data.iconClass === 'cyan') {
+          iconEl.style.background = 'linear-gradient(135deg, #06b6d4, #0891b2)';
+        } else {
+          iconEl.style.background = 'linear-gradient(135deg, #8b5cf6, #7c3aed)';
+        }
+        document.getElementById('tool-detail-title').textContent = data.title;
+        document.getElementById('tool-detail-source').textContent = data.source;
+        document.getElementById('tool-detail-tag').textContent = data.tag;
+        document.getElementById('tool-detail-desc').textContent = data.desc;
+        document.getElementById('tool-detail-overview-text').textContent = data.overview;
+        var ucHtml = '';
+        data.usecases.forEach(function(uc) {
+          ucHtml += '<div class="tool-detail-usecase">' +
+            '<div class="tool-detail-usecase-title"><span>&#10023;</span> ' + uc.title + '</div>' +
+            '<div class="tool-detail-usecase-desc">' + uc.desc + '</div>' +
+            '</div>';
+        });
+        document.getElementById('tool-detail-usecases').innerHTML = ucHtml;
+        document.getElementById('tool-detail-activate-btn').setAttribute('onclick', data.activateFn + '()');
         document.getElementById('tool-detail-overlay').classList.add('active');
       } else {
         alert('Agent: ' + agent.name + '\\nSource: ' + agent.subtitle + '\\nStatus: ' + (agent.status || 'Available'));
@@ -8903,6 +9081,47 @@ app.get(UI_ROUTE, (req, res) => {
         outlookAgent.status = 'active';
         aiAgentsData.active.push(outlookAgent);
         aiAgentsData.catalog = aiAgentsData.catalog.filter(function(a) { return a.id !== 'outlook'; });
+        renderAiAgents();
+      }
+    }
+
+    function openTeamsActivate() {
+      document.getElementById('teams-activate-overlay').classList.add('active');
+    }
+    function closeTeamsActivate() {
+      document.getElementById('teams-activate-overlay').classList.remove('active');
+    }
+    function testTeamsConnection() {
+      var btn = event.target;
+      var origText = btn.textContent;
+      btn.textContent = 'Testing...';
+      btn.disabled = true;
+      setTimeout(function() {
+        btn.textContent = 'Connected!';
+        btn.style.borderColor = '#22c55e';
+        btn.style.color = '#22c55e';
+        setTimeout(function() {
+          btn.textContent = origText;
+          btn.disabled = false;
+          btn.style.borderColor = '';
+          btn.style.color = '';
+        }, 2000);
+      }, 1500);
+    }
+    function activateTeamsConnection() {
+      var clientId = document.getElementById('teams-client-id').value;
+      var clientSecret = document.getElementById('teams-client-secret').value;
+      if (!clientId || !clientSecret) {
+        alert('Please provide both Client ID and Client Secret.');
+        return;
+      }
+      closeTeamsActivate();
+      closeToolDetail();
+      var teamsAgent = aiAgentsData.catalog.find(function(a) { return a.id === 'teams'; });
+      if (teamsAgent) {
+        teamsAgent.status = 'active';
+        aiAgentsData.active.push(teamsAgent);
+        aiAgentsData.catalog = aiAgentsData.catalog.filter(function(a) { return a.id !== 'teams'; });
         renderAiAgents();
       }
     }
