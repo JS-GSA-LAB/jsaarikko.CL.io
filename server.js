@@ -7745,7 +7745,7 @@ app.get(UI_ROUTE, (_req, res) => {
         '<div class="ai-agent-description">' + agent.description + '</div>' : '';
 
       card.innerHTML =
-        '<button class="ai-agent-delete" data-agent-id="' + agent.id + '" onclick="deleteAgentCard(event,\'' + agent.id + '\')">' +
+        '<button class="ai-agent-delete">' +
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>' +
         '</button>' +
         '<div class="ai-agent-card-header">' +
@@ -7758,6 +7758,13 @@ app.get(UI_ROUTE, (_req, res) => {
         '<div class="ai-agent-tags">' + tagsHtml + '</div>' +
         descHtml +
         statusHtml;
+
+      // Attach delete handler via JS to avoid inline onclick issues
+      var delBtn = card.querySelector('.ai-agent-delete');
+      delBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        deleteAgentCard(agent.id);
+      });
 
       return card;
     }
@@ -7806,8 +7813,7 @@ app.get(UI_ROUTE, (_req, res) => {
     }
 
     // Delete Agent Card
-    function deleteAgentCard(event, agentId) {
-      event.stopPropagation();
+    function deleteAgentCard(agentId) {
       if (!confirm('Delete this agent?')) return;
       aiAgentsData.active = aiAgentsData.active.filter(function(a) { return a.id !== agentId; });
       aiAgentsData.catalog = aiAgentsData.catalog.filter(function(a) { return a.id !== agentId; });
