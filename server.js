@@ -8188,9 +8188,20 @@ app.get(UI_ROUTE, (req, res) => {
         }
         .wf-chat-overlay.active { display: flex; }
         .wf-chat-panel {
-          background: #151922; border-radius: 12px; width: 380px;
+          background: #151922; border-radius: 12px; width: 420px; height: 520px;
           border: 1px solid rgba(255,255,255,0.1); overflow: hidden;
-          display: flex; flex-direction: column; max-height: 70vh;
+          display: flex; flex-direction: column;
+          min-width: 320px; min-height: 300px; max-width: 90vw; max-height: 90vh;
+          position: relative;
+        }
+        .wf-chat-resize-handle {
+          position: absolute; bottom: 0; right: 0; width: 18px; height: 18px;
+          cursor: nwse-resize; z-index: 10;
+          background: linear-gradient(135deg, transparent 50%, rgba(139,92,246,0.4) 50%);
+          border-radius: 0 0 12px 0;
+        }
+        .wf-chat-resize-handle:hover {
+          background: linear-gradient(135deg, transparent 50%, rgba(139,92,246,0.7) 50%);
         }
         .wf-chat-header {
           display: flex; align-items: center; justify-content: space-between;
@@ -8720,7 +8731,7 @@ app.get(UI_ROUTE, (req, res) => {
 
       <!-- Chat Input Panel -->
       <div class="wf-chat-overlay" id="wf-chat-overlay" onclick="if(event.target===this)closeWfChat()">
-        <div class="wf-chat-panel">
+        <div class="wf-chat-panel" id="wf-chat-panel">
           <div class="wf-chat-header">
             <div class="wf-chat-header-left">
               <div class="wf-chat-header-icon">
@@ -8741,6 +8752,7 @@ app.get(UI_ROUTE, (req, res) => {
             <input class="wf-chat-input" id="wf-chat-input" type="text" placeholder="Chat Input" onkeydown="if(event.key==='Enter')sendWfChat()">
             <button class="wf-chat-send" onclick="sendWfChat()">Send</button>
           </div>
+          <div class="wf-chat-resize-handle" id="wf-chat-resize-handle"></div>
         </div>
       </div>
     </div>
@@ -9562,6 +9574,44 @@ app.get(UI_ROUTE, (req, res) => {
         input.focus();
       });
     }
+
+    // --- Chat Panel Resize ---
+    (function() {
+      var handle = document.getElementById('wf-chat-resize-handle');
+      var panel = document.getElementById('wf-chat-panel');
+      if (!handle || !panel) return;
+      var startX, startY, startW, startH;
+      handle.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        startX = e.clientX; startY = e.clientY;
+        startW = panel.offsetWidth; startH = panel.offsetHeight;
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+      handle.addEventListener('touchstart', function(e) {
+        var t = e.touches[0];
+        startX = t.clientX; startY = t.clientY;
+        startW = panel.offsetWidth; startH = panel.offsetHeight;
+        document.addEventListener('touchmove', onTouchMove);
+        document.addEventListener('touchend', onTouchEnd);
+      });
+      function onMove(e) { resize(e.clientX, e.clientY); }
+      function onTouchMove(e) { var t = e.touches[0]; resize(t.clientX, t.clientY); }
+      function resize(cx, cy) {
+        var newW = Math.max(320, Math.min(window.innerWidth * 0.9, startW + (cx - startX)));
+        var newH = Math.max(300, Math.min(window.innerHeight * 0.9, startH + (cy - startY)));
+        panel.style.width = newW + 'px';
+        panel.style.height = newH + 'px';
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      function onTouchEnd() {
+        document.removeEventListener('touchmove', onTouchMove);
+        document.removeEventListener('touchend', onTouchEnd);
+      }
+    })();
 
     // Application Traffic Functions
     async function initAppTrafficView() {
