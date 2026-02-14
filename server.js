@@ -7620,6 +7620,10 @@ app.get(UI_ROUTE, (req, res) => {
           display: flex; align-items: center; justify-content: center;
           color: white; font-weight: 700; font-size: 18px; flex-shrink: 0;
         }
+        .mcp-detail-topbar-logo-icon.cyan,
+        .mcp-detail-header-icon.cyan {
+          background: linear-gradient(135deg, #06b6d4, #0891b2);
+        }
         .mcp-detail-header h1 {
           font-size: 24px; font-weight: 700; color: #fff; margin: 0 0 4px 0;
         }
@@ -8331,6 +8335,86 @@ app.get(UI_ROUTE, (req, res) => {
         </div>
       </div>
 
+      <!-- Meraki MCP Detail Page -->
+      <div class="mcp-detail-overlay" id="meraki-detail-overlay">
+        <div class="mcp-detail-topbar">
+          <div class="mcp-detail-topbar-logo">
+            <div class="mcp-detail-topbar-logo-icon cyan">M</div>
+            Cisco Meraki
+          </div>
+          <div class="mcp-detail-tabs">
+            <button class="mcp-detail-tab active">Catalog</button>
+            <button class="mcp-detail-tab">Dashboard</button>
+            <button class="mcp-detail-tab">Agent Flow Builder</button>
+          </div>
+        </div>
+        <div class="mcp-detail-content">
+          <button class="mcp-detail-backlink" onclick="closeMerakiDetail()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Catalog
+          </button>
+
+          <div class="mcp-detail-header">
+            <div class="mcp-detail-header-icon cyan">M</div>
+            <div>
+              <h1>Meraki APIs MCP Server</h1>
+            </div>
+          </div>
+
+          <div class="mcp-detail-source">Cisco</div>
+          <div class="mcp-detail-tag">Tool</div>
+          <div class="mcp-detail-desc">Enables integration with Cisco Meraki APIs for cloud-managed network monitoring and automation.</div>
+
+          <div class="mcp-detail-actions">
+            <div class="mcp-detail-status-badge"><span class="mcp-detail-status-dot"></span>Active</div>
+            <button class="mcp-detail-btn" onclick="openMerakiManageModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              Manage
+            </button>
+            <button class="mcp-detail-btn">Deactivate</button>
+          </div>
+
+          <div class="mcp-detail-pills">
+            <button class="mcp-detail-pill">Supported Agents</button>
+            <button class="mcp-detail-pill">General Model</button>
+            <button class="mcp-detail-pill">Service Agent</button>
+            <button class="mcp-detail-pill active">MCP</button>
+            <button class="mcp-detail-pill">Purpose</button>
+            <button class="mcp-detail-pill">Agent Configuration</button>
+            <button class="mcp-detail-pill">Agent Execution</button>
+            <button class="mcp-detail-pill">Standardization</button>
+          </div>
+
+          <div class="mcp-detail-meta">
+            <div><strong>Services:</strong> 1 API</div>
+            <div><strong>Last Updated:</strong> 2025.06.15</div>
+          </div>
+
+          <div class="mcp-detail-section">
+            <h2>Overview</h2>
+            <p>The Meraki APIs MCP Server provides a streamlined interface for interacting with the Cisco Meraki Dashboard API. It enables cloud-managed network monitoring, device management, and automation across Meraki organizations and networks, giving agents direct access to network infrastructure insights and controls.</p>
+
+            <h3>Use Cases</h3>
+            <div class="mcp-use-case">
+              <div class="mcp-use-case-title"><span>1.</span> Network monitoring</div>
+              <div class="mcp-use-case-desc">Monitor device status, uptime, connectivity, and performance across Meraki networks.</div>
+            </div>
+            <div class="mcp-use-case">
+              <div class="mcp-use-case-title"><span>2.</span> Device management</div>
+              <div class="mcp-use-case-desc">List, configure, and manage Meraki devices including APs, switches, and security appliances.</div>
+            </div>
+            <div class="mcp-use-case">
+              <div class="mcp-use-case-title"><span>3.</span> Organization and network administration</div>
+              <div class="mcp-use-case-desc">Manage organizations, networks, and administrators through the Meraki Dashboard API.</div>
+            </div>
+            <div class="mcp-use-case">
+              <div class="mcp-use-case-title"><span>4.</span> Client and traffic analysis</div>
+              <div class="mcp-use-case-desc">Track connected clients, bandwidth usage, and application traffic across the network.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Manage MCP Modal -->
       <div class="mcp-manage-overlay" id="mcp-manage-overlay" onclick="if(event.target===this)closeMcpManageModal()">
         <div class="mcp-manage-modal">
@@ -8356,6 +8440,37 @@ app.get(UI_ROUTE, (req, res) => {
           </div>
           <div class="mcp-manage-actions">
             <button class="mcp-manage-btn" onclick="closeMcpManageModal()">Cancel</button>
+            <button class="mcp-manage-btn test">Test Connection</button>
+            <button class="mcp-manage-btn primary">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manage Meraki MCP Modal -->
+      <div class="mcp-manage-overlay" id="meraki-manage-overlay" onclick="if(event.target===this)closeMerakiManageModal()">
+        <div class="mcp-manage-modal">
+          <div class="mcp-manage-header">
+            <h3>Manage Meraki APIs MCP Server</h3>
+            <button class="mcp-manage-close" onclick="closeMerakiManageModal()">&times;</button>
+          </div>
+          <div class="mcp-manage-field">
+            <div class="mcp-manage-label">Type</div>
+            <div class="mcp-manage-value">MCP Server</div>
+          </div>
+          <div class="mcp-manage-field">
+            <div class="mcp-manage-label">Name</div>
+            <div class="mcp-manage-value">Meraki APIs MCP Server</div>
+          </div>
+          <div class="mcp-manage-field">
+            <div class="mcp-manage-label">Server URL</div>
+            <input class="mcp-manage-input" type="text" value="https://meraki-mcp.example.com/mcp" readonly>
+          </div>
+          <div class="mcp-manage-field">
+            <div class="mcp-manage-label">API Key</div>
+            <input class="mcp-manage-input" type="password" value="sk-xxxxxxxxxxxx" readonly>
+          </div>
+          <div class="mcp-manage-actions">
+            <button class="mcp-manage-btn" onclick="closeMerakiManageModal()">Cancel</button>
             <button class="mcp-manage-btn test">Test Connection</button>
             <button class="mcp-manage-btn primary">Save Changes</button>
           </div>
@@ -8868,6 +8983,7 @@ app.get(UI_ROUTE, (req, res) => {
         { id: 'device-health-notif', name: 'Proactive Network DeviceHealth Issues Notification', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null },
         { id: 'support-case', name: 'Interactive Support case creation and tracking', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null },
         { id: 'platform-one-mcp', name: 'Platform ONE APIs MCP Server', subtitle: 'Extreme Networks', icon: 'E', tags: ['tool'], status: 'active' },
+        { id: 'meraki-mcp', name: 'Meraki APIs MCP Server', subtitle: 'Cisco', icon: 'M', iconClass: 'cyan', tags: ['tool'], status: 'active' },
         { id: 'ashutosh-flow1', name: 'Ashutosh Flow1', subtitle: 'User-Added', icon: '>>', tags: ['workflow'], status: null },
         { id: 'radio-resource-intel', name: 'Radio Resource Intelligence', subtitle: 'Extreme Networks', icon: 'E', tags: ['agent'], status: 'active' },
         { id: 'device-health-intel', name: 'Device Health Intelligence', subtitle: 'Extreme Networks', icon: 'E', tags: ['agent'], status: 'active' },
@@ -9017,7 +9133,9 @@ app.get(UI_ROUTE, (req, res) => {
     };
 
     function openAiAgentDetail(agent) {
-      if (agent.id === 'platform-one-mcp') {
+      if (agent.id === 'meraki-mcp') {
+        document.getElementById('meraki-detail-overlay').classList.add('active');
+      } else if (agent.id === 'platform-one-mcp') {
         document.getElementById('mcp-detail-overlay').classList.add('active');
       } else if (agent.id === 'testing-workflow') {
         document.getElementById('workflow-modal-title').textContent = agent.name;
@@ -9149,6 +9267,16 @@ app.get(UI_ROUTE, (req, res) => {
     }
     function closeMcpManageModal() {
       document.getElementById('mcp-manage-overlay').classList.remove('active');
+    }
+
+    function closeMerakiDetail() {
+      document.getElementById('meraki-detail-overlay').classList.remove('active');
+    }
+    function openMerakiManageModal() {
+      document.getElementById('meraki-manage-overlay').classList.add('active');
+    }
+    function closeMerakiManageModal() {
+      document.getElementById('meraki-manage-overlay').classList.remove('active');
     }
 
     // Delete Agent Card
