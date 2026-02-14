@@ -731,6 +731,30 @@ app.delete("/api/portal-users/:id", (req, res) => {
   res.json({ ok: true });
 });
 
+// Build dynamic system prompt with MCP server awareness
+function buildChatSystemPrompt() {
+  const connections = [];
+  if (UPSTREAM)
+    connections.push('Platform ONE APIs MCP Server (Extreme Networks) — Connected, URL: ' + UPSTREAM + PROXY_ROUTE);
+  if (MERAKI_API_KEY)
+    connections.push('Meraki APIs MCP Server (Cisco) — Connected, Endpoint: ' + MERAKI_API_BASE);
+  if (XIQ_USERNAME && XIQ_PASSWORD)
+    connections.push('ExtremeCloud IQ (Extreme Networks) — Connected, Endpoint: ' + XIQ_API_BASE);
+  if (PEPLINK_CLIENT_ID && PEPLINK_CLIENT_SECRET)
+    connections.push('PepLink InControl2 (PepLink) — Connected, Endpoint: ' + PEPLINK_API_BASE);
+
+  let mcpSection = '';
+  if (connections.length > 0) {
+    mcpSection = '\n\nYou have the following MCP server connections and API integrations configured and active:\n'
+      + connections.map(c => '- ' + c).join('\n')
+      + '\n\nWhen users ask about MCP connections, integrations, or server status, report these active connections and their status.';
+  }
+
+  return 'You are a helpful network operations AI assistant integrated into the Extreme Exchange platform. '
+    + 'Help users with network management, troubleshooting, and automation tasks. Keep responses concise.'
+    + mcpSection;
+}
+
 // Claude Chat API
 app.post("/api/claude-chat", express.json(), async (req, res) => {
   if (!ANTHROPIC_API_KEY) {
@@ -748,7 +772,7 @@ app.post("/api/claude-chat", express.json(), async (req, res) => {
       body: JSON.stringify({
         model: "claude-sonnet-4-5-20250929",
         max_tokens: 1024,
-        system: "You are a helpful network operations AI assistant integrated into the Extreme Exchange platform. Help users with network management, troubleshooting, and automation tasks. Keep responses concise.",
+        system: buildChatSystemPrompt(),
         messages: messages,
       }),
     });
