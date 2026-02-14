@@ -289,8 +289,6 @@ app.get("/healthz", (_req, res) => res.json({ ok: true }));
 app.get("/login", (req, res) => {
   if (req.session && req.session.userId) return res.redirect("/");
   const error = req.query.error ? "Invalid username or password." : "";
-  let hasPasskey = false;
-  for (const [, u] of users) { if (u.webauthn_credential) { hasPasskey = true; break; } }
   res.send(`<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -334,7 +332,7 @@ app.get("/login", (req, res) => {
     <input id="password" name="password" type="password" required>
     <button type="submit">Sign In</button>
   </form>
-  <div id="passkey-section" style="display:${hasPasskey ? 'block' : 'none'}">
+  <div id="passkey-section">
     <div class="divider"><span>or</span></div>
     <button type="button" class="passkey-btn" id="passkey-login-btn" onclick="loginWithPasskey()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -349,14 +347,27 @@ app.get("/login", (req, res) => {
     <div id="passkey-error" class="error" style="display:none;margin-top:12px"></div>
   </div>
 </div>
-${hasPasskey ? '<script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"><\/script>' : ''}
 <script>
+async function loadWebAuthnBrowser() {
+  if (typeof SimpleWebAuthnBrowser !== 'undefined') return;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js';
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to load WebAuthn library'));
+    document.head.appendChild(s);
+  });
+}
 async function loginWithPasskey() {
   const errEl = document.getElementById('passkey-error');
   errEl.style.display = 'none';
   try {
+    await loadWebAuthnBrowser();
     const optRes = await fetch('/webauthn/auth/options');
-    if (!optRes.ok) throw new Error((await optRes.json()).error || 'Failed to get options');
+    if (!optRes.ok) {
+      const body = await optRes.json().catch(() => ({}));
+      throw new Error(body.error || 'No passkeys registered yet. Log in with password first, then register a passkey from the sidebar.');
+    }
     const opts = await optRes.json();
     const authResp = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: opts });
     const verRes = await fetch('/webauthn/auth/verify', {
@@ -372,7 +383,7 @@ async function loginWithPasskey() {
       errEl.style.display = 'block';
     }
   } catch (e) {
-    if (e.name === 'NotAllowedError') return; // user cancelled
+    if (e.name === 'NotAllowedError') return;
     errEl.textContent = e.message || 'Passkey authentication failed.';
     errEl.style.display = 'block';
   }
