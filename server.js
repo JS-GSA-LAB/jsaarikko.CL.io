@@ -7174,6 +7174,101 @@ app.get(UI_ROUTE, (_req, res) => {
           background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8);
         }
 
+        /* Catalog Tool Detail Page */
+        .tool-detail-overlay {
+          display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+          background: #0d1117; z-index: 9999; overflow-y: auto;
+        }
+        .tool-detail-overlay.active { display: block; }
+        .tool-detail-content {
+          max-width: 1050px; margin: 0 auto; padding: 40px 32px;
+        }
+        .tool-detail-top {
+          display: flex; justify-content: space-between; align-items: flex-start; gap: 40px;
+        }
+        .tool-detail-left { flex: 1; }
+        .tool-detail-right { flex-shrink: 0; width: 340px; }
+        .tool-detail-title-row {
+          display: flex; align-items: center; gap: 14px; margin-bottom: 14px;
+        }
+        .tool-detail-icon {
+          width: 40px; height: 40px; border-radius: 10px;
+          background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+          display: flex; align-items: center; justify-content: center;
+          color: white; font-weight: 700; font-size: 18px; flex-shrink: 0;
+        }
+        .tool-detail-title-row h1 {
+          font-size: 28px; font-weight: 700; color: #fff; margin: 0;
+        }
+        .tool-detail-source {
+          font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 10px;
+        }
+        .tool-detail-tag {
+          display: inline-block; font-size: 12px; padding: 4px 14px;
+          border-radius: 6px; background: rgba(255,255,255,0.08);
+          color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.12);
+          margin-bottom: 20px;
+        }
+        .tool-detail-desc {
+          font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6; margin-bottom: 20px;
+        }
+        .tool-detail-activate {
+          display: inline-flex; align-items: center; gap: 8px;
+          padding: 10px 20px; border-radius: 8px; background: #8b5cf6;
+          border: none; color: white; font-size: 14px; font-weight: 500;
+          cursor: pointer; font-family: inherit;
+        }
+        .tool-detail-activate:hover { background: #7c3aed; }
+        .tool-detail-activate svg { width: 16px; height: 16px; }
+        .tool-detail-meta-label {
+          font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.6);
+          min-width: 110px; flex-shrink: 0;
+        }
+        .tool-detail-meta-row {
+          display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px;
+        }
+        .tool-detail-pills {
+          display: flex; flex-wrap: wrap; gap: 8px;
+        }
+        .tool-detail-pill {
+          padding: 5px 14px; border-radius: 20px; font-size: 12px;
+          border: 1px solid rgba(255,255,255,0.2); background: transparent;
+          color: rgba(255,255,255,0.7); font-family: inherit;
+        }
+        .tool-detail-req {
+          font-size: 13px; color: rgba(255,255,255,0.6);
+        }
+        .tool-detail-divider {
+          border: none; border-top: 1px solid rgba(255,255,255,0.08);
+          margin: 32px 0;
+        }
+        .tool-detail-section h2 {
+          font-size: 20px; font-weight: 700; color: rgba(255,255,255,0.9); margin: 0 0 12px 0;
+        }
+        .tool-detail-section p {
+          font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.7; margin: 0 0 24px 0;
+        }
+        .tool-detail-section h3 {
+          font-size: 17px; font-weight: 700; color: rgba(255,255,255,0.85); margin: 0 0 16px 0;
+        }
+        .tool-detail-usecase {
+          margin-bottom: 18px;
+        }
+        .tool-detail-usecase-title {
+          font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.8); margin-bottom: 4px;
+        }
+        .tool-detail-usecase-title span { color: #8b5cf6; margin-right: 6px; }
+        .tool-detail-usecase-desc {
+          font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.5;
+        }
+        .tool-detail-back {
+          display: inline-flex; align-items: center; gap: 4px;
+          font-size: 13px; color: rgba(255,255,255,0.5); cursor: pointer;
+          background: none; border: none; padding: 0; font-family: inherit;
+          margin-bottom: 24px;
+        }
+        .tool-detail-back:hover { color: var(--primary); }
+
         /* Create Agent Flow Modal */
         .create-flow-overlay {
           display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -7526,6 +7621,81 @@ app.get(UI_ROUTE, (_req, res) => {
         </div>
       </div>
 
+      <!-- Catalog Tool Detail Page -->
+      <div class="tool-detail-overlay" id="tool-detail-overlay">
+        <div class="tool-detail-content">
+          <button class="tool-detail-back" onclick="closeToolDetail()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back
+          </button>
+
+          <div class="tool-detail-top">
+            <div class="tool-detail-left">
+              <div class="tool-detail-title-row">
+                <div class="tool-detail-icon" id="tool-detail-icon">O</div>
+                <h1 id="tool-detail-title">Microsoft Outlook</h1>
+              </div>
+              <div class="tool-detail-source" id="tool-detail-source">Third Party</div>
+              <div class="tool-detail-tag" id="tool-detail-tag">Tool</div>
+              <div class="tool-detail-desc" id="tool-detail-desc">Microsoft Outlook APIs to manage Messages, Channels and Chats</div>
+              <button class="tool-detail-activate">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Activate
+              </button>
+            </div>
+            <div class="tool-detail-right" id="tool-detail-right">
+              <div class="tool-detail-meta-row">
+                <div class="tool-detail-meta-label">Industry</div>
+                <div class="tool-detail-pills">
+                  <span class="tool-detail-pill">Enterprise</span>
+                  <span class="tool-detail-pill">Manufacturing</span>
+                  <span class="tool-detail-pill">Hospitality</span>
+                  <span class="tool-detail-pill">Federal</span>
+                  <span class="tool-detail-pill">State</span>
+                  <span class="tool-detail-pill">Local</span>
+                  <span class="tool-detail-pill">Education</span>
+                </div>
+              </div>
+              <div class="tool-detail-meta-row">
+                <div class="tool-detail-meta-label">Job Function</div>
+                <div class="tool-detail-pills">
+                  <span class="tool-detail-pill">Network Ops</span>
+                  <span class="tool-detail-pill">Security Ops</span>
+                  <span class="tool-detail-pill">NetSecOps</span>
+                </div>
+              </div>
+              <div class="tool-detail-meta-row">
+                <div class="tool-detail-meta-label">Requirements</div>
+                <div class="tool-detail-req">Valid Platform ONE subscription.</div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="tool-detail-divider">
+
+          <div class="tool-detail-section" id="tool-detail-overview">
+            <h2>Overview</h2>
+            <p id="tool-detail-overview-text">Use these tools to perform Create/Read/Update/Delete operations on your Microsoft Outlook Messages, Events and Calendar.</p>
+
+            <h3>Use Cases</h3>
+            <div id="tool-detail-usecases">
+              <div class="tool-detail-usecase">
+                <div class="tool-detail-usecase-title"><span>&#10023;</span> Email Messages</div>
+                <div class="tool-detail-usecase-desc">List Messages, Get Message, Create Draft Message, Send Message, Update Message, Delete Message, Copy Message, Move Message, Reply to Message, Forward Message.</div>
+              </div>
+              <div class="tool-detail-usecase">
+                <div class="tool-detail-usecase-title"><span>&#10023;</span> Events</div>
+                <div class="tool-detail-usecase-desc">List Events, Get Event, Create Event, Update Event, Delete Event</div>
+              </div>
+              <div class="tool-detail-usecase">
+                <div class="tool-detail-usecase-title"><span>&#10023;</span> Calendar</div>
+                <div class="tool-detail-usecase-desc">List Events, Get Event, Create Event. Update Event, Delete Event</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Create Agent Flow Modal -->
       <div class="create-flow-overlay" id="create-flow-overlay" onclick="if(event.target===this)closeCreateFlow()">
         <div class="create-flow-modal">
@@ -7797,9 +7967,15 @@ app.get(UI_ROUTE, (_req, res) => {
         document.getElementById('workflow-modal-title').textContent = agent.name;
         document.getElementById('workflow-modal-overlay').classList.add('active');
         initWorkflowBuilder();
+      } else if (agent.id === 'outlook') {
+        document.getElementById('tool-detail-overlay').classList.add('active');
       } else {
         alert('Agent: ' + agent.name + '\\nSource: ' + agent.subtitle + '\\nStatus: ' + (agent.status || 'Available'));
       }
+    }
+
+    function closeToolDetail() {
+      document.getElementById('tool-detail-overlay').classList.remove('active');
     }
 
     function closeMcpDetail() {
