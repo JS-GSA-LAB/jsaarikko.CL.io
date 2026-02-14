@@ -7269,6 +7269,87 @@ app.get(UI_ROUTE, (_req, res) => {
         }
         .tool-detail-back:hover { color: var(--primary); }
 
+        /* Outlook Activate Modal */
+        .outlook-activate-overlay {
+          display: none; position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.6); z-index: 10002;
+          justify-content: center; align-items: center;
+        }
+        .outlook-activate-overlay.active { display: flex; }
+        .outlook-activate-modal {
+          background: #1e2235; border-radius: 12px; width: 620px;
+          border: 1px solid rgba(255,255,255,0.1); padding: 28px 32px;
+        }
+        .outlook-activate-header {
+          display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
+        }
+        .outlook-activate-header h3 {
+          font-size: 18px; font-weight: 600; color: #fff; margin: 0;
+        }
+        .outlook-activate-close {
+          background: none; border: none; color: rgba(255,255,255,0.4);
+          font-size: 22px; cursor: pointer; padding: 0; line-height: 1;
+        }
+        .outlook-activate-close:hover { color: rgba(255,255,255,0.8); }
+        .outlook-activate-meta {
+          display: flex; gap: 0; flex-direction: column; margin-bottom: 20px;
+        }
+        .outlook-activate-meta-row {
+          display: flex; align-items: center; padding: 6px 0;
+        }
+        .outlook-activate-meta-label {
+          font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.9); width: 120px;
+        }
+        .outlook-activate-meta-value {
+          font-size: 14px; color: rgba(255,255,255,0.6);
+        }
+        .outlook-activate-field {
+          position: relative; margin-bottom: 18px;
+        }
+        .outlook-activate-field label {
+          position: absolute; top: -9px; left: 12px;
+          background: #1e2235; padding: 0 6px;
+          font-size: 11px; color: rgba(255,255,255,0.45);
+          pointer-events: none;
+        }
+        .outlook-activate-field input {
+          width: 100%; padding: 14px 14px; border-radius: 8px;
+          background: transparent; border: 1px solid rgba(255,255,255,0.2);
+          color: rgba(255,255,255,0.85); font-size: 13px; font-family: inherit;
+          box-sizing: border-box;
+        }
+        .outlook-activate-field input:focus {
+          outline: none; border-color: var(--primary);
+        }
+        .outlook-activate-field input::placeholder {
+          color: rgba(255,255,255,0.3);
+        }
+        .outlook-activate-footer {
+          display: flex; align-items: center; justify-content: space-between; margin-top: 28px;
+        }
+        .outlook-activate-cancel {
+          background: none; border: none; color: var(--primary);
+          font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;
+          padding: 0;
+        }
+        .outlook-activate-cancel:hover { opacity: 0.8; }
+        .outlook-activate-footer-right {
+          display: flex; gap: 10px;
+        }
+        .outlook-activate-btn-test {
+          padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500;
+          cursor: pointer; font-family: inherit; border: 1px solid rgba(255,255,255,0.2);
+          background: transparent; color: rgba(255,255,255,0.7);
+        }
+        .outlook-activate-btn-test:hover { background: rgba(255,255,255,0.06); }
+        .outlook-activate-btn-activate {
+          padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 500;
+          cursor: pointer; font-family: inherit; border: none;
+          background: var(--primary); color: white;
+        }
+        .outlook-activate-btn-activate:hover { opacity: 0.9; }
+
         /* Create Agent Flow Modal */
         .create-flow-overlay {
           display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -7638,7 +7719,7 @@ app.get(UI_ROUTE, (_req, res) => {
               <div class="tool-detail-source" id="tool-detail-source">Third Party</div>
               <div class="tool-detail-tag" id="tool-detail-tag">Tool</div>
               <div class="tool-detail-desc" id="tool-detail-desc">Microsoft Outlook APIs to manage Messages, Channels and Chats</div>
-              <button class="tool-detail-activate">
+              <button class="tool-detail-activate" onclick="openOutlookActivate()">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 Activate
               </button>
@@ -7691,6 +7772,47 @@ app.get(UI_ROUTE, (_req, res) => {
                 <div class="tool-detail-usecase-title"><span>&#10023;</span> Calendar</div>
                 <div class="tool-detail-usecase-desc">List Events, Get Event, Create Event. Update Event, Delete Event</div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outlook Activate Modal -->
+      <div class="outlook-activate-overlay" id="outlook-activate-overlay" onclick="if(event.target===this)closeOutlookActivate()">
+        <div class="outlook-activate-modal">
+          <div class="outlook-activate-header">
+            <h3>Activate Microsoft Outlook</h3>
+            <button class="outlook-activate-close" onclick="closeOutlookActivate()">&times;</button>
+          </div>
+          <div class="outlook-activate-meta">
+            <div class="outlook-activate-meta-row">
+              <div class="outlook-activate-meta-label">Type</div>
+              <div class="outlook-activate-meta-value">Tool</div>
+            </div>
+            <div class="outlook-activate-meta-row">
+              <div class="outlook-activate-meta-label">Name</div>
+              <div class="outlook-activate-meta-value">Microsoft Outlook</div>
+            </div>
+          </div>
+          <div class="outlook-activate-field">
+            <label>Access Token URL</label>
+            <input type="text" id="outlook-token-url" value="https://login.microsoftonline.com/<tenantId>/oauth2/v2.0/token">
+          </div>
+          <div class="outlook-activate-field">
+            <label>Authorization URL</label>
+            <input type="text" id="outlook-auth-url" value="https://login.microsoftonline.com/<tenantId>/oauth2/v2.0/authorize">
+          </div>
+          <div class="outlook-activate-field">
+            <input type="text" id="outlook-client-id" placeholder="Client ID">
+          </div>
+          <div class="outlook-activate-field">
+            <input type="password" id="outlook-client-secret" placeholder="Client Secret">
+          </div>
+          <div class="outlook-activate-footer">
+            <button class="outlook-activate-cancel" onclick="closeOutlookActivate()">Cancel</button>
+            <div class="outlook-activate-footer-right">
+              <button class="outlook-activate-btn-test" onclick="testOutlookConnection()">Test Connection</button>
+              <button class="outlook-activate-btn-activate" onclick="activateOutlookConnection()">Activate</button>
             </div>
           </div>
         </div>
@@ -7976,6 +8098,49 @@ app.get(UI_ROUTE, (_req, res) => {
 
     function closeToolDetail() {
       document.getElementById('tool-detail-overlay').classList.remove('active');
+    }
+
+    function openOutlookActivate() {
+      document.getElementById('outlook-activate-overlay').classList.add('active');
+    }
+    function closeOutlookActivate() {
+      document.getElementById('outlook-activate-overlay').classList.remove('active');
+    }
+    function testOutlookConnection() {
+      var btn = event.target;
+      var origText = btn.textContent;
+      btn.textContent = 'Testing...';
+      btn.disabled = true;
+      setTimeout(function() {
+        btn.textContent = 'Connected!';
+        btn.style.borderColor = '#22c55e';
+        btn.style.color = '#22c55e';
+        setTimeout(function() {
+          btn.textContent = origText;
+          btn.disabled = false;
+          btn.style.borderColor = '';
+          btn.style.color = '';
+        }, 2000);
+      }, 1500);
+    }
+    function activateOutlookConnection() {
+      var tokenUrl = document.getElementById('outlook-token-url').value;
+      var authUrl = document.getElementById('outlook-auth-url').value;
+      var clientId = document.getElementById('outlook-client-id').value;
+      var clientSecret = document.getElementById('outlook-client-secret').value;
+      if (!clientId || !clientSecret) {
+        alert('Please provide both Client ID and Client Secret.');
+        return;
+      }
+      closeOutlookActivate();
+      closeToolDetail();
+      var outlookAgent = aiAgentsData.catalog.find(function(a) { return a.id === 'outlook'; });
+      if (outlookAgent) {
+        outlookAgent.status = 'active';
+        aiAgentsData.active.push(outlookAgent);
+        aiAgentsData.catalog = aiAgentsData.catalog.filter(function(a) { return a.id !== 'outlook'; });
+        renderAiAgents();
+      }
     }
 
     function closeMcpDetail() {
