@@ -6,6 +6,11 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import bcrypt from "bcryptjs";
 import session from "express-session";
+import {
+  generateRegistrationOptions, verifyRegistrationResponse,
+  generateAuthenticationOptions, verifyAuthenticationResponse,
+} from "@simplewebauthn/server";
+import { isoUint8Array } from "@simplewebauthn/server/helpers";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,13 +33,25 @@ const users = new Map();
   const adminPass = process.env.ADMIN_PASS;
   if (adminPass) {
     const hash = bcrypt.hashSync(adminPass, 10);
-    users.set(adminUser.toLowerCase(), {
+    const adminRecord = {
       id: 1,
       username: adminUser,
       password_hash: hash,
       display_name: "Administrator",
       role: "admin",
-    });
+    };
+
+    // Load persisted WebAuthn credential from env var
+    if (process.env.WEBAUTHN_CREDENTIAL) {
+      try {
+        adminRecord.webauthn_credential = JSON.parse(process.env.WEBAUTHN_CREDENTIAL);
+        console.log("Loaded WebAuthn passkey for admin user");
+      } catch (e) {
+        console.warn("Failed to parse WEBAUTHN_CREDENTIAL:", e.message);
+      }
+    }
+
+    users.set(adminUser.toLowerCase(), adminRecord);
     console.log(`Seeded admin user "${adminUser}"`);
   } else {
     console.warn("No ADMIN_PASS set — no admin user seeded. Login will be unavailable.");
@@ -57,6 +74,8 @@ const users = new Map();
  * - DATA_DIR                (unused, reserved for future persistent storage)
  * - ANTHROPIC_API_KEY       (optional) Anthropic API key for Claude chat integration
  * - FORWARD_AUTH_HEADER     (optional) default "true" => forward Authorization header to upstream
+ * - RP_ID                   (optional) WebAuthn relying party ID — defaults to RAILWAY_PUBLIC_DOMAIN or "localhost"
+ * - WEBAUTHN_CREDENTIAL     (optional) JSON-stringified WebAuthn credential for passkey login
  *
  * Notes:
  * - This app provides a simple web UI and a reverse-proxy endpoint.
@@ -68,6 +87,12 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
 
 const MERAKI_API_BASE = "https://api.meraki.com/api/v1";
 const MERAKI_API_KEY = process.env.MERAKI_API_KEY || "";
+
+// ── WebAuthn / Passkey configuration ────────────────────────────────
+const RP_ID = process.env.RP_ID || process.env.RAILWAY_PUBLIC_DOMAIN || "localhost";
+const RP_ORIGIN = RP_ID === "localhost" ? `http://localhost:${process.env.PORT || 3000}` : `https://${RP_ID}`;
+const RP_NAME = "GSA VC Portal";
+const challenges = new Map(); // temporary challenge storage with TTL
 
 // Meraki API helper
 async function merakiFetch(endpoint, options = {}) {
@@ -249,6 +274,7 @@ app.use(session({
 
 function requireAuth(req, res, next) {
   if (req.path === "/login" || req.path === "/healthz") return next();
+  if (req.path === "/webauthn/auth/options" || req.path === "/webauthn/auth/verify") return next();
   if (req.session && req.session.userId) return next();
   const accept = req.headers.accept || "";
   if (accept.includes("text/html")) return res.redirect("/login");
@@ -263,6 +289,8 @@ app.get("/healthz", (_req, res) => res.json({ ok: true }));
 app.get("/login", (req, res) => {
   if (req.session && req.session.userId) return res.redirect("/");
   const error = req.query.error ? "Invalid username or password." : "";
+  let hasPasskey = false;
+  for (const [, u] of users) { if (u.webauthn_credential) { hasPasskey = true; break; } }
   res.send(`<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -285,6 +313,14 @@ app.get("/login", (req, res) => {
   button:hover{opacity:0.9}
   .error{background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.4);color:#f85149;
     border-radius:6px;padding:8px 12px;font-size:13px;margin-bottom:16px;text-align:center}
+  .divider{display:flex;align-items:center;margin:20px 0;color:#8b949e;font-size:12px}
+  .divider::before,.divider::after{content:'';flex:1;border-top:1px solid #30363d}
+  .divider span{padding:0 12px}
+  .passkey-btn{width:100%;padding:10px;background:transparent;color:#e6edf3;
+    border:1px solid #30363d;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;transition:border-color 0.2s}
+  .passkey-btn:hover{border-color:#7c3aed}
+  .passkey-btn svg{width:18px;height:18px}
 </style></head><body>
 <div class="card">
   <div class="logo">E</div>
@@ -298,7 +334,50 @@ app.get("/login", (req, res) => {
     <input id="password" name="password" type="password" required>
     <button type="submit">Sign In</button>
   </form>
+  <div id="passkey-section" style="display:${hasPasskey ? 'block' : 'none'}">
+    <div class="divider"><span>or</span></div>
+    <button type="button" class="passkey-btn" id="passkey-login-btn" onclick="loginWithPasskey()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 11c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4"/>
+        <path d="M16 15v6l-2-1-2 1v-6"/>
+        <circle cx="16" cy="11" r="1"/>
+        <path d="M2 18c0-3.31 2.69-6 6-6s6 2.69 6 6"/>
+        <circle cx="8" cy="8" r="3"/>
+      </svg>
+      Sign in with Passkey
+    </button>
+    <div id="passkey-error" class="error" style="display:none;margin-top:12px"></div>
+  </div>
 </div>
+${hasPasskey ? '<script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"><\/script>' : ''}
+<script>
+async function loginWithPasskey() {
+  const errEl = document.getElementById('passkey-error');
+  errEl.style.display = 'none';
+  try {
+    const optRes = await fetch('/webauthn/auth/options');
+    if (!optRes.ok) throw new Error((await optRes.json()).error || 'Failed to get options');
+    const opts = await optRes.json();
+    const authResp = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: opts });
+    const verRes = await fetch('/webauthn/auth/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(authResp),
+    });
+    const result = await verRes.json();
+    if (result.verified) {
+      window.location.href = result.redirect || '/';
+    } else {
+      errEl.textContent = 'Passkey verification failed.';
+      errEl.style.display = 'block';
+    }
+  } catch (e) {
+    if (e.name === 'NotAllowedError') return; // user cancelled
+    errEl.textContent = e.message || 'Passkey authentication failed.';
+    errEl.style.display = 'block';
+  }
+}
+</script>
 </body></html>`);
 });
 
@@ -326,6 +405,181 @@ app.get("/logout", (req, res) => {
     res.clearCookie("connect.sid");
     res.redirect("/login");
   });
+});
+
+// ── WebAuthn / Passkey routes ───────────────────────────────────────
+
+// Registration: generate options (requires active session)
+app.get("/webauthn/register/options", async (req, res) => {
+  try {
+    const user = users.get(req.session.username.toLowerCase());
+    if (!user) return res.status(400).json({ error: "User not found" });
+
+    const opts = await generateRegistrationOptions({
+      rpName: RP_NAME,
+      rpID: RP_ID,
+      userID: isoUint8Array.fromUTF8String(String(user.id)),
+      userName: user.username,
+      userDisplayName: user.display_name,
+      attestationType: "none",
+      authenticatorSelection: {
+        residentKey: "preferred",
+        userVerification: "preferred",
+      },
+      excludeCredentials: user.webauthn_credential
+        ? [{ id: user.webauthn_credential.credentialID, type: "public-key" }]
+        : [],
+    });
+
+    challenges.set(req.session.userId, { challenge: opts.challenge, expires: Date.now() + 5 * 60 * 1000 });
+    res.json(opts);
+  } catch (e) {
+    console.error("WebAuthn register options error:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Registration: verify response (requires active session)
+app.post("/webauthn/register/verify", express.json(), async (req, res) => {
+  try {
+    const stored = challenges.get(req.session.userId);
+    if (!stored || Date.now() > stored.expires) {
+      return res.status(400).json({ error: "Challenge expired" });
+    }
+
+    const verification = await verifyRegistrationResponse({
+      response: req.body,
+      expectedChallenge: stored.challenge,
+      expectedOrigin: RP_ORIGIN,
+      expectedRPID: RP_ID,
+    });
+
+    challenges.delete(req.session.userId);
+
+    if (verification.verified && verification.registrationInfo) {
+      const { credential } = verification.registrationInfo;
+      const credentialJSON = {
+        credentialID: credential.id,
+        credentialPublicKey: Array.from(credential.publicKey),
+        counter: credential.counter,
+        transports: req.body.response?.transports || [],
+      };
+
+      // Attach to in-memory user
+      const user = users.get(req.session.username.toLowerCase());
+      if (user) user.webauthn_credential = credentialJSON;
+
+      console.log("\n╔══════════════════════════════════════════════════════════════╗");
+      console.log("║  WEBAUTHN CREDENTIAL — Copy this to Railway env var:       ║");
+      console.log("╠══════════════════════════════════════════════════════════════╣");
+      console.log("║  WEBAUTHN_CREDENTIAL=" + JSON.stringify(credentialJSON));
+      console.log("╚══════════════════════════════════════════════════════════════╝\n");
+
+      res.json({ verified: true });
+    } else {
+      res.json({ verified: false });
+    }
+  } catch (e) {
+    console.error("WebAuthn register verify error:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Authentication: generate options (public — no session required)
+app.get("/webauthn/auth/options", async (req, res) => {
+  try {
+    // Find the admin user with a registered credential
+    let allowCredentials = [];
+    for (const [, user] of users) {
+      if (user.webauthn_credential) {
+        allowCredentials.push({
+          id: user.webauthn_credential.credentialID,
+          type: "public-key",
+          transports: user.webauthn_credential.transports || [],
+        });
+      }
+    }
+
+    if (allowCredentials.length === 0) {
+      return res.status(404).json({ error: "No passkeys registered" });
+    }
+
+    const opts = await generateAuthenticationOptions({
+      rpID: RP_ID,
+      allowCredentials,
+      userVerification: "preferred",
+    });
+
+    // Store challenge keyed by the challenge itself (no session available)
+    challenges.set("auth:" + opts.challenge, { challenge: opts.challenge, expires: Date.now() + 5 * 60 * 1000 });
+    res.json(opts);
+  } catch (e) {
+    console.error("WebAuthn auth options error:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Authentication: verify response (public — no session required)
+app.post("/webauthn/auth/verify", express.json(), async (req, res) => {
+  try {
+    const { id: credentialID } = req.body;
+
+    // Find user with matching credential
+    let matchedUser = null;
+    for (const [, user] of users) {
+      if (user.webauthn_credential && user.webauthn_credential.credentialID === credentialID) {
+        matchedUser = user;
+        break;
+      }
+    }
+
+    if (!matchedUser) {
+      return res.status(400).json({ error: "Credential not recognized" });
+    }
+
+    // Find the stored challenge from clientDataJSON
+    const clientData = JSON.parse(Buffer.from(req.body.response.clientDataJSON, "base64url").toString());
+    const storedKey = "auth:" + clientData.challenge;
+    const stored = challenges.get(storedKey);
+    if (!stored || Date.now() > stored.expires) {
+      return res.status(400).json({ error: "Challenge expired or not found" });
+    }
+
+    const cred = matchedUser.webauthn_credential;
+    const verification = await verifyAuthenticationResponse({
+      response: req.body,
+      expectedChallenge: stored.challenge,
+      expectedOrigin: RP_ORIGIN,
+      expectedRPID: RP_ID,
+      credential: {
+        id: cred.credentialID,
+        publicKey: new Uint8Array(cred.credentialPublicKey),
+        counter: cred.counter,
+      },
+    });
+
+    challenges.delete(storedKey);
+
+    if (verification.verified) {
+      // Update counter
+      cred.counter = verification.authenticationInfo.newCounter;
+
+      // Create session
+      req.session.regenerate((err) => {
+        if (err) return res.status(500).json({ error: "Session error" });
+        req.session.userId = matchedUser.id;
+        req.session.username = matchedUser.username;
+        req.session.displayName = matchedUser.display_name;
+        req.session.role = matchedUser.role;
+        res.json({ verified: true, redirect: "/" });
+      });
+    } else {
+      res.json({ verified: false });
+    }
+  } catch (e) {
+    console.error("WebAuthn auth verify error:", e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // Claude Chat API
@@ -4768,7 +5022,13 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
         <span>Route: ${PROXY_ROUTE}</span>
-        <a href="/logout" style="color:rgba(255,255,255,0.4);text-decoration:none;font-size:11px" onmouseover="this.style.color='#f85149'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">Sign Out</a>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button onclick="registerPasskey()" style="background:none;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);font-size:11px;padding:2px 8px;border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:4px" onmouseover="this.style.borderColor='#7c3aed';this.style.color='#a78bfa'" onmouseout="this.style.borderColor='rgba(255,255,255,0.15)';this.style.color='rgba(255,255,255,0.5)'" title="Register a passkey for biometric login">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4"/><path d="M16 15v6l-2-1-2 1v-6"/><circle cx="16" cy="11" r="1"/><path d="M2 18c0-3.31 2.69-6 6-6s6 2.69 6 6"/><circle cx="8" cy="8" r="3"/></svg>
+            Passkey
+          </button>
+          <a href="/logout" style="color:rgba(255,255,255,0.4);text-decoration:none;font-size:11px" onmouseover="this.style.color='#f85149'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">Sign Out</a>
+        </div>
       </div>
     </div>
   </nav>
@@ -13453,6 +13713,40 @@ app.get(UI_ROUTE, (_req, res) => {
               '<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">Seen on: ' + [...info.aps].join(', ') + '</div></div>'
             ).join('');
         }
+      }
+    }
+
+    // ── Passkey Registration ──────────────────────────────────
+    async function registerPasskey() {
+      try {
+        // Dynamically load SimpleWebAuthn browser bundle
+        if (typeof SimpleWebAuthnBrowser === 'undefined') {
+          await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js';
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Failed to load WebAuthn library'));
+            document.head.appendChild(s);
+          });
+        }
+        const optRes = await fetch('/webauthn/register/options');
+        if (!optRes.ok) throw new Error((await optRes.json()).error || 'Failed to get options');
+        const opts = await optRes.json();
+        const regResp = await SimpleWebAuthnBrowser.startRegistration({ optionsJSON: opts });
+        const verRes = await fetch('/webauthn/register/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(regResp),
+        });
+        const result = await verRes.json();
+        if (result.verified) {
+          showToast('Passkey registered! Check deployment logs for WEBAUTHN_CREDENTIAL value.');
+        } else {
+          showToast('Passkey registration failed.');
+        }
+      } catch (e) {
+        if (e.name === 'NotAllowedError') return;
+        showToast('Passkey error: ' + (e.message || 'Unknown error'));
       }
     }
   </script>
