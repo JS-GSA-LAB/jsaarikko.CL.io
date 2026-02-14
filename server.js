@@ -5244,6 +5244,13 @@ app.get(UI_ROUTE, (req, res) => {
           AI Agents
         </button>
       </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Athletics</div>
+        <button class="nav-item" onclick="showView('swimmer')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20c2-1 4-2 6-2s4 1 6 2 4 1 6 0"/><path d="M2 16c2-1 4-2 6-2s4 1 6 2 4 1 6 0"/><circle cx="12" cy="8" r="2"/><path d="M16 12l-3-4-3 4"/></svg>
+          Swim Analytics
+        </button>
+      </div>
       ${req.session.role === "admin" ? `<div class="nav-section">
         <div class="nav-section-title">Administration</div>
         <button class="nav-item" onclick="showView('portal-users')">
@@ -8828,6 +8835,27 @@ app.get(UI_ROUTE, (req, res) => {
       </div>
     </div>
 
+    <!-- Swim Analytics View -->
+    <div id="view-swimmer" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Swim Analytics</h1>
+          <div class="page-subtitle">2026 IMX Games &mdash; Racer X Aquatics &mdash; College Park, MD &mdash; Jan 23-25, 2026 (SCY)</div>
+        </div>
+        <div class="header-actions">
+          <select id="swim-perspective" onchange="renderSwimView()" style="padding:8px 12px;border-radius:6px;background:var(--background-sidebar);border:1px solid var(--border);color:var(--foreground);font-size:13px;font-family:inherit">
+            <option value="overview">Team Overview</option>
+            <option value="athletes">By Athlete</option>
+            <option value="events">By Event</option>
+            <option value="improvements">Improvements</option>
+            <option value="placements">Placements</option>
+            <option value="headtohead">Head to Head</option>
+          </select>
+        </div>
+      </div>
+      <div class="page-content" id="swim-content"></div>
+    </div>
+
   </main>
 
   <script>
@@ -8875,6 +8903,8 @@ app.get(UI_ROUTE, (req, res) => {
         initAiAgentsView();
       } else if (viewId === 'portal-users') {
         loadPortalUsers();
+      } else if (viewId === 'swimmer') {
+        renderSwimView();
       }
     }
 
@@ -9573,6 +9603,360 @@ app.get(UI_ROUTE, (req, res) => {
         input.disabled = false;
         input.focus();
       });
+    }
+
+    // ── Swim Analytics ──────────────────────────────────────────────
+    var SWIM_DATA = [
+      { rank:1,  name:'Charlie Lange',   event:'200 Y Breast', time:'2:14.32', secs:134.32, imp:-2.80, place:3,  pts:862 },
+      { rank:2,  name:'Charlie Lange',   event:'400 Y IM',     time:'4:23.35', secs:263.35, imp:-0.70, place:7,  pts:813 },
+      { rank:3,  name:'Luke Wilson',     event:'200 Y Fly',    time:'2:03.34', secs:123.34, imp:0.50,  place:9,  pts:806 },
+      { rank:4,  name:'Ian Brenenborg',  event:'400 Y IM',     time:'4:25.54', secs:265.54, imp:5.24,  place:12, pts:793 },
+      { rank:5,  name:'Ian Brenenborg',  event:'500 Y Free',   time:'4:55.43', secs:295.43, imp:1.80,  place:8,  pts:790 },
+      { rank:6,  name:'Charlie Lange',   event:'500 Y Free',   time:'4:55.78', secs:295.78, imp:-3.38, place:10, pts:786 },
+      { rank:7,  name:'Charlie Lange',   event:'200 Y Back',   time:'2:03.20', secs:123.20, imp:-5.52, place:14, pts:784 },
+      { rank:8,  name:'Luke Wilson',     event:'200 Y Breast', time:'2:20.76', secs:140.76, imp:-5.17, place:11, pts:764 },
+      { rank:9,  name:'Ian Brenenborg',  event:'200 Y Back',   time:'2:04.49', secs:124.49, imp:1.24,  place:18, pts:758 },
+      { rank:10, name:'Luke Wilson',     event:'400 Y IM',     time:'4:31.33', secs:271.33, imp:-0.26, place:24, pts:739 },
+      { rank:11, name:'Charlie Lange',   event:'200 Y IM',     time:'2:06.84', secs:126.84, imp:-1.60, place:15, pts:738 },
+      { rank:12, name:'Luke Wilson',     event:'200 Y IM',     time:'2:08.08', secs:128.08, imp:1.35,  place:21, pts:712 },
+      { rank:13, name:'Ian Brenenborg',  event:'200 Y Fly',    time:'2:08.61', secs:128.61, imp:1.71,  place:25, pts:708 },
+      { rank:14, name:'Ian Brenenborg',  event:'200 Y IM',     time:'2:09.44', secs:129.44, imp:1.84,  place:28, pts:685 },
+      { rank:15, name:'Luke Wilson',     event:'500 Y Free',   time:'5:08.74', secs:308.74, imp:4.30,  place:24, pts:674 },
+      { rank:16, name:'Aiden Jamison',   event:'200 Y Back',   time:'2:04.20', secs:124.20, imp:0.25,  place:16, pts:652 },
+      { rank:17, name:'Aiden Jamison',   event:'200 Y IM',     time:'2:06.33', secs:126.33, imp:-0.30, place:13, pts:646 },
+      { rank:18, name:'Aiden Jamison',   event:'400 Y IM',     time:'4:31.25', secs:271.25, imp:0.11,  place:23, pts:637 },
+      { rank:19, name:'Luke Wilson',     event:'200 Y Back',   time:'2:11.87', secs:131.87, imp:null,  place:50, pts:618 },
+      { rank:20, name:'Ian Brenenborg',  event:'200 Y Breast', time:'2:30.77', secs:150.77, imp:-2.84, place:55, pts:617 },
+      { rank:21, name:'Aiden Jamison',   event:'200 Y Breast', time:'2:26.41', secs:146.41, imp:null,  place:25, pts:616 },
+      { rank:22, name:'Aiden Jamison',   event:'500 Y Free',   time:'5:06.02', secs:306.02, imp:-2.05, place:17, pts:609 },
+      { rank:23, name:'Charlie Lange',   event:'200 Y Fly',    time:'2:14.96', secs:134.96, imp:null,  place:54, pts:596 },
+      { rank:24, name:'Aiden Jamison',   event:'200 Y Fly',    time:'2:10.78', secs:130.78, imp:null,  place:32, pts:564 }
+    ];
+
+    var SWIM_ATHLETES = ['Charlie Lange','Luke Wilson','Ian Brenenborg','Aiden Jamison'];
+    var SWIM_COLORS = { 'Charlie Lange':'#a78bfa', 'Luke Wilson':'#38bdf8', 'Ian Brenenborg':'#34d399', 'Aiden Jamison':'#fb923c' };
+
+    function swimImpStr(v) {
+      if (v === null) return '<span style="color:rgba(255,255,255,0.25)">—</span>';
+      if (v < 0) return '<span style="color:#22c55e">' + v.toFixed(2) + 's</span>';
+      return '<span style="color:#ef4444">+' + v.toFixed(2) + 's</span>';
+    }
+    function swimBar(val, max, color) {
+      var pct = Math.round((val / max) * 100);
+      return '<div style="width:100%;background:rgba(255,255,255,0.06);border-radius:4px;height:22px;position:relative;overflow:hidden">'
+        + '<div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:4px;opacity:0.7"></div>'
+        + '<span style="position:absolute;right:6px;top:2px;font-size:11px;color:rgba(255,255,255,0.7)">' + val + '</span></div>';
+    }
+    function swimPlaceBadge(p) {
+      var bg = p <= 3 ? 'rgba(251,191,36,0.2)' : p <= 10 ? 'rgba(34,197,94,0.15)' : p <= 20 ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.06)';
+      var fg = p <= 3 ? '#fbbf24' : p <= 10 ? '#22c55e' : p <= 20 ? '#38bdf8' : 'rgba(255,255,255,0.5)';
+      return '<span style="display:inline-block;padding:2px 10px;border-radius:10px;background:' + bg + ';color:' + fg + ';font-size:12px;font-weight:600">' + p + '</span>';
+    }
+
+    function renderSwimView() {
+      var perspective = document.getElementById('swim-perspective').value;
+      var c = document.getElementById('swim-content');
+      if (perspective === 'overview') renderSwimOverview(c);
+      else if (perspective === 'athletes') renderSwimAthletes(c);
+      else if (perspective === 'events') renderSwimEvents(c);
+      else if (perspective === 'improvements') renderSwimImprovements(c);
+      else if (perspective === 'placements') renderSwimPlacements(c);
+      else if (perspective === 'headtohead') renderSwimH2H(c);
+    }
+
+    function renderSwimOverview(c) {
+      var totalPts = SWIM_DATA.reduce(function(s,d){return s+d.pts},0);
+      var avgPts = Math.round(totalPts / SWIM_DATA.length);
+      var bestSwim = SWIM_DATA[0];
+      var pbs = SWIM_DATA.filter(function(d){return d.imp !== null && d.imp < 0}).length;
+      var top10 = SWIM_DATA.filter(function(d){return d.place <= 10}).length;
+
+      var athleteStats = SWIM_ATHLETES.map(function(name) {
+        var swims = SWIM_DATA.filter(function(d){return d.name===name});
+        var avg = Math.round(swims.reduce(function(s,d){return s+d.pts},0) / swims.length);
+        var best = swims.reduce(function(a,b){return a.pts>b.pts?a:b});
+        var pb = swims.filter(function(d){return d.imp!==null && d.imp<0}).length;
+        return { name:name, swims:swims.length, avg:avg, best:best, pbs:pb, total:swims.reduce(function(s,d){return s+d.pts},0) };
+      });
+
+      c.innerHTML = ''
+        + '<div class="stat-cards">'
+        + '<div class="stat-card"><div class="stat-card-label">Total Entries</div><div class="stat-card-value">' + SWIM_DATA.length + '</div><div class="stat-card-sub">' + SWIM_ATHLETES.length + ' athletes</div></div>'
+        + '<div class="stat-card"><div class="stat-card-label">Avg Power Score</div><div class="stat-card-value">' + avgPts + '</div><div class="stat-card-sub">Team avg across all swims</div></div>'
+        + '<div class="stat-card"><div class="stat-card-label">Personal Bests</div><div class="stat-card-value" style="color:#22c55e">' + pbs + '</div><div class="stat-card-sub">' + Math.round(pbs/SWIM_DATA.length*100) + '% of swims</div></div>'
+        + '<div class="stat-card"><div class="stat-card-label">Top-10 Finishes</div><div class="stat-card-value" style="color:#fbbf24">' + top10 + '</div><div class="stat-card-sub">Best: ' + bestSwim.name + ' — ' + bestSwim.place + getOrdinal(bestSwim.place) + '</div></div>'
+        + '</div>'
+        // Athlete summary cards
+        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">'
+        + athleteStats.map(function(a) {
+            return '<div style="background:var(--background-sidebar);border:1px solid var(--border);border-radius:10px;padding:20px">'
+              + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
+              + '<div style="width:10px;height:10px;border-radius:50%;background:' + SWIM_COLORS[a.name] + '"></div>'
+              + '<span style="font-size:14px;font-weight:600;color:var(--foreground)">' + a.name + '</span></div>'
+              + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">'
+              + '<div><span style="color:var(--foreground-muted)">Swims</span><div style="font-size:18px;font-weight:600;color:var(--foreground)">' + a.swims + '</div></div>'
+              + '<div><span style="color:var(--foreground-muted)">Avg Score</span><div style="font-size:18px;font-weight:600;color:var(--foreground)">' + a.avg + '</div></div>'
+              + '<div><span style="color:var(--foreground-muted)">Best Score</span><div style="font-size:18px;font-weight:600;color:' + SWIM_COLORS[a.name] + '">' + a.best.pts + '</div></div>'
+              + '<div><span style="color:var(--foreground-muted)">PBs</span><div style="font-size:18px;font-weight:600;color:#22c55e">' + a.pbs + '</div></div>'
+              + '</div></div>';
+          }).join('')
+        + '</div>'
+        // Score distribution bar chart
+        + '<div class="data-table-container" style="margin-bottom:24px"><div class="data-table-header"><div><div class="data-table-title">Power Score Distribution by Athlete</div><div class="data-table-subtitle">Each bar represents one swim entry</div></div></div>'
+        + '<div style="padding:20px">'
+        + SWIM_ATHLETES.map(function(name) {
+            var swims = SWIM_DATA.filter(function(d){return d.name===name}).sort(function(a,b){return b.pts-a.pts});
+            return '<div style="margin-bottom:16px"><div style="font-size:12px;color:var(--foreground-muted);margin-bottom:6px">' + name + '</div>'
+              + '<div style="display:flex;gap:3px;align-items:end;height:40px">'
+              + swims.map(function(s) {
+                  var h = Math.round((s.pts / 900) * 40);
+                  return '<div title="' + s.event + ': ' + s.pts + ' pts" style="width:100%;height:' + h + 'px;background:' + SWIM_COLORS[name] + ';border-radius:3px 3px 0 0;opacity:0.8;cursor:pointer;transition:opacity 0.2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8"></div>';
+                }).join('')
+              + '</div></div>';
+          }).join('')
+        + '</div></div>'
+        // All swims table
+        + '<div class="data-table-container"><div class="data-table-header"><div><div class="data-table-title">All Swims</div><div class="data-table-subtitle">' + SWIM_DATA.length + ' entries ranked by power score</div></div></div>'
+        + '<table class="data-table"><thead><tr><th>#</th><th>Athlete</th><th>Event</th><th>Time</th><th>Improvement</th><th>Place</th><th>Power Score</th></tr></thead><tbody>'
+        + SWIM_DATA.map(function(d) {
+            return '<tr><td>' + d.rank + '</td>'
+              + '<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + SWIM_COLORS[d.name] + ';margin-right:6px"></span>' + d.name + '</td>'
+              + '<td>' + d.event + '</td><td style="font-family:monospace">' + d.time + '</td>'
+              + '<td>' + swimImpStr(d.imp) + '</td>'
+              + '<td>' + swimPlaceBadge(d.place) + '</td>'
+              + '<td>' + swimBar(d.pts, 900, SWIM_COLORS[d.name]) + '</td></tr>';
+          }).join('')
+        + '</tbody></table></div>';
+    }
+
+    function renderSwimAthletes(c) {
+      c.innerHTML = SWIM_ATHLETES.map(function(name) {
+        var swims = SWIM_DATA.filter(function(d){return d.name===name}).sort(function(a,b){return b.pts-a.pts});
+        var totalPts = swims.reduce(function(s,d){return s+d.pts},0);
+        var avgPts = Math.round(totalPts / swims.length);
+        var pbs = swims.filter(function(d){return d.imp!==null&&d.imp<0}).length;
+        var bestPlace = Math.min.apply(null, swims.map(function(d){return d.place}));
+        var strongEvent = swims[0];
+        var impSwims = swims.filter(function(d){return d.imp!==null}).sort(function(a,b){return a.imp-b.imp});
+        var bestImp = impSwims.length ? impSwims[0] : null;
+
+        return '<div class="data-table-container" style="margin-bottom:24px">'
+          + '<div class="data-table-header"><div>'
+          + '<div class="data-table-title" style="display:flex;align-items:center;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:' + SWIM_COLORS[name] + '"></span>' + name + '</div>'
+          + '<div class="data-table-subtitle">' + swims.length + ' events &mdash; Avg Score: ' + avgPts + ' &mdash; PBs: ' + pbs + ' &mdash; Best Finish: ' + bestPlace + getOrdinal(bestPlace) + '</div>'
+          + '</div></div>'
+          + '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)">'
+          + '<div style="text-align:center"><div style="font-size:11px;color:var(--foreground-muted);margin-bottom:4px">Total Points</div><div style="font-size:20px;font-weight:700;color:' + SWIM_COLORS[name] + '">' + totalPts + '</div></div>'
+          + '<div style="text-align:center"><div style="font-size:11px;color:var(--foreground-muted);margin-bottom:4px">Avg Score</div><div style="font-size:20px;font-weight:700;color:var(--foreground)">' + avgPts + '</div></div>'
+          + '<div style="text-align:center"><div style="font-size:11px;color:var(--foreground-muted);margin-bottom:4px">Best Event</div><div style="font-size:14px;font-weight:600;color:var(--foreground)">' + strongEvent.event + '</div><div style="font-size:11px;color:var(--foreground-muted)">' + strongEvent.pts + ' pts</div></div>'
+          + '<div style="text-align:center"><div style="font-size:11px;color:var(--foreground-muted);margin-bottom:4px">Best Improvement</div><div style="font-size:14px;font-weight:600">' + (bestImp ? swimImpStr(bestImp.imp) : '—') + '</div>' + (bestImp ? '<div style="font-size:11px;color:var(--foreground-muted)">' + bestImp.event + '</div>' : '') + '</div>'
+          + '<div style="text-align:center"><div style="font-size:11px;color:var(--foreground-muted);margin-bottom:4px">Best Place</div><div style="font-size:20px;font-weight:700;color:#fbbf24">' + bestPlace + '<span style="font-size:12px">' + getOrdinal(bestPlace) + '</span></div></div>'
+          + '</div>'
+          + '<table class="data-table"><thead><tr><th>Event</th><th>Time</th><th>Improvement</th><th>Place</th><th>Power Score</th></tr></thead><tbody>'
+          + swims.map(function(s) {
+              return '<tr><td>' + s.event + '</td><td style="font-family:monospace">' + s.time + '</td>'
+                + '<td>' + swimImpStr(s.imp) + '</td><td>' + swimPlaceBadge(s.place) + '</td>'
+                + '<td>' + swimBar(s.pts, 900, SWIM_COLORS[name]) + '</td></tr>';
+            }).join('')
+          + '</tbody></table></div>';
+      }).join('');
+    }
+
+    function renderSwimEvents(c) {
+      var events = {};
+      SWIM_DATA.forEach(function(d) {
+        if (!events[d.event]) events[d.event] = [];
+        events[d.event].push(d);
+      });
+      var eventNames = Object.keys(events).sort();
+
+      c.innerHTML = eventNames.map(function(ev) {
+        var swims = events[ev].sort(function(a,b){return a.secs-b.secs});
+        var best = swims[0];
+        var avgTime = (swims.reduce(function(s,d){return s+d.secs},0) / swims.length).toFixed(2);
+        var mm = Math.floor(avgTime / 60); var ss = (avgTime - mm * 60).toFixed(2); if (ss < 10) ss = '0' + ss;
+
+        return '<div class="data-table-container" style="margin-bottom:24px">'
+          + '<div class="data-table-header"><div>'
+          + '<div class="data-table-title">' + ev + '</div>'
+          + '<div class="data-table-subtitle">' + swims.length + ' entries &mdash; Fastest: ' + best.time + ' (' + best.name + ') &mdash; Avg: ' + mm + ':' + ss + '</div>'
+          + '</div></div>'
+          + '<table class="data-table"><thead><tr><th>Rank</th><th>Athlete</th><th>Time</th><th>Improvement</th><th>Place</th><th>Power Score</th></tr></thead><tbody>'
+          + swims.map(function(s, i) {
+              return '<tr' + (i === 0 ? ' style="background:rgba(139,92,246,0.05)"' : '') + '>'
+                + '<td>' + (i + 1) + '</td>'
+                + '<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + SWIM_COLORS[s.name] + ';margin-right:6px"></span>' + s.name + '</td>'
+                + '<td style="font-family:monospace">' + s.time + '</td>'
+                + '<td>' + swimImpStr(s.imp) + '</td><td>' + swimPlaceBadge(s.place) + '</td>'
+                + '<td>' + swimBar(s.pts, 900, SWIM_COLORS[s.name]) + '</td></tr>';
+            }).join('')
+          + '</tbody></table></div>';
+      }).join('');
+    }
+
+    function renderSwimImprovements(c) {
+      var improved = SWIM_DATA.filter(function(d){return d.imp!==null&&d.imp<0}).sort(function(a,b){return a.imp-b.imp});
+      var slower = SWIM_DATA.filter(function(d){return d.imp!==null&&d.imp>0}).sort(function(a,b){return b.imp-a.imp});
+      var noBase = SWIM_DATA.filter(function(d){return d.imp===null});
+
+      var byAthlete = {};
+      SWIM_ATHLETES.forEach(function(name) {
+        var swims = SWIM_DATA.filter(function(d){return d.name===name&&d.imp!==null});
+        var avgImp = swims.length ? (swims.reduce(function(s,d){return s+d.imp},0) / swims.length) : 0;
+        byAthlete[name] = { avg:avgImp, count:swims.length, pbs:swims.filter(function(d){return d.imp<0}).length };
+      });
+
+      c.innerHTML = ''
+        + '<div class="stat-cards" style="margin-bottom:24px">'
+        + '<div class="stat-card"><div class="stat-card-label" style="color:#22c55e">PBs Achieved</div><div class="stat-card-value" style="color:#22c55e">' + improved.length + '</div><div class="stat-card-sub">' + Math.round(improved.length/SWIM_DATA.length*100) + '% of all swims</div></div>'
+        + '<div class="stat-card"><div class="stat-card-label" style="color:#ef4444">Slower Swims</div><div class="stat-card-value" style="color:#ef4444">' + slower.length + '</div><div class="stat-card-sub">' + Math.round(slower.length/SWIM_DATA.length*100) + '% of all swims</div></div>'
+        + '<div class="stat-card"><div class="stat-card-label">No Baseline</div><div class="stat-card-value">' + noBase.length + '</div><div class="stat-card-sub">First recorded time</div></div>'
+        + '<div class="stat-card"><div class="stat-card-label">Biggest Drop</div><div class="stat-card-value" style="color:#22c55e">' + (improved.length ? improved[0].imp.toFixed(2) + 's' : '—') + '</div><div class="stat-card-sub">' + (improved.length ? improved[0].name + ' — ' + improved[0].event : '') + '</div></div>'
+        + '</div>'
+        // Athlete improvement breakdown
+        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">'
+        + SWIM_ATHLETES.map(function(name) {
+            var a = byAthlete[name];
+            var barColor = a.avg < 0 ? '#22c55e' : '#ef4444';
+            return '<div style="background:var(--background-sidebar);border:1px solid var(--border);border-radius:10px;padding:16px">'
+              + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+              + '<span style="width:10px;height:10px;border-radius:50%;background:' + SWIM_COLORS[name] + '"></span>'
+              + '<span style="font-size:13px;font-weight:600;color:var(--foreground)">' + name + '</span></div>'
+              + '<div style="font-size:22px;font-weight:700;color:' + barColor + ';margin-bottom:4px">' + (a.avg < 0 ? '' : '+') + a.avg.toFixed(2) + 's</div>'
+              + '<div style="font-size:11px;color:var(--foreground-muted)">Avg improvement &mdash; ' + a.pbs + '/' + a.count + ' PBs</div>'
+              + '</div>';
+          }).join('')
+        + '</div>'
+        // Best improvements table
+        + '<div class="data-table-container" style="margin-bottom:24px"><div class="data-table-header"><div><div class="data-table-title" style="color:#22c55e">Best Time Drops</div><div class="data-table-subtitle">Swims where athletes beat their previous best</div></div></div>'
+        + '<table class="data-table"><thead><tr><th>#</th><th>Athlete</th><th>Event</th><th>Time</th><th>Time Drop</th><th>Place</th><th>Score</th></tr></thead><tbody>'
+        + improved.map(function(d,i) {
+            return '<tr><td>' + (i+1) + '</td>'
+              + '<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + SWIM_COLORS[d.name] + ';margin-right:6px"></span>' + d.name + '</td>'
+              + '<td>' + d.event + '</td><td style="font-family:monospace">' + d.time + '</td>'
+              + '<td style="color:#22c55e;font-weight:600">' + d.imp.toFixed(2) + 's</td>'
+              + '<td>' + swimPlaceBadge(d.place) + '</td><td>' + d.pts + '</td></tr>';
+          }).join('')
+        + '</tbody></table></div>'
+        // Slower swims table
+        + '<div class="data-table-container"><div class="data-table-header"><div><div class="data-table-title" style="color:#ef4444">Off-Pace Swims</div><div class="data-table-subtitle">Swims slower than previous best — areas for improvement</div></div></div>'
+        + '<table class="data-table"><thead><tr><th>#</th><th>Athlete</th><th>Event</th><th>Time</th><th>Time Added</th><th>Place</th><th>Score</th></tr></thead><tbody>'
+        + slower.map(function(d,i) {
+            return '<tr><td>' + (i+1) + '</td>'
+              + '<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + SWIM_COLORS[d.name] + ';margin-right:6px"></span>' + d.name + '</td>'
+              + '<td>' + d.event + '</td><td style="font-family:monospace">' + d.time + '</td>'
+              + '<td style="color:#ef4444;font-weight:600">+' + d.imp.toFixed(2) + 's</td>'
+              + '<td>' + swimPlaceBadge(d.place) + '</td><td>' + d.pts + '</td></tr>';
+          }).join('')
+        + '</tbody></table></div>';
+    }
+
+    function renderSwimPlacements(c) {
+      var top3 = SWIM_DATA.filter(function(d){return d.place<=3});
+      var top10 = SWIM_DATA.filter(function(d){return d.place>3&&d.place<=10});
+      var top20 = SWIM_DATA.filter(function(d){return d.place>10&&d.place<=20});
+      var rest = SWIM_DATA.filter(function(d){return d.place>20});
+      var sorted = SWIM_DATA.slice().sort(function(a,b){return a.place-b.place});
+
+      var byAthlete = {};
+      SWIM_ATHLETES.forEach(function(name) {
+        var swims = SWIM_DATA.filter(function(d){return d.name===name});
+        var avg = Math.round(swims.reduce(function(s,d){return s+d.place},0) / swims.length);
+        byAthlete[name] = { avg:avg, best:Math.min.apply(null,swims.map(function(d){return d.place})), swims:swims.length };
+      });
+
+      c.innerHTML = ''
+        + '<div class="stat-cards" style="margin-bottom:24px">'
+        + '<div class="stat-card"><div class="stat-card-label" style="color:#fbbf24">Podium (1st-3rd)</div><div class="stat-card-value" style="color:#fbbf24">' + top3.length + '</div><div class="stat-card-sub">' + (top3.length ? top3.map(function(d){return d.name}).join(', ') : 'None') + '</div></div>'
+        + '<div class="stat-card"><div class="stat-card-label" style="color:#22c55e">Top 10</div><div class="stat-card-value" style="color:#22c55e">' + top10.length + '</div><div class="stat-card-sub">4th–10th place finishes</div></div>'
+        + '<div class="stat-card"><div class="stat-card-label" style="color:#38bdf8">Top 20</div><div class="stat-card-value" style="color:#38bdf8">' + top20.length + '</div><div class="stat-card-sub">11th–20th place finishes</div></div>'
+        + '<div class="stat-card"><div class="stat-card-label">21st+</div><div class="stat-card-value">' + rest.length + '</div><div class="stat-card-sub">Outside top 20</div></div>'
+        + '</div>'
+        // Placement distribution visual
+        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">'
+        + SWIM_ATHLETES.map(function(name) {
+            var a = byAthlete[name];
+            var swims = SWIM_DATA.filter(function(d){return d.name===name}).sort(function(a,b){return a.place-b.place});
+            return '<div style="background:var(--background-sidebar);border:1px solid var(--border);border-radius:10px;padding:16px">'
+              + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+              + '<span style="width:10px;height:10px;border-radius:50%;background:' + SWIM_COLORS[name] + '"></span>'
+              + '<span style="font-size:13px;font-weight:600;color:var(--foreground)">' + name + '</span></div>'
+              + '<div style="font-size:11px;color:var(--foreground-muted);margin-bottom:6px">Avg Place: <span style="font-weight:600;color:var(--foreground)">' + a.avg + getOrdinal(a.avg) + '</span> &mdash; Best: <span style="font-weight:600;color:#fbbf24">' + a.best + getOrdinal(a.best) + '</span></div>'
+              + '<div style="display:flex;gap:4px;flex-wrap:wrap">'
+              + swims.map(function(s) { return swimPlaceBadge(s.place); }).join(' ')
+              + '</div></div>';
+          }).join('')
+        + '</div>'
+        // Full placements table
+        + '<div class="data-table-container"><div class="data-table-header"><div><div class="data-table-title">All Placements (Best to Worst)</div><div class="data-table-subtitle">' + SWIM_DATA.length + ' finishes</div></div></div>'
+        + '<table class="data-table"><thead><tr><th>Place</th><th>Athlete</th><th>Event</th><th>Time</th><th>Power Score</th></tr></thead><tbody>'
+        + sorted.map(function(d) {
+            return '<tr><td>' + swimPlaceBadge(d.place) + '</td>'
+              + '<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + SWIM_COLORS[d.name] + ';margin-right:6px"></span>' + d.name + '</td>'
+              + '<td>' + d.event + '</td><td style="font-family:monospace">' + d.time + '</td>'
+              + '<td>' + swimBar(d.pts, 900, SWIM_COLORS[d.name]) + '</td></tr>';
+          }).join('')
+        + '</tbody></table></div>';
+    }
+
+    function renderSwimH2H(c) {
+      var events = {};
+      SWIM_DATA.forEach(function(d) {
+        if (!events[d.event]) events[d.event] = [];
+        events[d.event].push(d);
+      });
+      // Only show events with 2+ teammates
+      var shared = Object.keys(events).filter(function(e){return events[e].length>=2}).sort();
+
+      c.innerHTML = ''
+        + '<div class="data-table-container" style="margin-bottom:24px"><div class="data-table-header"><div><div class="data-table-title">Head-to-Head Teammate Matchups</div><div class="data-table-subtitle">Comparing athletes in events they both swam</div></div></div>'
+        + '<div style="padding:0">'
+        + shared.map(function(ev) {
+            var swims = events[ev].sort(function(a,b){return a.secs-b.secs});
+            var leader = swims[0];
+            return '<div style="border-bottom:1px solid var(--border);padding:16px 20px">'
+              + '<div style="font-size:14px;font-weight:600;color:var(--foreground);margin-bottom:12px">' + ev + ' <span style="font-size:12px;color:var(--foreground-muted)">(' + swims.length + ' swimmers)</span></div>'
+              + '<div style="display:flex;flex-direction:column;gap:8px">'
+              + swims.map(function(s, i) {
+                  var gap = i === 0 ? '' : ' <span style="color:var(--foreground-muted);font-size:11px">(+' + (s.secs - leader.secs).toFixed(2) + 's behind)</span>';
+                  var medal = i === 0 ? ' <span style="color:#fbbf24;font-size:11px;font-weight:600">FASTEST</span>' : '';
+                  return '<div style="display:flex;align-items:center;gap:12px">'
+                    + '<div style="width:140px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:' + SWIM_COLORS[s.name] + '"></span><span style="font-size:13px;color:var(--foreground)">' + s.name + '</span></div>'
+                    + '<div style="font-family:monospace;width:80px;font-size:13px;color:var(--foreground)">' + s.time + '</div>'
+                    + '<div style="flex:1">' + swimBar(s.pts, 900, SWIM_COLORS[s.name]) + '</div>'
+                    + '<div style="width:60px;text-align:right">' + swimPlaceBadge(s.place) + '</div>'
+                    + '<div style="width:180px">' + medal + gap + '</div>'
+                    + '</div>';
+                }).join('')
+              + '</div></div>';
+          }).join('')
+        + '</div></div>'
+        // Win matrix
+        + '<div class="data-table-container"><div class="data-table-header"><div><div class="data-table-title">Teammate Win Matrix</div><div class="data-table-subtitle">How many shared events each athlete won (fastest time among teammates)</div></div></div>'
+        + '<table class="data-table"><thead><tr><th>Athlete</th><th>Events with Teammates</th><th>Wins (Fastest)</th><th>Win Rate</th></tr></thead><tbody>'
+        + (function() {
+            var matrix = {};
+            SWIM_ATHLETES.forEach(function(n){matrix[n]={shared:0,wins:0}});
+            shared.forEach(function(ev) {
+              var swims = events[ev].sort(function(a,b){return a.secs-b.secs});
+              swims.forEach(function(s){matrix[s.name].shared++});
+              matrix[swims[0].name].wins++;
+            });
+            return SWIM_ATHLETES.map(function(name) {
+              var m = matrix[name];
+              var rate = m.shared ? Math.round(m.wins/shared.length*100) : 0;
+              var barW = Math.max(4, rate);
+              return '<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + SWIM_COLORS[name] + ';margin-right:6px"></span>' + name + '</td>'
+                + '<td>' + m.shared + '</td><td style="font-weight:600;color:#fbbf24">' + m.wins + '</td>'
+                + '<td><div style="display:flex;align-items:center;gap:8px"><div style="width:100px;background:rgba(255,255,255,0.06);border-radius:4px;height:16px;overflow:hidden"><div style="width:' + barW + '%;height:100%;background:' + SWIM_COLORS[name] + ';border-radius:4px"></div></div><span style="font-size:12px;color:var(--foreground-muted)">' + rate + '%</span></div></td></tr>';
+            }).join('');
+          })()
+        + '</tbody></table></div>';
+    }
+
+    function getOrdinal(n) {
+      var s = ['th','st','nd','rd']; var v = n % 100;
+      return (s[(v-20)%10]||s[v]||s[0]);
     }
 
     // --- Chat Panel Resize ---
