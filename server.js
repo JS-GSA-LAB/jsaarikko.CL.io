@@ -480,13 +480,14 @@ app.post("/webauthn/register/verify", express.json(), async (req, res) => {
       const user = users.get(req.session.username.toLowerCase());
       if (user) user.webauthn_credential = credentialJSON;
 
+      const credentialStr = JSON.stringify(credentialJSON);
       console.log("\n╔══════════════════════════════════════════════════════════════╗");
       console.log("║  WEBAUTHN CREDENTIAL — Copy this to Railway env var:       ║");
       console.log("╠══════════════════════════════════════════════════════════════╣");
-      console.log("║  WEBAUTHN_CREDENTIAL=" + JSON.stringify(credentialJSON));
+      console.log("║  WEBAUTHN_CREDENTIAL=" + credentialStr);
       console.log("╚══════════════════════════════════════════════════════════════╝\n");
 
-      res.json({ verified: true });
+      res.json({ verified: true, credential: credentialStr });
     } else {
       res.json({ verified: false });
     }
@@ -13760,7 +13761,8 @@ app.get(UI_ROUTE, (_req, res) => {
         });
         const result = await verRes.json();
         if (result.verified) {
-          showToast('Passkey registered! Check deployment logs for WEBAUTHN_CREDENTIAL value.');
+          showToast('Passkey registered!');
+          showCredentialModal(result.credential);
         } else {
           showToast('Passkey registration failed.');
         }
@@ -13768,6 +13770,46 @@ app.get(UI_ROUTE, (_req, res) => {
         if (e.name === 'NotAllowedError') return;
         showToast('Passkey error: ' + (e.message || 'Unknown error'));
       }
+    }
+
+    function showCredentialModal(credentialStr) {
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+      var card = document.createElement('div');
+      card.style.cssText = 'background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;max-width:520px;width:100%';
+      var h = document.createElement('h3');
+      h.textContent = 'Passkey Registered';
+      h.style.cssText = 'color:#e6edf3;font-size:16px;margin-bottom:4px';
+      var p = document.createElement('p');
+      p.style.cssText = 'color:#8b949e;font-size:13px;margin-bottom:16px';
+      p.innerHTML = 'To persist across deploys, add this as <code style="background:#0d1117;padding:2px 6px;border-radius:4px;color:#a78bfa">WEBAUTHN_CREDENTIAL</code> in your Railway environment variables.';
+      var ta = document.createElement('textarea');
+      ta.readOnly = true;
+      ta.value = credentialStr;
+      ta.style.cssText = 'width:100%;height:100px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;font-family:monospace;font-size:11px;padding:10px;resize:none;margin-bottom:12px';
+      var btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
+      var copyBtn = document.createElement('button');
+      copyBtn.textContent = 'Copy';
+      copyBtn.style.cssText = 'padding:8px 16px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer';
+      copyBtn.addEventListener('click', function() {
+        navigator.clipboard.writeText(ta.value);
+        copyBtn.textContent = 'Copied!';
+        setTimeout(function() { copyBtn.textContent = 'Copy'; }, 2000);
+      });
+      var closeBtn = document.createElement('button');
+      closeBtn.textContent = 'Close';
+      closeBtn.style.cssText = 'padding:8px 16px;background:transparent;color:#8b949e;border:1px solid #30363d;border-radius:6px;font-size:13px;cursor:pointer';
+      closeBtn.addEventListener('click', function() { overlay.remove(); });
+      btnRow.appendChild(copyBtn);
+      btnRow.appendChild(closeBtn);
+      card.appendChild(h);
+      card.appendChild(p);
+      card.appendChild(ta);
+      card.appendChild(btnRow);
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
     }
   </script>
 </body>
