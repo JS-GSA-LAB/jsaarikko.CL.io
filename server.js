@@ -58,6 +58,33 @@ const users = new Map();
   }
 }
 
+// ── Seed additional users from PORTAL_USERS env var ──────────────────
+let nextUserId = 2;
+{
+  const portalUsersEnv = process.env.PORTAL_USERS;
+  if (portalUsersEnv) {
+    try {
+      const extraUsers = JSON.parse(portalUsersEnv);
+      for (const u of extraUsers) {
+        if (!u.username || !u.password) continue;
+        const key = u.username.toLowerCase();
+        if (users.has(key)) continue; // don't overwrite admin
+        const hash = bcrypt.hashSync(u.password, 10);
+        users.set(key, {
+          id: nextUserId++,
+          username: u.username,
+          password_hash: hash,
+          display_name: u.display_name || u.username,
+          role: u.role || "viewer",
+        });
+      }
+      console.log(`Seeded ${extraUsers.length} additional portal user(s) from PORTAL_USERS`);
+    } catch (e) {
+      console.warn("Failed to parse PORTAL_USERS:", e.message);
+    }
+  }
+}
+
 /**
  * ENV VARS (set these in Railway):
  * - UPSTREAM_MCP_URL        (required) e.g. "http://134.141.116.46:8000"  (no trailing slash)
@@ -76,6 +103,7 @@ const users = new Map();
  * - FORWARD_AUTH_HEADER     (optional) default "true" => forward Authorization header to upstream
  * - RP_ID                   (optional) WebAuthn relying party ID — defaults to RAILWAY_PUBLIC_DOMAIN or "localhost"
  * - WEBAUTHN_CREDENTIAL     (optional) JSON-stringified WebAuthn credential for passkey login
+ * - PORTAL_USERS            (optional) JSON array of additional users: [{"username":"x","password":"y","display_name":"X","role":"viewer"},...]
  *
  * Notes:
  * - This app provides a simple web UI and a reverse-proxy endpoint.
@@ -592,6 +620,57 @@ app.post("/webauthn/auth/verify", express.json(), async (req, res) => {
     console.error("WebAuthn auth verify error:", e);
     res.status(500).json({ error: e.message });
   }
+});
+
+// ── Portal Users CRUD API ────────────────────────────────────────────
+app.get("/api/portal-users", (req, res) => {
+  const list = [];
+  for (const u of users.values()) {
+    list.push({
+      id: u.id,
+      username: u.username,
+      display_name: u.display_name,
+      role: u.role,
+      has_passkey: !!u.webauthn_credential,
+    });
+  }
+  res.json(list);
+});
+
+app.post("/api/portal-users", express.json(), (req, res) => {
+  if (req.session.role !== "admin") return res.status(403).json({ error: "Admin access required" });
+  const { username, password, display_name, role } = req.body;
+  if (!username || !password) return res.status(400).json({ error: "Username and password are required" });
+  const key = username.toLowerCase();
+  if (users.has(key)) return res.status(409).json({ error: "Username already exists" });
+  const hash = bcrypt.hashSync(password, 10);
+  const newUser = { id: nextUserId++, username, password_hash: hash, display_name: display_name || username, role: role || "viewer" };
+  users.set(key, newUser);
+  res.status(201).json({ id: newUser.id, username: newUser.username, display_name: newUser.display_name, role: newUser.role });
+});
+
+app.put("/api/portal-users/:id", express.json(), (req, res) => {
+  if (req.session.role !== "admin") return res.status(403).json({ error: "Admin access required" });
+  const targetId = Number(req.params.id);
+  let target = null;
+  for (const u of users.values()) { if (u.id === targetId) { target = u; break; } }
+  if (!target) return res.status(404).json({ error: "User not found" });
+  const { display_name, role, password } = req.body;
+  if (display_name !== undefined) target.display_name = display_name;
+  if (role !== undefined) target.role = role;
+  if (password) target.password_hash = bcrypt.hashSync(password, 10);
+  res.json({ id: target.id, username: target.username, display_name: target.display_name, role: target.role });
+});
+
+app.delete("/api/portal-users/:id", (req, res) => {
+  if (req.session.role !== "admin") return res.status(403).json({ error: "Admin access required" });
+  const targetId = Number(req.params.id);
+  if (targetId === req.session.userId) return res.status(400).json({ error: "Cannot delete your own account" });
+  let targetKey = null;
+  for (const [key, u] of users.entries()) { if (u.id === targetId) { targetKey = key; break; } }
+  if (!targetKey) return res.status(404).json({ error: "User not found" });
+  users.delete(targetKey);
+  res.json({ ok: true });
 });
 
 // Claude Chat API
@@ -4920,6 +4999,54 @@ app.get(UI_ROUTE, (_req, res) => {
       background: var(--border);
       margin: 10px 0;
     }
+    /* Portal User Modal */
+    .portal-user-overlay {
+      display: none; position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6); z-index: 10001;
+      justify-content: center; align-items: center;
+    }
+    .portal-user-overlay.active { display: flex; }
+    .portal-user-modal {
+      background: #1a1f2e; border-radius: 12px; width: 440px;
+      border: 1px solid rgba(255,255,255,0.1); padding: 24px;
+    }
+    .portal-user-modal-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+    }
+    .portal-user-modal-header h3 {
+      font-size: 16px; font-weight: 600; color: #fff; margin: 0;
+    }
+    .portal-user-modal-close {
+      background: none; border: none; color: rgba(255,255,255,0.4);
+      font-size: 20px; cursor: pointer; padding: 0;
+    }
+    .portal-user-modal-close:hover { color: rgba(255,255,255,0.8); }
+    .portal-user-field { margin-bottom: 16px; }
+    .portal-user-label {
+      display: block; font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 6px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .portal-user-input {
+      width: 100%; padding: 10px 12px; border-radius: 6px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.9); font-size: 13px; font-family: inherit;
+      box-sizing: border-box;
+    }
+    .portal-user-input:focus { outline: none; border-color: var(--primary); }
+    .portal-user-modal-actions {
+      display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;
+    }
+    .portal-user-btn {
+      padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 500;
+      cursor: pointer; font-family: inherit; border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7);
+    }
+    .portal-user-btn:hover { background: rgba(255,255,255,0.1); }
+    .portal-user-btn.primary {
+      background: var(--primary); color: white; border-color: var(--primary);
+    }
+    .portal-user-btn.primary:hover { opacity: 0.9; }
   </style>
 </head>
 <body>
@@ -5027,6 +5154,13 @@ app.get(UI_ROUTE, (_req, res) => {
         <button class="nav-item" onclick="showView('ai-agents')">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4M4.22 4.22l2.83 2.83m9.9 9.9l2.83 2.83M1 12h4m14 0h4M4.22 19.78l2.83-2.83m9.9-9.9l2.83-2.83"/></svg>
           AI Agents
+        </button>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Administration</div>
+        <button class="nav-item" onclick="showView('portal-users')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Portal Users
         </button>
       </div>
     </div>
@@ -8286,6 +8420,77 @@ app.get(UI_ROUTE, (_req, res) => {
       </div>
     </div>
 
+    <!-- Portal Users View -->
+    <div id="view-portal-users" class="view-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Portal Users</h1>
+          <div class="page-subtitle">Manage user accounts for the GSA VC Portal</div>
+        </div>
+        <div class="header-actions">
+          <button class="header-btn" style="background:var(--primary);color:white" onclick="openAddUser()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add User
+          </button>
+        </div>
+      </div>
+      <div class="page-content">
+        <div class="data-table-container">
+          <table class="data-table" id="portal-users-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Username</th>
+                <th>Display Name</th>
+                <th>Role</th>
+                <th>Passkey</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="portal-users-tbody">
+              <tr><td colspan="6" style="text-align:center;color:var(--foreground-muted);padding:40px">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portal User Add/Edit Modal -->
+    <div class="portal-user-overlay" id="portal-user-overlay" onclick="if(event.target===this)closeUserModal()">
+      <div class="portal-user-modal">
+        <div class="portal-user-modal-header">
+          <h3 id="portal-user-modal-title">Add User</h3>
+          <button class="portal-user-modal-close" onclick="closeUserModal()">&times;</button>
+        </div>
+        <div class="portal-user-modal-body">
+          <input type="hidden" id="pu-edit-id" value="">
+          <div class="portal-user-field">
+            <label class="portal-user-label">Username</label>
+            <input class="portal-user-input" type="text" id="pu-username" placeholder="Enter username" autocomplete="off">
+          </div>
+          <div class="portal-user-field">
+            <label class="portal-user-label">Password <span id="pu-password-hint" style="display:none;color:rgba(255,255,255,0.3)">(leave blank to keep current)</span></label>
+            <input class="portal-user-input" type="password" id="pu-password" placeholder="Enter password" autocomplete="new-password">
+          </div>
+          <div class="portal-user-field">
+            <label class="portal-user-label">Display Name</label>
+            <input class="portal-user-input" type="text" id="pu-display-name" placeholder="Enter display name" autocomplete="off">
+          </div>
+          <div class="portal-user-field">
+            <label class="portal-user-label">Role</label>
+            <select class="portal-user-input" id="pu-role">
+              <option value="admin">Admin</option>
+              <option value="viewer" selected>Viewer</option>
+            </select>
+          </div>
+        </div>
+        <div class="portal-user-modal-actions">
+          <button class="portal-user-btn" onclick="closeUserModal()">Cancel</button>
+          <button class="portal-user-btn primary" onclick="saveUser()">Save</button>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script>
@@ -8331,7 +8536,132 @@ app.get(UI_ROUTE, (_req, res) => {
         initRfVisualizer();
       } else if (viewId === 'ai-agents') {
         initAiAgentsView();
+      } else if (viewId === 'portal-users') {
+        loadPortalUsers();
       }
+    }
+
+    // ── Portal Users Management ──────────────────────────────────────
+    var portalUserEditMode = null; // 'add' or 'edit'
+
+    async function loadPortalUsers() {
+      try {
+        const res = await fetch('/api/portal-users');
+        const users = await res.json();
+        const tbody = document.getElementById('portal-users-tbody');
+        if (!users.length) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--foreground-muted);padding:40px">No users found</td></tr>';
+          return;
+        }
+        tbody.innerHTML = users.map(function(u) {
+          var roleBadge = u.role === 'admin'
+            ? '<span class="status-badge" style="background:rgba(139,92,246,0.15);color:#a78bfa">Admin</span>'
+            : '<span class="status-badge" style="background:rgba(34,197,94,0.15);color:#22c55e">Viewer</span>';
+          var passkeyIcon = u.has_passkey
+            ? '<span style="color:#22c55e" title="Passkey registered">&#10003;</span>'
+            : '<span style="color:rgba(255,255,255,0.2)">—</span>';
+          return '<tr>'
+            + '<td>' + roleBadge + '</td>'
+            + '<td>' + u.username + '</td>'
+            + '<td>' + (u.display_name || '') + '</td>'
+            + '<td>' + u.role + '</td>'
+            + '<td>' + passkeyIcon + '</td>'
+            + '<td>'
+            + '<button onclick="openEditUser(' + u.id + ')" style="background:none;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;margin-right:6px" onmouseover="this.style.borderColor=\'var(--primary)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.12)\'">Edit</button>'
+            + '<button onclick="deleteUser(' + u.id + ',\'' + u.username.replace(/'/g, "\\'") + '\')" style="background:none;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px" onmouseover="this.style.borderColor=\'#f85149\';this.style.color=\'#f85149\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.12)\';this.style.color=\'rgba(255,255,255,0.6)\'">Delete</button>'
+            + '</td></tr>';
+        }).join('');
+      } catch (e) {
+        document.getElementById('portal-users-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#f85149;padding:40px">Error loading users: ' + e.message + '</td></tr>';
+      }
+    }
+
+    function openAddUser() {
+      portalUserEditMode = 'add';
+      document.getElementById('portal-user-modal-title').textContent = 'Add User';
+      document.getElementById('pu-edit-id').value = '';
+      document.getElementById('pu-username').value = '';
+      document.getElementById('pu-username').readOnly = false;
+      document.getElementById('pu-password').value = '';
+      document.getElementById('pu-password-hint').style.display = 'none';
+      document.getElementById('pu-display-name').value = '';
+      document.getElementById('pu-role').value = 'viewer';
+      document.getElementById('portal-user-overlay').classList.add('active');
+    }
+
+    async function openEditUser(id) {
+      try {
+        var res = await fetch('/api/portal-users');
+        var users = await res.json();
+        var user = users.find(function(u) { return u.id === id; });
+        if (!user) return;
+        portalUserEditMode = 'edit';
+        document.getElementById('portal-user-modal-title').textContent = 'Edit User';
+        document.getElementById('pu-edit-id').value = user.id;
+        document.getElementById('pu-username').value = user.username;
+        document.getElementById('pu-username').readOnly = true;
+        document.getElementById('pu-password').value = '';
+        document.getElementById('pu-password-hint').style.display = 'inline';
+        document.getElementById('pu-display-name').value = user.display_name || '';
+        document.getElementById('pu-role').value = user.role;
+        document.getElementById('portal-user-overlay').classList.add('active');
+      } catch (e) {
+        showToast('Error loading user: ' + e.message);
+      }
+    }
+
+    function closeUserModal() {
+      document.getElementById('portal-user-overlay').classList.remove('active');
+    }
+
+    async function saveUser() {
+      var username = document.getElementById('pu-username').value.trim();
+      var password = document.getElementById('pu-password').value;
+      var display_name = document.getElementById('pu-display-name').value.trim();
+      var role = document.getElementById('pu-role').value;
+
+      if (portalUserEditMode === 'add') {
+        if (!username || !password) { showToast('Username and password are required'); return; }
+        try {
+          var res = await fetch('/api/portal-users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username, password: password, display_name: display_name, role: role })
+          });
+          var data = await res.json();
+          if (!res.ok) { showToast(data.error || 'Failed to create user'); return; }
+          closeUserModal();
+          loadPortalUsers();
+          showToast('User created successfully');
+        } catch (e) { showToast('Error: ' + e.message); }
+      } else {
+        var id = document.getElementById('pu-edit-id').value;
+        var body = { display_name: display_name, role: role };
+        if (password) body.password = password;
+        try {
+          var res = await fetch('/api/portal-users/' + id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          var data = await res.json();
+          if (!res.ok) { showToast(data.error || 'Failed to update user'); return; }
+          closeUserModal();
+          loadPortalUsers();
+          showToast('User updated successfully');
+        } catch (e) { showToast('Error: ' + e.message); }
+      }
+    }
+
+    async function deleteUser(id, username) {
+      if (!confirm('Delete user "' + username + '"? This cannot be undone.')) return;
+      try {
+        var res = await fetch('/api/portal-users/' + id, { method: 'DELETE' });
+        var data = await res.json();
+        if (!res.ok) { showToast(data.error || 'Failed to delete user'); return; }
+        loadPortalUsers();
+        showToast('User deleted');
+      } catch (e) { showToast('Error: ' + e.message); }
     }
 
     // AI Agents Marketplace Data and Functions
