@@ -5047,6 +5047,12 @@ app.get(UI_ROUTE, (_req, res) => {
       background: var(--primary); color: white; border-color: var(--primary);
     }
     .portal-user-btn.primary:hover { opacity: 0.9; }
+    .pu-action-btn {
+      background: none; border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.6);
+      padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-family: inherit;
+    }
+    .pu-action-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .pu-action-btn.danger:hover { border-color: #f85149; color: #f85149; }
   </style>
 </head>
 <body>
@@ -8567,8 +8573,8 @@ app.get(UI_ROUTE, (_req, res) => {
             + '<td>' + u.role + '</td>'
             + '<td>' + passkeyIcon + '</td>'
             + '<td>'
-            + '<button onclick="openEditUser(' + u.id + ')" style="background:none;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;margin-right:6px" onmouseover="this.style.borderColor=\'var(--primary)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.12)\'">Edit</button>'
-            + '<button onclick="deleteUser(' + u.id + ',\'' + u.username.replace(/'/g, "\\'") + '\')" style="background:none;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px" onmouseover="this.style.borderColor=\'#f85149\';this.style.color=\'#f85149\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.12)\';this.style.color=\'rgba(255,255,255,0.6)\'">Delete</button>'
+            + '<button class="pu-action-btn" style="margin-right:6px" onclick="openEditUser(' + u.id + ')">Edit</button>'
+            + '<button class="pu-action-btn danger" onclick="deleteUser(' + u.id + ')">Delete</button>'
             + '</td></tr>';
         }).join('');
       } catch (e) {
@@ -8653,9 +8659,13 @@ app.get(UI_ROUTE, (_req, res) => {
       }
     }
 
-    async function deleteUser(id, username) {
-      if (!confirm('Delete user "' + username + '"? This cannot be undone.')) return;
+    async function deleteUser(id) {
       try {
+        var listRes = await fetch('/api/portal-users');
+        var allUsers = await listRes.json();
+        var target = allUsers.find(function(u) { return u.id === id; });
+        var name = target ? target.username : 'ID ' + id;
+        if (!confirm('Delete user "' + name + '"? This cannot be undone.')) return;
         var res = await fetch('/api/portal-users/' + id, { method: 'DELETE' });
         var data = await res.json();
         if (!res.ok) { showToast(data.error || 'Failed to delete user'); return; }
