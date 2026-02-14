@@ -8854,6 +8854,7 @@ app.get(UI_ROUTE, (req, res) => {
             <option value="top-performers">Top Performers</option>
             <option value="roster">Full Roster</option>
             <option value="meets">Meets & Schedule</option>
+            <option value="performance">Performance — IMX/IMR Kickoff</option>
           </select>
         </div>
       </div>
@@ -9902,6 +9903,7 @@ app.get(UI_ROUTE, (req, res) => {
       else if (p === 'top-performers') render757TopPerformers(c);
       else if (p === 'roster') render757Roster(c);
       else if (p === 'meets') render757Meets(c);
+      else if (p === 'performance') render757Performance(c);
     }
 
     function render757Overview(c) {
@@ -10178,6 +10180,922 @@ app.get(UI_ROUTE, (req, res) => {
               + '<div style="font-size:10px;color:var(--foreground-muted)">' + m.date.split(',')[0] + '</div></div>';
           }).join('')
         + '</div></div>';
+    }
+
+    // ── IMX/IMR Kickoff Performance Data ─────────────────────────────
+    var IMX_TEAMS = {'757':'757 Swim','NCSC':'Nations Capital Swim Club','MSAC':'Metro Surge Aquatic Club','PSI':'Poseidon Swimming Inc','BASS':'Battlefield Area Star Swimmers'};
+    var IMX_TCOLORS = {'757':'#a78bfa','NCSC':'#38bdf8','MSAC':'#22c55e','PSI':'#fb923c','BASS':'#f472b6'};
+    var IMX_DATA = [
+      [1,'Julian Francisco','NCSC','400 Y IM','4:20.89',837],
+      [2,'Julian Francisco','NCSC','200 Y IM','2:04.15',794],
+      [3,'Julian Francisco','NCSC','500 Y Free','4:56.22',783],
+      [4,'Jiayi Qi','757','100 Y Breast','1:08.40',779],
+      [5,'Jaxson Daniel','NCSC','200 Y Back','1:58.12',774],
+      [6,'Jaxson Daniel','NCSC','200 Y IM','2:00.69',765],
+      [7,'Lucas Gunter','PSI','200 Y Back','1:54.54',754],
+      [8,'Wyatt Sylvester','757','200 Y Breast','2:12.45',745],
+      [9,'Jaxson Daniel','NCSC','200 Y Breast','2:18.08',742],
+      [10,'Wyatt Sylvester','757','200 Y IM','1:56.90',737],
+      [11,'Ethan Hawver','NCSC','200 Y Breast','2:18.67',733],
+      [12,'Max Yanoff','MSAC','100 Y Breast','1:10.01',731],
+      [13,'Ethan Hawver','NCSC','400 Y IM','4:21.01',731],
+      [14,'Ethan Hawver','NCSC','200 Y Back','2:00.50',726],
+      [15,'Victor Wall','NCSC','200 Y Breast','2:19.28',724],
+      [16,'Jaxson Daniel','NCSC','400 Y IM','4:21.76',724],
+      [17,'Victor Wall','NCSC','400 Y IM','4:21.90',723],
+      [18,'Jiayi Qi','757','100 Y Back','1:01.97',720],
+      [19,'Will Hartig','757','200 Y IM','1:57.71',719],
+      [20,'Wyatt Sylvester','757','200 Y Fly','1:57.78',716],
+      [21,'Lucas Gunter','PSI','200 Y IM','1:57.85',716],
+      [22,'Will Hartig','757','500 Y Free','4:43.78',716],
+      [23,'Billy Grau','PSI','200 Y Breast','2:10.41',713],
+      [24,'Victor Wall','NCSC','200 Y IM','2:03.37',708],
+      [25,'Julian Francisco','NCSC','200 Y Breast','2:24.50',708],
+      [26,'Julian Francisco','NCSC','200 Y Fly','2:08.77',705],
+      [27,'Wyatt Sylvester','757','400 Y IM','4:13.19',704],
+      [28,'Will Hartig','757','200 Y Breast','2:15.07',703],
+      [29,'Wyatt Sylvester','757','500 Y Free','4:45.78',698],
+      [30,'Victor Wall','NCSC','500 Y Free','4:55.94',696],
+      [31,'Ethan Hawver','NCSC','200 Y IM','2:04.05',693],
+      [32,'Lucas Landers','757','200 Y Fly','1:57.75',690],
+      [33,'Julian Francisco','NCSC','200 Y Back','2:08.05',690],
+      [34,'Colin Conn','757','500 Y Free','4:47.52',682],
+      [35,'Jiayi Qi','757','200 Y IM','2:16.64',677],
+      [36,'Oliver Voss','757','100 Y Back','1:03.28',674],
+      [37,'Jaxson Daniel','NCSC','500 Y Free','4:58.48',674],
+      [38,'Will Hartig','757','400 Y IM','4:16.33',673],
+      [39,'Jaxson Daniel','NCSC','200 Y Fly','2:05.06',668],
+      [40,'RJ Washburn','MSAC','200 Y IM','2:10.30',668],
+      [41,'Victor Wall','NCSC','200 Y Fly','2:05.10',667],
+      [42,'Oliver Voss','757','500 Y Free','5:26.80',659],
+      [43,'Victor Wall','NCSC','200 Y Back','2:03.94',657],
+      [44,'Lucas Gunter','PSI','200 Y Breast','2:18.08',656],
+      [45,'Greyson White','NCSC','200 Y Breast','2:18.09',656],
+      [46,'RJ Washburn','MSAC','200 Y Breast','2:28.18',654],
+      [47,'Reid Kessel','757','100 Y Back','1:18.51',653],
+      [48,'Will Hartig','757','200 Y Fly','2:01.08',651],
+      [49,'Peyton Skipper','BASS','200 Y IM','2:01.03',647],
+      [50,'Peyton Skipper','BASS','200 Y Back','1:59.88',643],
+      [51,'David Adame','NCSC','200 Y Breast','2:24.75',641],
+      [52,'RJ Washburn','MSAC','400 Y IM','4:42.56',640],
+      [53,'Lucas Landers','757','200 Y IM','2:00.96',637],
+      [54,'Colin Conn','757','200 Y Breast','2:19.30',637],
+      [55,'Peyton Skipper','BASS','200 Y Breast','2:19.75',630],
+      [56,'Jimmy Jacobs','757','200 Y Back','2:03.65',623],
+      [57,'Colin Conn','757','400 Y IM','4:21.62',623],
+      [58,'Bryce Rohrbach','NCSC','200 Y Back','2:03.76',621],
+      [59,'Landon Lawrence','757','200 Y Back','2:12.23',612],
+      [60,'Colin Conn','757','200 Y IM','2:02.86',608],
+      [61,'Wyatt Sylvester','757','200 Y Back','2:01.89',603],
+      [62,'Lucas Landers','757','500 Y Free','4:53.94',601],
+      [63,'Max Yanoff','MSAC','100 Y Back','1:05.47',600],
+      [64,'Jiayi Qi','757','100 Y Fly','1:04.96',598],
+      [65,'Lucas Gunter','PSI','500 Y Free','4:57.13',597],
+      [66,'Ethan Hawver','NCSC','500 Y Free','5:07.47',597],
+      [67,'Brandon Thai','NCSC','200 Y Breast','2:32.27',595],
+      [68,'Colin Conn','757','200 Y Fly','2:04.11',594],
+      [69,'Ethan Haddock','NCSC','200 Y Back','2:05.19',593],
+      [70,'RJ Washburn','MSAC','200 Y Back','2:13.44',590],
+      [71,'Lucas Gunter','PSI','400 Y IM','4:25.66',586],
+      [72,'Jack Supon','NCSC','200 Y Back','2:02.87',584],
+      [73,'Braxton Cobbs','MSAC','200 Y Breast','2:21.20',581],
+      [74,'Lucas Landers','757','400 Y IM','4:25.05',581],
+      [75,'Chase Laine','NCSC','200 Y Back','2:02.11',580],
+      [76,'Ethan Haddock','NCSC','200 Y IM','2:06.43',580],
+      [77,'Preston Rall','NCSC','200 Y Back','2:14.02',580],
+      [78,'Lucas Landers','757','200 Y Back','2:02.25',578],
+      [79,'Lucas Landers','757','200 Y Breast','2:21.39',578],
+      [80,'RJ Washburn','MSAC','500 Y Free','5:20.85',575],
+      [81,'Brandon Thai','NCSC','400 Y IM','4:50.37',573],
+      [82,'Taylor Starr','BASS','100 Y Breast','1:04.12',572],
+      [83,'Landon Dockett','NCSC','400 Y IM','4:38.53',572],
+      [84,'Logan Sumrow','MSAC','200 Y Back','2:14.85',565],
+      [85,'Braxton Cobbs','MSAC','200 Y IM','2:04.55',563],
+      [86,'Oliver Voss','757','200 Y IM','2:23.48',562],
+      [87,'Owen Strickland','NCSC','200 Y Breast','2:25.32',562],
+      [88,'Jiayi Qi','757','500 Y Free','5:40.62',562],
+      [89,'Finn Leggett','757','200 Y IM','2:04.89',556],
+      [90,'Isaac Hsu','MSAC','200 Y Breast','2:35.07',556],
+      [91,'Ben Sleeth','757','50 Y Back','35.90',554],
+      [92,'Brandon Thai','NCSC','200 Y IM','2:16.23',554],
+      [93,'Ethan Haddock','NCSC','400 Y IM','4:34.71',554],
+      [94,'Reddick Perkins','757','100 Y Fly','1:11.79',552],
+      [95,'Brennan Bermudez','757','200 Y IM','2:16.36',552],
+      [96,'Tianze Wen','MSAC','200 Y Breast','2:25.03',550],
+      [97,'Erik Szabo','PSI','400 Y IM','4:28.46',550],
+      [98,'Ryan King','MSAC','100 Y Back','1:12.59',546],
+      [99,'Owen Strickland','NCSC','200 Y IM','2:08.13',546],
+      [100,'Ethan Haddock','NCSC','200 Y Breast','2:26.40',546],
+      [101,'Bryce Rohrbach','NCSC','200 Y Fly','2:08.43',545],
+      [102,'Greyson White','NCSC','200 Y Fly','2:06.84',544],
+      [103,'Landon Dockett','NCSC','200 Y IM','2:11.51',544],
+      [104,'Bryce Rohrbach','NCSC','400 Y IM','4:35.77',544],
+      [105,'Landon Dockett','NCSC','200 Y Breast','2:31.44',543],
+      [106,'Owen Strickland','NCSC','400 Y IM','4:35.91',543],
+      [107,'Greyson White','NCSC','200 Y IM','2:06.11',542],
+      [108,'Jimmy Jacobs','757','200 Y IM','2:08.37',542],
+      [109,'Reddick Perkins','757','200 Y IM','2:35.41',541],
+      [110,'Landon Dockett','NCSC','500 Y Free','5:14.29',541],
+      [111,'Max Yanoff','MSAC','100 Y Fly','1:06.84',540],
+      [112,'Billy Grau','PSI','200 Y IM','2:03.96',540],
+      [113,'Peyton Skipper','BASS','500 Y Free','5:03.88',540],
+      [114,'Ethan Haddock','NCSC','500 Y Free','5:08.35',540],
+      [115,'Oliver Voss','757','100 Y Fly','1:06.85',539],
+      [116,'David Adame','NCSC','200 Y IM','2:11.76',539],
+      [117,'Anson Butler','757','200 Y Breast','2:25.85',537],
+      [118,'Brandon Thai','NCSC','500 Y Free','5:26.27',532],
+      [119,'Reddick Perkins','757','100 Y Back','1:13.14',530],
+      [120,'Jasper Kotowicz','NCSC','200 Y Back','2:08.77',526],
+      [121,'Chase Laine','NCSC','200 Y IM','2:06.43',525],
+      [122,'Landon Dockett','NCSC','200 Y Fly','2:13.04',524],
+      [123,'RJ Washburn','MSAC','200 Y Fly','2:19.24',524],
+      [124,'Greyson White','NCSC','500 Y Free','5:05.90',523],
+      [125,'X Pangilinan','NCSC','200 Y Back','2:11.22',520],
+      [126,'Noah Levin','757','200 Y Back','2:11.24',520],
+      [127,'Owen Strickland','NCSC','200 Y Back','2:09.12',519],
+      [128,'Jasper Kotowicz','NCSC','400 Y IM','4:38.67',519],
+      [129,'X Pangilinan','NCSC','200 Y IM','2:12.92',517],
+      [130,'Preston Rall','NCSC','400 Y IM','4:57.19',517],
+      [131,'Owen Quinn','757','500 Y Free','5:11.21',517],
+      [132,'Ryan King','MSAC','500 Y Free','6:09.29',517],
+      [133,'Reddick Perkins','757','100 Y Breast','1:23.79',516],
+      [134,'Max Yanoff','MSAC','200 Y IM','2:26.48',515],
+      [135,'Luke Shnowske','757','100 Y Breast','1:23.85',514],
+      [136,'Landon Lawrence','757','400 Y IM','4:58.03',511],
+      [137,'Will Hartig','757','200 Y Back','2:06.86',508],
+      [138,'Greyson White','NCSC','200 Y Back','2:06.89',507],
+      [139,'Knox O\'Brien','757','200 Y IM','2:18.86',507],
+      [140,'Reid Kessel','757','200 Y Free','2:38.36',507],
+      [141,'Peyton Skipper','BASS','400 Y IM','4:34.50',507],
+      [142,'Cole Brenner','757','500 Y Free','5:07.99',507],
+      [143,'Landon Dockett','NCSC','200 Y Back','2:12.08',505],
+      [144,'Lucas Gunter','PSI','200 Y Fly','2:09.01',504],
+      [145,'Brandon Thai','NCSC','200 Y Back','2:18.36',504],
+      [146,'Owen Strickland','NCSC','500 Y Free','5:12.86',504],
+      [147,'Taylor Starr','BASS','100 Y IM','57.85',503],
+      [148,'Finn Leggett','757','200 Y Back','2:06.20',502],
+      [149,'Geo Garcia','NCSC','200 Y Breast','2:28.28',502],
+      [150,'Reid Kessel','757','200 Y IM','3:00.55',502],
+      [151,'Isaac Hsu','MSAC','200 Y IM','2:19.35',498],
+      [152,'Knox O\'Brien','757','400 Y IM','4:59.62',498],
+      [153,'Jimmy Jacobs','757','400 Y IM','4:41.35',497],
+      [154,'Nathan George','NCSC','200 Y Back','2:18.84',496],
+      [155,'Braxton Cobbs','MSAC','200 Y Fly','2:08.08',495],
+      [156,'Noah Levin','757','200 Y IM','2:14.14',495],
+      [157,'Mason Hibbard','757','200 Y Breast','2:26.94',495],
+      [158,'Geo Garcia','NCSC','200 Y Back','2:07.64',493],
+      [159,'Ethan Haddock','NCSC','200 Y Fly','2:11.36',493],
+      [160,'Isaac Hsu','MSAC','400 Y IM','5:00.25',493],
+      [161,'Max Basilio','MSAC','100 Y Breast','1:18.48',492],
+      [162,'Jasper Kotowicz','NCSC','200 Y IM','2:11.00',491],
+      [163,'Preston Rall','NCSC','200 Y IM','2:19.76',491],
+      [164,'Luke Haskin','757','200 Y Breast','2:27.18',491],
+      [165,'Billy Grau','PSI','400 Y IM','4:33.26',491],
+      [166,'Braxton Cobbs','MSAC','400 Y IM','4:35.20',491],
+      [167,'Isaac Hsu','MSAC','200 Y Back','2:19.31',488],
+      [168,'Landon Lawrence','757','500 Y Free','5:32.15',488],
+      [169,'Bryce Rohrbach','NCSC','500 Y Free','5:14.94',487],
+      [170,'Gavin King','MSAC','100 Y Fly','59.39',486],
+      [171,'Erik Szabo','PSI','200 Y Back','2:07.15',484],
+      [172,'Cole Brenner','757','200 Y Fly','2:10.17',484],
+      [173,'Bryce Rohrbach','NCSC','200 Y IM','2:11.37',484],
+      [174,'Ethan Hawver','NCSC','200 Y Fly','2:15.41',484],
+      [175,'Finn Leggett','757','200 Y Breast','2:27.69',484],
+      [176,'Travis Wen','MSAC','500 Y Free','6:14.67',484],
+      [177,'Colin Conn','757','200 Y Back','2:08.22',483],
+      [178,'Geo Garcia','NCSC','200 Y IM','2:09.27',481],
+      [179,'Finn Leggett','757','200 Y Fly','2:08.95',480],
+      [180,'Chase Laine','NCSC','400 Y IM','4:36.88',477],
+      [181,'Jasper Kotowicz','NCSC','500 Y Free','5:16.50',475],
+      [182,'Greyson White','NCSC','400 Y IM','4:38.41',474],
+      [183,'Mason Hibbard','757','200 Y IM','2:09.16',473],
+      [184,'Landon Lawrence','757','200 Y IM','2:20.83',472],
+      [185,'Finn Leggett','757','500 Y Free','5:09.53',472],
+      [186,'Owen Strickland','NCSC','200 Y Fly','2:12.62',471],
+      [187,'Brandon Thai','NCSC','200 Y Fly','2:22.49',471],
+      [188,'Jimmy Jacobs','757','200 Y Breast','2:31.51',471],
+      [189,'Brennan Bermudez','757','500 Y Free','5:34.48',471],
+      [190,'Taylor Starr','BASS','100 Y Back','58.78',470],
+      [191,'Travis Wen','MSAC','100 Y Fly','1:14.76',470],
+      [192,'Braxton Cobbs','MSAC','200 Y Back','2:07.91',470],
+      [193,'Reid Kessel','757','100 Y Breast','1:39.22',468],
+      [194,'X Pangilinan','NCSC','400 Y IM','4:51.03',468],
+      [195,'Taylor Starr','BASS','100 Y Fly','57.72',466],
+      [196,'Aahaan Mohapatra','MSAC','100 Y Back','1:15.40',465],
+      [197,'Luke Shnowske','757','200 Y IM','2:40.79',463],
+      [198,'Feynman Zheng','757','50 Y Fly','33.33',462],
+      [199,'Max Han','757','100 Y Back','1:20.75',460],
+      [200,'Sam Shnowske','757','200 Y Breast','2:37.67',456],
+      [201,'Ryan King','MSAC','200 Y IM','2:41.30',456],
+      [202,'Billy Grau','PSI','500 Y Free','5:09.91',456],
+      [203,'Brennan Bermudez','757','200 Y Breast','2:42.60',453],
+      [204,'Rhodes Barrell','757','200 Y Breast','2:42.61',453],
+      [205,'Sam Shnowske','757','500 Y Free','5:25.92',452],
+      [206,'Ryan King','MSAC','100 Y Breast','1:26.46',451],
+      [207,'Sam Shnowske','757','200 Y IM','2:16.58',451],
+      [208,'Jimmy Jacobs','757','500 Y Free','5:19.63',451],
+      [209,'X Pangilinan','NCSC','500 Y Free','5:26.07',451],
+      [210,'Luke Shnowske','757','100 Y Back','1:16.03',448],
+      [211,'Logan Sumrow','MSAC','200 Y IM','2:22.21',448],
+      [212,'Travis Wen','MSAC','200 Y IM','2:42.00',447],
+      [213,'Aahaan Mohapatra','MSAC','100 Y Fly','1:15.64',446],
+      [214,'Cole Brenner','757','200 Y IM','2:11.13',446],
+      [215,'Braxton Cobbs','MSAC','500 Y Free','5:12.85',446],
+      [216,'Makai Hamilton','757','100 Y Back','1:16.15',445],
+      [217,'Geo Garcia','NCSC','400 Y IM','4:42.02',444],
+      [218,'Bryce Rohrbach','NCSC','200 Y Breast','2:33.52',443],
+      [219,'Preston Rall','NCSC','500 Y Free','5:38.59',441],
+      [220,'Max Yanoff','MSAC','500 Y Free','5:59.17',441],
+      [221,'Preston Rall','NCSC','200 Y Fly','2:24.45',440],
+      [222,'David Adame','NCSC','400 Y IM','4:54.53',440],
+      [223,'Brennan Bermudez','757','400 Y IM','5:07.14',440],
+      [224,'Knox O\'Brien','757','200 Y Breast','2:43.63',439],
+      [225,'Ben Sleeth','757','50 Y Fly','35.98',438],
+      [226,'Cole Brenner','757','400 Y IM','4:42.80',437],
+      [227,'Chase Laine','NCSC','500 Y Free','5:14.04',436],
+      [228,'Finn Leggett','757','400 Y IM','4:41.83',435],
+      [229,'Daniel Uribe','NCSC','200 Y Breast','2:31.10',434],
+      [230,'Jack Supon','NCSC','200 Y IM','2:11.87',433],
+      [231,'Cole Brenner','757','200 Y Back','2:11.13',430],
+      [232,'Erik Szabo','PSI','200 Y Breast','2:31.46',429],
+      [233,'Noah Levin','757','200 Y Fly','2:18.78',428],
+      [234,'Jasper Kotowicz','NCSC','200 Y Breast','2:34.55',428],
+      [235,'Chase Laine','NCSC','200 Y Fly','2:12.05',426],
+      [236,'Jack Supon','NCSC','500 Y Free','5:18.28',426],
+      [237,'Brennan Bermudez','757','200 Y Back','2:23.09',425],
+      [238,'Peyton Skipper','BASS','200 Y Fly','2:13.65',424],
+      [239,'Travis Wen','MSAC','100 Y Back','1:17.05',420],
+      [240,'Knox O\'Brien','757','500 Y Free','5:41.65',420],
+      [241,'Noah Levin','757','500 Y Free','5:30.32',419],
+      [242,'Noah Levin','757','400 Y IM','4:57.34',418],
+      [243,'Anson Butler','757','200 Y IM','2:12.80',416],
+      [244,'Logan Sumrow','MSAC','400 Y IM','5:10.31',416],
+      [245,'Knox O\'Brien','757','200 Y Back','2:23.76',415],
+      [246,'Oliver Voss','757','100 Y Breast','1:21.53',414],
+      [247,'Logan Sumrow','MSAC','200 Y Breast','2:45.54',414],
+      [248,'Feynman Zheng','757','50 Y Back','36.04',411],
+      [249,'Jonathan Finley','757','100 Y Back','1:06.56',411],
+      [250,'David Adame','NCSC','200 Y Back','2:17.52',411],
+      [251,'Brayden Acton','BASS','100 Y IM','1:00.37',409],
+      [252,'Brayden Acton','BASS','100 Y Breast','1:10.00',409],
+      [253,'Landon Lawrence','757','200 Y Breast','2:45.98',409],
+      [254,'Brayden Acton','BASS','100 Y Fly','59.89',408],
+      [255,'Jackson Sady','PSI','200 Y Breast','2:36.05',408],
+      [256,'X Pangilinan','NCSC','200 Y Breast','2:41.28',407],
+      [257,'Noah Levin','757','200 Y Breast','2:41.30',407],
+      [258,'Nathan George','NCSC','200 Y IM','2:24.78',406],
+      [259,'Knox O\'Brien','757','200 Y Fly','2:26.71',405],
+      [260,'Preston Rall','NCSC','200 Y Breast','2:46.28',405],
+      [261,'Mason Hibbard','757','400 Y IM','4:45.60',405],
+      [262,'Rhodes Barrell','757','400 Y IM','5:11.97',404],
+      [263,'Landen Selak','MSAC','500 Y Free','5:21.75',401],
+      [264,'Max Basilio','MSAC','100 Y Back','1:11.96',399],
+      [265,'Calum James','757','100 Y Back','1:23.36',398],
+      [266,'Owen Quinn','757','200 Y IM','2:16.18',398],
+      [267,'Blake Harden','MSAC','200 Y Breast','2:36.75',398],
+      [268,'Elden Sullivan','PSI','500 Y Free','5:26.95',397],
+      [269,'Logan Sumrow','MSAC','500 Y Free','5:44.88',397],
+      [270,'Ben Sleeth','757','100 Y IM','1:22.70',396],
+      [271,'Owen Quinn','757','400 Y IM','4:53.79',396],
+      [272,'Ashby Marchese','PSI','200 Y Breast','2:35.77',395],
+      [273,'Robby Saul','757','500 Y Free','5:27.31',395],
+      [274,'Gavin King','MSAC','100 Y Back','1:03.05',393],
+      [275,'Landen Selak','MSAC','200 Y Back','2:13.31',393],
+      [276,'Travis Wen','MSAC','100 Y Breast','1:28.96',392],
+      [277,'Nathan George','NCSC','100 Y Breast','1:16.58',391],
+      [278,'Lars Arne','757','200 Y Breast','2:47.34',391],
+      [279,'Brayden Acton','BASS','200 Y Free','1:58.90',389],
+      [280,'Brayden Acton','BASS','200 Y IM','2:14.42',388],
+      [281,'Brayden Acton','BASS','100 Y Back','1:01.82',387],
+      [282,'David Adame','NCSC','500 Y Free','5:34.88',387],
+      [283,'Cole Brenner','757','200 Y Breast','2:36.49',385],
+      [284,'Desmond James','757','100 Y Breast','1:35.25',384],
+      [285,'Ashby Marchese','PSI','200 Y Back','2:13.80',384],
+      [286,'Mason Hibbard','757','200 Y Fly','2:14.53',384],
+      [287,'Sam Shnowske','757','400 Y IM','5:01.76',384],
+      [288,'Reid Kessel','757','100 Y Fly','1:30.42',383],
+      [289,'Calum James','757','200 Y Free','2:36.34',383],
+      [290,'Calum James','757','200 Y IM','2:59.48',377],
+      [291,'Mason Hibbard','757','500 Y Free','5:22.19',376],
+      [292,'Nathan George','NCSC','100 Y IM','1:06.45',375],
+      [293,'Aaron Greenberg','BASS','500 Y Free','5:25.30',375],
+      [294,'Max Han','757','200 Y IM','2:59.73',374],
+      [295,'Landen Selak','MSAC','200 Y IM','2:15.24',373],
+      [296,'Eden Zhang','MSAC','100 Y Breast','1:29.86',372],
+      [297,'Luke Shnowske','757','500 Y Free','6:34.23',371],
+      [298,'Brady Boone','PSI','200 Y Breast','2:38.84',370],
+      [299,'Chase Laine','NCSC','200 Y Breast','2:35.75',369],
+      [300,'Landen Selak','MSAC','400 Y IM','4:51.52',368],
+      [301,'Anson Butler','757','400 Y IM','4:51.52',368],
+      [302,'Ben Sleeth','757','100 Y Free','1:13.80',367],
+      [303,'Blake Harden','MSAC','200 Y Back','2:17.92',367],
+      [304,'Rhodes Barrell','757','200 Y IM','2:27.21',367],
+      [305,'Erik Szabo','PSI','200 Y Fly','2:15.63',366],
+      [306,'Jimmy Jacobs','757','200 Y Fly','2:18.99',366],
+      [307,'David Adame','NCSC','200 Y Fly','2:22.70',366],
+      [308,'Gavin King','MSAC','100 Y IM','1:02.61',364],
+      [309,'Ben Sleeth','757','50 Y Breast','44.14',363],
+      [310,'Ashby Marchese','PSI','200 Y IM','2:15.97',361],
+      [311,'Daniel Uribe','NCSC','400 Y IM','4:51.14',361],
+      [312,'Jack Supon','NCSC','200 Y Fly','2:17.58',360],
+      [313,'Josh Reed','757','200 Y IM','2:16.08',359],
+      [314,'Isaac Hsu','MSAC','500 Y Free','5:50.94',357],
+      [315,'Jasper Kotowicz','NCSC','200 Y Fly','2:19.63',356],
+      [316,'Aaron Greenberg','BASS','200 Y Fly','2:17.92',354],
+      [317,'Luke Shnowske','757','100 Y Fly','1:19.35',353],
+      [318,'Calum James','757','100 Y Breast','1:36.86',353],
+      [319,'Blake Harden','MSAC','400 Y IM','4:59.57',352],
+      [320,'Lars Arne','757','500 Y Free','5:51.65',352],
+      [321,'Luke Haskin','757','200 Y IM','2:15.97',351],
+      [322,'Geo Garcia','NCSC','500 Y Free','5:28.83',350],
+      [323,'Nathan George','NCSC','100 Y Fly','1:07.74',347],
+      [324,'Landon Lawrence','757','200 Y Fly','2:30.59',347],
+      [325,'Carter Basilio','MSAC','50 Y Back','39.95',345],
+      [326,'Tommy Owen','757','50 Y Back','42.73',344],
+      [327,'X Pangilinan','NCSC','200 Y Fly','2:24.12',344],
+      [328,'Ashby Marchese','PSI','400 Y IM','4:54.59',344],
+      [329,'Tianze Wen','MSAC','400 Y IM','4:54.59',344],
+      [330,'Christian Ballin','757','50 Y Back','40.05',341],
+      [331,'Max Han','757','100 Y Fly','1:25.53',340],
+      [332,'Christian Ballin','757','100 Y Free','1:14.89',339],
+      [333,'Max Basilio','MSAC','200 Y IM','2:38.71',339],
+      [334,'Landen Selak','MSAC','200 Y Breast','2:39.93',339],
+      [335,'Elden Sullivan','PSI','200 Y Back','2:19.70',338],
+      [336,'Luke Haskin','757','400 Y IM','4:54.19',338],
+      [337,'Elias Males','PSI','200 Y Breast','2:40.07',337],
+      [338,'Ryan Kurowski','757','50 Y Back','42.98',333],
+      [339,'Ivan Yeriemieiev','757','100 Y Back','1:26.22',333],
+      [340,'Eden Zhang','MSAC','200 Y IM','2:50.81',333],
+      [341,'Lars Arne','757','400 Y IM','5:21.92',333],
+      [342,'Daniel Uribe','NCSC','200 Y IM','2:17.10',332],
+      [343,'Desmond James','757','200 Y IM','3:03.69',331],
+      [344,'Elden Sullivan','PSI','200 Y IM','2:20.42',327],
+      [345,'Ryan King','MSAC','100 Y Fly','1:20.46',326],
+      [346,'Desmond James','757','100 Y Back','1:26.60',325],
+      [347,'Matthew Long','757','200 Y Breast','2:40.99',325],
+      [348,'Blake Harden','MSAC','200 Y IM','2:20.67',323],
+      [349,'Robby Saul','757','200 Y Back','2:20.67',323],
+      [350,'Eden Zhang','MSAC','100 Y Back','1:20.88',320],
+      [351,'Mason Hibbard','757','200 Y Back','2:16.67',320],
+      [352,'Matthew Long','757','200 Y IM','2:18.47',320],
+      [353,'Daniel Uribe','NCSC','500 Y Free','5:30.10',320],
+      [354,'Lars Arne','757','200 Y IM','2:30.35',319],
+      [355,'Robby Saul','757','400 Y IM','5:04.05',319],
+      [356,'Robby Saul','757','200 Y IM','2:21.07',317],
+      [357,'Eden Zhang','MSAC','500 Y Free','6:44.83',316],
+      [358,'Matthew Long','757','400 Y IM','4:58.45',315],
+      [359,'Geo Garcia','NCSC','200 Y Fly','2:20.51',314],
+      [360,'Elias Males','PSI','500 Y Free','5:34.17',314],
+      [361,'Elias Males','PSI','200 Y IM','2:18.94',313],
+      [362,'Max Basilio','MSAC','500 Y Free','6:21.47',312],
+      [363,'Blake Harden','MSAC','500 Y Free','5:39.92',308],
+      [364,'Sam Shnowske','757','200 Y Back','2:24.11',306],
+      [365,'Max Han','757','200 Y Free','2:42.63',306],
+      [366,'Devon McKinney','757','100 Y Breast','1:16.65',305],
+      [367,'Feynman Zheng','757','100 Y IM','1:21.25',304],
+      [368,'Gavin King','MSAC','100 Y Breast','1:14.49',302],
+      [369,'Alex Musteata','757','100 Y Free','1:22.11',300],
+      [370,'Christian Ballin','757','100 Y IM','1:26.82',300],
+      [371,'Jonathan Finley','757','200 Y IM','2:31.69',299],
+      [372,'Elias Males','PSI','200 Y Back','2:19.28',296],
+      [373,'Rhodes Barrell','757','200 Y Back','2:31.64',296],
+      [374,'Josh Reed','757','400 Y IM','5:01.40',294],
+      [375,'Aahaan Mohapatra','MSAC','500 Y Free','6:49.78',291],
+      [376,'Noah Taliaferro','757','500 Y Free','6:25.55',290],
+      [377,'Aahaan Mohapatra','MSAC','200 Y IM','2:54.50',289],
+      [378,'Josh Reed','757','200 Y Back','2:19.77',288],
+      [379,'Landen Selak','MSAC','200 Y Fly','2:22.30',287],
+      [380,'Tianze Wen','MSAC','200 Y Fly','2:22.31',287],
+      [381,'Alex Musteata','757','50 Y Back','44.06',286],
+      [382,'Luke Haskin','757','500 Y Free','5:35.34',286],
+      [383,'Josh Reed','757','500 Y Free','5:38.34',286],
+      [384,'Elijah Kagwa','MSAC','100 Y Breast','1:20.44',285],
+      [385,'Josh Reed','757','200 Y Fly','2:22.42',285],
+      [386,'Robby Saul','757','200 Y Breast','2:45.33',285],
+      [387,'Owen Quinn','757','200 Y Back','2:23.24',284],
+      [388,'Elias Males','PSI','400 Y IM','5:02.87',284],
+      [389,'Matthew Long','757','200 Y Fly','2:22.52',283],
+      [390,'Daniel Uribe','NCSC','200 Y Back','2:19.14',282],
+      [391,'Mason Schroth','757','500 Y Free','6:51.52',282],
+      [392,'Tianze Wen','MSAC','200 Y Back','2:20.24',281],
+      [393,'Christian Ballin','757','50 Y Breast','46.16',280],
+      [394,'Brennan Bermudez','757','200 Y Fly','2:35.38',280],
+      [395,'Nathan George','NCSC','200 Y Free','2:15.31',279],
+      [396,'Aaron Greenberg','BASS','200 Y IM','2:21.08',279],
+      [397,'Stevie Kohler','757','100 Y Back','1:22.72',276],
+      [398,'Rhodes Barrell','757','500 Y Free','6:03.87',276],
+      [399,'Luke Haskin','757','200 Y Back','2:19.60',275],
+      [400,'Ivan Yeriemieiev','757','200 Y IM','3:09.28',274],
+      [401,'Makai Hamilton','757','500 Y Free','6:53.32',274],
+      [402,'Matthew Long','757','200 Y Back','2:20.79',273],
+      [403,'Owen Quinn','757','200 Y Breast','2:46.62',269],
+      [404,'Ivan Yeriemieiev','757','200 Y Free','2:45.97',267],
+      [405,'Minki Shin','757','50 Y Back','36.16',263],
+      [406,'Ryan Zheng','757','100 Y IM','1:09.87',262],
+      [407,'Anson Butler','757','200 Y Back','2:21.52',262],
+      [408,'Aaron Greenberg','BASS','200 Y Back','2:21.68',259],
+      [409,'Jonathan Finley','757','100 Y Breast','1:21.58',256],
+      [410,'Caleb Harrell','757','200 Y Breast','2:46.45',255],
+      [411,'Leo Washburn','MSAC','50 Y Breast','50.51',254],
+      [412,'Jiming Zhou','757','100 Y Breast','1:28.32',254],
+      [413,'Drew Gander','BASS','100 Y Breast','1:35.57',250],
+      [414,'Noah Taliaferro','757','200 Y IM','2:45.87',250],
+      [415,'Makai Hamilton','757','100 Y Fly','1:23.90',249],
+      [416,'Desmond James','757','200 Y Free','2:47.67',249],
+      [417,'Calum James','757','100 Y Fly','1:30.39',247],
+      [418,'Ryan Zheng','757','100 Y Fly','1:11.01',246],
+      [419,'Noah Taliaferro','757','100 Y Breast','1:28.70',246],
+      [420,'Lars Arne','757','200 Y Back','2:35.26',246],
+      [421,'Aahaan Mohapatra','MSAC','100 Y Breast','1:35.94',243],
+      [422,'Carter Basilio','MSAC','100 Y Free','1:18.90',242],
+      [423,'Matthew Long','757','500 Y Free','5:45.49',242],
+      [424,'Ryan Zheng','757','100 Y Back','1:12.02',240],
+      [425,'Minki Shin','757','50 Y Fly','35.29',239],
+      [426,'Ryan Zheng','757','100 Y Breast','1:22.29',238],
+      [427,'Andrew Kolar','757','500 Y Free','7:01.17',237],
+      [428,'Noah Taliaferro','757','100 Y Fly','1:18.19',236],
+      [429,'Ryan Kurowski','757','100 Y Free','1:25.02',236],
+      [430,'Makai Hamilton','757','200 Y IM','2:59.44',234],
+      [431,'Caleb Harrell','757','500 Y Free','5:46.87',234],
+      [432,'Devon McKinney','757','100 Y IM','1:08.14',232],
+      [433,'Andrew Kolar','757','100 Y Breast','1:36.51',232],
+      [434,'Jonathan Finley','757','100 Y IM','1:11.03',228],
+      [435,'Stevie Kohler','757','100 Y Breast','1:36.72',228],
+      [436,'Josh Reed','757','200 Y Breast','2:48.66',228],
+      [437,'Minki Shin','757','100 Y IM','1:18.05',226],
+      [438,'Levi Rensch','BASS','100 Y Breast','1:17.33',224],
+      [439,'Levi Rensch','BASS','100 Y Back','1:08.26',223],
+      [440,'Anson Butler','757','500 Y Free','5:48.64',223],
+      [441,'Stevie Kohler','757','200 Y IM','3:00.56',222],
+      [442,'Andrew Kolar','757','100 Y Back','1:25.34',216],
+      [443,'Ivan Yeriemieiev','757','100 Y Fly','1:32.25',214],
+      [444,'Mason Schroth','757','100 Y Back','1:25.48',213],
+      [445,'Ashby Marchese','PSI','200 Y Fly','2:27.76',209],
+      [446,'Brady Boone','PSI','400 Y IM','5:20.34',209],
+      [447,'Jonathan Finley','757','200 Y Free','2:20.01',208],
+      [448,'Aaron Greenberg','BASS','200 Y Breast','2:50.31',208],
+      [449,'Noah Taliaferro','757','100 Y Back','1:19.32',207],
+      [450,'Max Basilio','MSAC','100 Y Fly','1:19.50',207],
+      [451,'Rhodes Barrell','757','200 Y Fly','2:41.14',205],
+      [452,'Minki Shin','757','50 Y Breast','41.45',204],
+      [453,'Andrew Kolar','757','200 Y IM','3:02.96',198],
+      [454,'Ryan Gander','BASS','100 Y Breast','1:23.97',197],
+      [455,'Jiming Zhou','757','100 Y Fly','1:20.01',196],
+      [456,'Josh Li','MSAC','100 Y Back','1:09.21',195],
+      [457,'Levi Rensch','BASS','100 Y Fly','1:07.93',194],
+      [458,'Ryan Kurowski','757','50 Y Breast','52.37',191],
+      [459,'Tommy Owen','757','50 Y Fly','44.90',190],
+      [460,'Jacob Birckhead','BASS','100 Y Back','1:13.88',189],
+      [461,'Owen Quinn','757','200 Y Fly','2:31.33',188],
+      [462,'Levi Rensch','BASS','100 Y IM','1:08.12',183],
+      [463,'Jacob Birckhead','BASS','100 Y IM','1:12.66',183],
+      [464,'Daniel Uribe','NCSC','200 Y Fly','2:28.05',183],
+      [465,'Elias Males','PSI','200 Y Fly','2:29.72',183],
+      [466,'Anson Butler','757','200 Y Fly','2:29.81',182],
+      [467,'Christian Ballin','757','50 Y Fly','41.91',179],
+      [468,'Logan Sumrow','MSAC','200 Y Fly','2:43.42',178],
+      [469,'Levi Rensch','BASS','200 Y IM','2:30.91',177],
+      [470,'Caleb Harrell','757','200 Y IM','2:28.55',174],
+      [471,'Max Han','757','100 Y Breast','1:47.07',173],
+      [472,'Minki Shin','757','200 Y Free','2:32.72',172],
+      [473,'Ashby Marchese','PSI','500 Y Free','5:58.26',170],
+      [474,'Carter Basilio','MSAC','100 Y IM','1:33.60',166],
+      [475,'Jonathan Finley','757','100 Y Fly','1:13.99',165],
+      [476,'Tommy Owen','757','100 Y Free','1:28.63',165],
+      [477,'Ivan Yeriemieiev','757','100 Y Breast','1:47.75',162],
+      [478,'Blake Harden','MSAC','200 Y Fly','2:33.38',162],
+      [479,'Josh Li','MSAC','100 Y IM','1:08.92',161],
+      [480,'Thadd Kerns','757','50 Y Back','38.24',160],
+      [481,'Colin Harden','MSAC','100 Y Back','1:21.41',160],
+      [482,'Isaac Hsu','MSAC','200 Y Fly','2:45.08',159],
+      [483,'Leo Washburn','MSAC','100 Y IM','1:40.85',158],
+      [484,'Ryan Kurowski','757','100 Y IM','1:40.98',156],
+      [485,'Jacob Birckhead','BASS','100 Y Breast','1:25.87',154],
+      [486,'Desmond James','757','100 Y Fly','1:36.15',153],
+      [487,'Josh Li','MSAC','100 Y Breast','1:20.28',151],
+      [488,'Jiming Zhou','757','200 Y IM','2:55.42',148],
+      [489,'Spencer Shelton','757','50 Y Back','38.55',146],
+      [490,'Caleb Harrell','757','400 Y IM','5:24.51',146],
+      [491,'Stevie Kohler','757','500 Y Free','7:23.07',146],
+      [492,'Reece Miller','PSI','200 Y Back','2:33.82',143],
+      [493,'Carter Basilio','MSAC','50 Y Breast','50.22',135],
+      [494,'Drew Gander','BASS','100 Y IM','1:28.98',135],
+      [495,'Josh Li','MSAC','100 Y Fly','1:10.15',134],
+      [496,'Jacob Birckhead','BASS','200 Y IM','2:45.23',130],
+      [497,'Cameron Finley','757','200 Y IM','3:10.36',130],
+      [498,'Cameron Finley','757','100 Y Breast','1:42.20',129],
+      [499,'Elijah Kagwa','MSAC','200 Y Free','2:26.25',127],
+      [500,'Mason Saless','757','200 Y Free','2:26.33',126],
+      [501,'Andrew Kolar','757','100 Y Fly','1:30.31',125],
+      [502,'Alex Musteata','757','100 Y IM','1:43.20',123],
+      [503,'Riley Covert','BASS','100 Y Fly','1:12.60',119],
+      [504,'Cameron Finley','757','100 Y Back','1:30.22',119],
+      [505,'Luke Haskin','757','200 Y Fly','2:33.35',118],
+      [506,'Elijah Kagwa','MSAC','100 Y IM','1:15.41',117],
+      [507,'Mason Saless','757','100 Y Back','1:16.90',115],
+      [508,'Devon McKinney','757','100 Y Fly','1:12.84',113],
+      [509,'Mason Saless','757','200 Y IM','2:46.87',113],
+      [510,'Joel Barrell','757','100 Y Back','1:30.63',111],
+      [511,'Mason Saless','757','100 Y Breast','1:28.05',109],
+      [512,'Makai Hamilton','757','100 Y Breast','1:43.62',106],
+      [513,'Brother Jung','MSAC','50 Y Breast','51.23',104],
+      [514,'Reese Simmons','757','50 Y Back','42.44',103],
+      [515,'Devon McKinney','757','100 Y Back','1:14.60',100],
+      [516,'Ryan Gander','BASS','100 Y IM','1:16.22',99],
+      [517,'Mason Schroth','757','100 Y Fly','1:31.97',98],
+      [518,'Ryan Gander','BASS','200 Y IM','2:48.81',95],
+      [519,'Mason Saless','757','100 Y IM','1:16.60',92],
+      [520,'Cameron Finley','757','500 Y Free','7:38.93',91],
+      [521,'Jack Sleeth','757','100 Y Breast','1:29.46',82],
+      [522,'Reese Simmons','757','100 Y IM','1:32.18',82],
+      [523,'Jack Sleeth','757','100 Y Back','1:18.64',78],
+      [524,'Drew Gander','BASS','500 Y Free','7:44.15',76],
+      [525,'Colin Harden','MSAC','500 Y Free','7:16.78',75],
+      [526,'Colin Harden','MSAC','200 Y IM','3:04.60',71],
+      [527,'Ryan Gander','BASS','200 Y Free','2:31.87',69],
+      [528,'Drew Gander','BASS','200 Y IM','3:18.55',68],
+      [529,'Carter Basilio','MSAC','50 Y Fly','45.73',67],
+      [530,'Jack Sleeth','757','100 Y IM','1:18.06',65],
+      [531,'Levi Rensch','BASS','200 Y Free','2:24.43',65],
+      [532,'Jacob Birckhead','BASS','100 Y Fly','1:18.69',61],
+      [533,'Stevie Kohler','757','100 Y Fly','1:34.60',61],
+      [534,'Thadd Kerns','757','200 Y Free','2:44.32',61],
+      [535,'Riley Covert','BASS','100 Y IM','1:15.50',57],
+      [536,'Jack Sleeth','757','200 Y IM','2:53.66',54],
+      [537,'Alex Musteata','757','50 Y Fly','50.09',52],
+      [538,'Thadd Kerns','757','100 Y IM','1:27.22',52],
+      [539,'Lars Arne','757','200 Y Fly','2:56.12',51],
+      [540,'Elijah Kagwa','MSAC','100 Y Back','1:20.34',47],
+      [541,'Robby Saul','757','200 Y Fly','2:44.33',47],
+      [542,'Riley Covert','BASS','100 Y Back','1:17.52',43],
+      [543,'Eden Zhang','MSAC','100 Y Fly','1:36.03',43],
+      [544,'Elden Sullivan','PSI','200 Y Fly','2:44.83',43],
+      [545,'Riley Covert','BASS','200 Y IM','2:48.46',43],
+      [546,'Mason Schroth','757','100 Y Breast','1:48.36',41],
+      [547,'Jacob Birckhead','BASS','200 Y Free','2:35.19',41],
+      [548,'Ryan Kurowski','757','50 Y Fly','50.72',40],
+      [549,'Eli Laurenzo','757','50 Y Back','41.44',39],
+      [550,'Jiming Zhou','757','500 Y Free','7:30.52',38],
+      [551,'Riley Covert','BASS','200 Y Free','2:30.46',37],
+      [552,'Caleb Harrell','757','200 Y Back','2:41.14',36],
+      [553,'Jiming Zhou','757','100 Y Back','1:28.83',31],
+      [554,'Nate Riley','757','100 Y Breast','1:32.69',30],
+      [555,'Kaleb Kurowski','757','100 Y Back','1:21.82',25],
+      [556,'Colin Harden','MSAC','100 Y Fly','1:30.56',24],
+      [557,'Ryan Gander','BASS','100 Y Back','1:22.04',22],
+      [558,'Colin Harden','MSAC','100 Y Breast','1:42.30',18],
+      [559,'Jack Sleeth','757','100 Y Fly','1:21.72',15],
+      [560,'Alex Musteata','757','50 Y Breast','59.75',11],
+      [561,'Drew Gander','BASS','100 Y Back','1:38.63',7],
+      [562,'Reese Simmons','757','50 Y Fly','44.53',6],
+      [563,'Thadd Kerns','757','50 Y Fly','42.64',2],
+      [564,'Spencer Shelton','757','50 Y Fly','46.59',2],
+      [565,'Thadd Kerns','757','50 Y Breast','49.03',2],
+      [566,'Spencer Shelton','757','50 Y Breast','52.68',2],
+      [567,'Eli Laurenzo','757','50 Y Fly','54.10',2],
+      [568,'Luke Figueroa','BASS','50 Y Back','54.45',2],
+      [569,'Eli Laurenzo','757','50 Y Breast','55.14',2],
+      [570,'Brother Jung','MSAC','50 Y Back','56.13',2],
+      [571,'Luke Figueroa','BASS','50 Y Fly','1:03.36',2],
+      [572,'Tommy Owen','757','50 Y Breast','1:09.40',2],
+      [573,'Luke Figueroa','BASS','50 Y Breast','1:20.83',2],
+      [574,'Kaleb Kurowski','757','100 Y IM','1:25.21',2],
+      [575,'Ryan Gander','BASS','100 Y Fly','1:26.16',2],
+      [576,'Elijah Kagwa','MSAC','100 Y Fly','1:27.82',2],
+      [577,'Nate Riley','757','100 Y IM','1:27.82',2],
+      [578,'Jacob Levin','757','100 Y Back','1:32.90',2],
+      [579,'Riley Covert','BASS','100 Y Breast','1:33.71',2],
+      [580,'Luke Figueroa','BASS','100 Y Free','1:34.21',2],
+      [581,'Kaleb Kurowski','757','100 Y Fly','1:35.82',2],
+      [582,'Kaleb Kurowski','757','100 Y Breast','1:40.31',2],
+      [583,'Cameron Finley','757','100 Y Fly','1:41.17',2],
+      [584,'Eli Laurenzo','757','100 Y IM','1:42.10',2],
+      [585,'Drew Gander','BASS','100 Y Fly','1:42.74',2],
+      [586,'Brother Jung','MSAC','100 Y Free','1:45.88',2],
+      [587,'Joel Barrell','757','100 Y Breast','1:53.02',2],
+      [588,'Brother Jung','MSAC','100 Y IM','1:53.59',2],
+      [589,'Luke Figueroa','BASS','100 Y IM','2:13.91',2],
+      [590,'Jacob Levin','757','200 Y Free','2:47.44',2],
+      [591,'Jack Sleeth','757','200 Y Free','2:47.91',2],
+      [592,'Reece Miller','PSI','200 Y Fly','2:52.73',2],
+      [593,'Kaleb Kurowski','757','200 Y Free','2:52.75',2],
+      [594,'Spencer Shelton','757','200 Y Free','2:56.13',2],
+      [595,'Caleb Harrell','757','200 Y Fly','2:58.37',2],
+      [596,'Kaleb Kurowski','757','200 Y IM','3:07.38',2],
+      [597,'Eli Laurenzo','757','200 Y Free','3:14.64',2],
+      [598,'Joel Barrell','757','200 Y IM','3:34.74',2],
+      [599,'Joel Barrell','757','500 Y Free','8:23.04',2]
+    ];
+
+    var _imxSubTab = 'overview';
+    var _imxSearch = '';
+
+    function render757Performance(c) {
+      var h = '';
+
+      // ── Tab buttons ──
+      var tabs = [
+        ['overview','Meet Overview'],
+        ['757dive','757 Swim Deep Dive'],
+        ['byevent','By Event'],
+        ['byteam','By Team'],
+        ['full','Full Results']
+      ];
+      h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px">';
+      for (var t = 0; t < tabs.length; t++) {
+        var active = _imxSubTab === tabs[t][0];
+        h += '<button onclick="_imxSubTab=\'' + tabs[t][0] + '\';_imxSearch=\'\';render757Performance(document.getElementById(\'imx-root\'))" style="padding:7px 16px;border-radius:8px;border:1px solid ' + (active ? '#a78bfa' : '#334155') + ';background:' + (active ? '#a78bfa' : '#1e293b') + ';color:' + (active ? '#fff' : '#94a3b8') + ';cursor:pointer;font-size:13px;font-weight:600">' + tabs[t][1] + '</button>';
+      }
+      h += '</div>';
+
+      // ── Helper: team dot ──
+      function teamDot(code) {
+        return '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (IMX_TCOLORS[code]||'#64748b') + ';margin-right:5px;vertical-align:middle"></span>';
+      }
+      function teamBadge(code) {
+        return teamDot(code) + '<span style="color:' + (IMX_TCOLORS[code]||'#94a3b8') + '">' + (IMX_TEAMS[code]||code) + '</span>';
+      }
+      function teamBadgeShort(code) {
+        return teamDot(code) + '<span style="color:' + (IMX_TCOLORS[code]||'#94a3b8') + '">' + code + '</span>';
+      }
+
+      // ── Helper: power score bar ──
+      function scorebar(pts, max) {
+        var pct = Math.round((pts / max) * 100);
+        var color = pts >= 700 ? '#a78bfa' : pts >= 500 ? '#38bdf8' : pts >= 300 ? '#22c55e' : pts >= 100 ? '#fb923c' : '#f472b6';
+        return '<div style="display:flex;align-items:center;gap:6px"><div style="width:90px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden"><div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:4px"></div></div><span style="font-size:12px;color:#cbd5e1;min-width:32px">' + pts + '</span></div>';
+      }
+
+      // ── Helper: stat card ──
+      function statCard(label, val, accent) {
+        return '<div style="background:#1e293b;border-radius:10px;padding:14px 18px;min-width:140px;flex:1"><div style="font-size:24px;font-weight:700;color:' + (accent||'#a78bfa') + '">' + val + '</div><div style="font-size:12px;color:#94a3b8;margin-top:2px">' + label + '</div></div>';
+      }
+
+      // ── Helper: place badge ──
+      function placeBadge(rank) {
+        if (rank === 1) return '<span style="background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1e293b;font-weight:700;padding:2px 8px;border-radius:10px;font-size:11px">1st</span>';
+        if (rank === 2) return '<span style="background:linear-gradient(135deg,#cbd5e1,#94a3b8);color:#1e293b;font-weight:700;padding:2px 8px;border-radius:10px;font-size:11px">2nd</span>';
+        if (rank === 3) return '<span style="background:linear-gradient(135deg,#d97706,#b45309);color:#fff;font-weight:700;padding:2px 8px;border-radius:10px;font-size:11px">3rd</span>';
+        return '<span style="color:#64748b;font-size:12px">#' + rank + '</span>';
+      }
+
+      // ── Helper: table header style ──
+      var thS = 'padding:8px 10px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #334155';
+      var tdS = 'padding:7px 10px;font-size:13px;color:#e2e8f0;border-bottom:1px solid #1e293b';
+      var tableS = 'width:100%;border-collapse:collapse;background:#0f172a;border-radius:10px;overflow:hidden';
+
+      // ────────────────────────────────────────────────
+      // TAB: MEET OVERVIEW
+      // ────────────────────────────────────────────────
+      if (_imxSubTab === 'overview') {
+        // Compute team standings
+        var teamStats = {};
+        var teamSwimmers = {};
+        for (var i = 0; i < IMX_DATA.length; i++) {
+          var d = IMX_DATA[i];
+          var tc = d[2];
+          if (!teamStats[tc]) { teamStats[tc] = {pts:0,swims:0}; teamSwimmers[tc] = {}; }
+          teamStats[tc].pts += d[5];
+          teamStats[tc].swims += 1;
+          teamSwimmers[tc][d[1]] = true;
+        }
+        // Sort teams by total pts
+        var teamKeys = Object.keys(teamStats);
+        teamKeys.sort(function(a,b){ return teamStats[b].pts - teamStats[a].pts; });
+
+        // Stat cards
+        h += '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px">';
+        h += statCard('Total Performances', '599', '#a78bfa');
+        h += statCard('Teams', '5', '#38bdf8');
+        h += statCard('Top Score', '837', '#fbbf24');
+        h += statCard('Top Swimmer', 'Julian Francisco', '#22c55e');
+        h += '</div>';
+
+        // Team standings
+        h += '<div style="margin-bottom:18px"><div style="font-size:15px;font-weight:700;color:#e2e8f0;margin-bottom:8px">Team Standings</div>';
+        h += '<table style="' + tableS + '"><thead><tr>';
+        h += '<th style="' + thS + '">Rank</th><th style="' + thS + '">Team</th><th style="' + thS + '">Total Pts</th><th style="' + thS + '">Avg Pts</th><th style="' + thS + '">Swims</th><th style="' + thS + '">Swimmers</th>';
+        h += '</tr></thead><tbody>';
+        for (var k = 0; k < teamKeys.length; k++) {
+          var tk = teamKeys[k];
+          var ts = teamStats[tk];
+          var numSwimmers = Object.keys(teamSwimmers[tk]).length;
+          var avg = Math.round(ts.pts / ts.swims);
+          h += '<tr><td style="' + tdS + '">' + placeBadge(k+1) + '</td>';
+          h += '<td style="' + tdS + '">' + teamBadge(tk) + '</td>';
+          h += '<td style="' + tdS + ';font-weight:700;color:#a78bfa">' + ts.pts.toLocaleString() + '</td>';
+          h += '<td style="' + tdS + '">' + avg + '</td>';
+          h += '<td style="' + tdS + '">' + ts.swims + '</td>';
+          h += '<td style="' + tdS + '">' + numSwimmers + '</td></tr>';
+        }
+        h += '</tbody></table></div>';
+
+        // Top 30
+        h += '<div style="font-size:15px;font-weight:700;color:#e2e8f0;margin-bottom:8px">Top 30 Performances</div>';
+        h += '<div style="overflow-x:auto"><table style="' + tableS + '"><thead><tr>';
+        h += '<th style="' + thS + '">#</th><th style="' + thS + '">Swimmer</th><th style="' + thS + '">Team</th><th style="' + thS + '">Event</th><th style="' + thS + '">Time</th><th style="' + thS + '">Power Score</th>';
+        h += '</tr></thead><tbody>';
+        for (var j = 0; j < 30; j++) {
+          var r = IMX_DATA[j];
+          h += '<tr><td style="' + tdS + '">' + placeBadge(r[0]) + '</td>';
+          h += '<td style="' + tdS + ';font-weight:600">' + r[1] + '</td>';
+          h += '<td style="' + tdS + '">' + teamBadgeShort(r[2]) + '</td>';
+          h += '<td style="' + tdS + '">' + r[3] + '</td>';
+          h += '<td style="' + tdS + ';font-family:monospace">' + r[4] + '</td>';
+          h += '<td style="' + tdS + '">' + scorebar(r[5], 837) + '</td></tr>';
+        }
+        h += '</tbody></table></div>';
+      }
+
+      // ────────────────────────────────────────────────
+      // TAB: 757 SWIM DEEP DIVE
+      // ────────────────────────────────────────────────
+      else if (_imxSubTab === '757dive') {
+        var s7 = IMX_DATA.filter(function(d){ return d[2] === '757'; });
+        var swimmers7 = {};
+        var totalPts7 = 0;
+        for (var i = 0; i < s7.length; i++) {
+          var name = s7[i][1];
+          if (!swimmers7[name]) swimmers7[name] = [];
+          swimmers7[name].push(s7[i]);
+          totalPts7 += s7[i][5];
+        }
+        var swimmerNames7 = Object.keys(swimmers7);
+        // Sort swimmers by their best score descending
+        swimmerNames7.sort(function(a,b){
+          var bestA = 0, bestB = 0;
+          for (var x = 0; x < swimmers7[a].length; x++) { if (swimmers7[a][x][5] > bestA) bestA = swimmers7[a][x][5]; }
+          for (var x = 0; x < swimmers7[b].length; x++) { if (swimmers7[b][x][5] > bestB) bestB = swimmers7[b][x][5]; }
+          return bestB - bestA;
+        });
+
+        h += '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px">';
+        h += statCard('757 Swims', s7.length, '#a78bfa');
+        h += statCard('Unique Swimmers', swimmerNames7.length, '#38bdf8');
+        h += statCard('Total Points', totalPts7.toLocaleString(), '#22c55e');
+        h += statCard('Avg Score', Math.round(totalPts7 / s7.length), '#fb923c');
+        h += '</div>';
+
+        // Per-swimmer breakdown
+        for (var s = 0; s < swimmerNames7.length; s++) {
+          var sn = swimmerNames7[s];
+          var swims = swimmers7[sn];
+          swims.sort(function(a,b){ return b[5] - a[5]; });
+          var swimTotal = 0;
+          for (var x = 0; x < swims.length; x++) swimTotal += swims[x][5];
+
+          h += '<div style="background:#1e293b;border-radius:10px;padding:14px 16px;margin-bottom:10px">';
+          h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+          h += '<div style="font-size:14px;font-weight:700;color:#e2e8f0">' + teamDot('757') + sn + '</div>';
+          h += '<div style="font-size:12px;color:#94a3b8">' + swims.length + ' event' + (swims.length > 1 ? 's' : '') + ' | ' + swimTotal + ' total pts | Best: ' + swims[0][5] + '</div>';
+          h += '</div>';
+          h += '<table style="' + tableS + '"><thead><tr>';
+          h += '<th style="' + thS + '">Rank</th><th style="' + thS + '">Event</th><th style="' + thS + '">Time</th><th style="' + thS + '">Score</th>';
+          h += '</tr></thead><tbody>';
+          for (var e = 0; e < swims.length; e++) {
+            h += '<tr><td style="' + tdS + '">' + placeBadge(swims[e][0]) + '</td>';
+            h += '<td style="' + tdS + '">' + swims[e][3] + '</td>';
+            h += '<td style="' + tdS + ';font-family:monospace">' + swims[e][4] + '</td>';
+            h += '<td style="' + tdS + '">' + scorebar(swims[e][5], 837) + '</td></tr>';
+          }
+          h += '</tbody></table></div>';
+        }
+      }
+
+      // ────────────────────────────────────────────────
+      // TAB: BY EVENT
+      // ────────────────────────────────────────────────
+      else if (_imxSubTab === 'byevent') {
+        var events = {};
+        for (var i = 0; i < IMX_DATA.length; i++) {
+          var ev = IMX_DATA[i][3];
+          if (!events[ev]) events[ev] = [];
+          events[ev].push(IMX_DATA[i]);
+        }
+        // Sort events by name
+        var evKeys = Object.keys(events).sort();
+        for (var e = 0; e < evKeys.length; e++) {
+          var ek = evKeys[e];
+          var evList = events[ek];
+          evList.sort(function(a,b){ return b[5] - a[5]; });
+
+          h += '<div style="background:#1e293b;border-radius:10px;padding:14px 16px;margin-bottom:12px">';
+          h += '<div style="font-size:14px;font-weight:700;color:#e2e8f0;margin-bottom:8px">' + ek + ' <span style="font-size:12px;color:#64748b;font-weight:400">(' + evList.length + ' swims)</span></div>';
+          h += '<table style="' + tableS + '"><thead><tr>';
+          h += '<th style="' + thS + '">#</th><th style="' + thS + '">Swimmer</th><th style="' + thS + '">Team</th><th style="' + thS + '">Time</th><th style="' + thS + '">Score</th>';
+          h += '</tr></thead><tbody>';
+          for (var r = 0; r < evList.length; r++) {
+            var row = evList[r];
+            h += '<tr><td style="' + tdS + '">' + placeBadge(r+1) + '</td>';
+            h += '<td style="' + tdS + ';font-weight:600">' + row[1] + '</td>';
+            h += '<td style="' + tdS + '">' + teamBadgeShort(row[2]) + '</td>';
+            h += '<td style="' + tdS + ';font-family:monospace">' + row[4] + '</td>';
+            h += '<td style="' + tdS + '">' + scorebar(row[5], 837) + '</td></tr>';
+          }
+          h += '</tbody></table></div>';
+        }
+      }
+
+      // ────────────────────────────────────────────────
+      // TAB: BY TEAM
+      // ────────────────────────────────────────────────
+      else if (_imxSubTab === 'byteam') {
+        var tData = {};
+        var tSwimmers = {};
+        for (var i = 0; i < IMX_DATA.length; i++) {
+          var tc = IMX_DATA[i][2];
+          if (!tData[tc]) { tData[tc] = []; tSwimmers[tc] = {}; }
+          tData[tc].push(IMX_DATA[i]);
+          tSwimmers[tc][IMX_DATA[i][1]] = true;
+        }
+        // Sort teams by total pts
+        var tKeys = Object.keys(tData);
+        tKeys.sort(function(a,b){
+          var sa = 0, sb = 0;
+          for (var x = 0; x < tData[a].length; x++) sa += tData[a][x][5];
+          for (var x = 0; x < tData[b].length; x++) sb += tData[b][x][5];
+          return sb - sa;
+        });
+
+        for (var t = 0; t < tKeys.length; t++) {
+          var tk = tKeys[t];
+          var td = tData[tk];
+          td.sort(function(a,b){ return b[5] - a[5]; });
+          var totalP = 0;
+          for (var x = 0; x < td.length; x++) totalP += td[x][5];
+          var numSw = Object.keys(tSwimmers[tk]).length;
+          var avgP = Math.round(totalP / td.length);
+
+          h += '<div style="background:#1e293b;border-radius:10px;padding:16px;margin-bottom:14px">';
+          h += '<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:10px">';
+          h += '<div style="font-size:16px;font-weight:700;color:#e2e8f0">' + teamBadge(tk) + '</div>';
+          h += '<div style="display:flex;gap:14px;font-size:12px;color:#94a3b8">';
+          h += '<span><strong style="color:#a78bfa">' + totalP.toLocaleString() + '</strong> total pts</span>';
+          h += '<span><strong style="color:#38bdf8">' + numSw + '</strong> swimmers</span>';
+          h += '<span><strong style="color:#22c55e">' + td.length + '</strong> swims</span>';
+          h += '<span>Avg <strong style="color:#fb923c">' + avgP + '</strong></span>';
+          h += '</div></div>';
+
+          // Top 10 swims
+          h += '<div style="font-size:12px;color:#64748b;margin-bottom:6px">Top 10 Performances</div>';
+          h += '<table style="' + tableS + '"><thead><tr>';
+          h += '<th style="' + thS + '">#</th><th style="' + thS + '">Swimmer</th><th style="' + thS + '">Event</th><th style="' + thS + '">Time</th><th style="' + thS + '">Score</th>';
+          h += '</tr></thead><tbody>';
+          var showCount = Math.min(10, td.length);
+          for (var r = 0; r < showCount; r++) {
+            var row = td[r];
+            h += '<tr><td style="' + tdS + '">' + placeBadge(r+1) + '</td>';
+            h += '<td style="' + tdS + ';font-weight:600">' + row[1] + '</td>';
+            h += '<td style="' + tdS + '">' + row[3] + '</td>';
+            h += '<td style="' + tdS + ';font-family:monospace">' + row[4] + '</td>';
+            h += '<td style="' + tdS + '">' + scorebar(row[5], 837) + '</td></tr>';
+          }
+          h += '</tbody></table></div>';
+        }
+      }
+
+      // ────────────────────────────────────────────────
+      // TAB: FULL RESULTS
+      // ────────────────────────────────────────────────
+      else if (_imxSubTab === 'full') {
+        h += '<div style="margin-bottom:12px"><input id="imx-search" type="text" placeholder="Search by name, team, or event..." value="' + _imxSearch.replace(/"/g, '&quot;') + '" oninput="_imxSearch=this.value;render757Performance(document.getElementById(\'imx-root\'))" style="width:100%;max-width:400px;padding:9px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:13px;outline:none"></div>';
+
+        var filtered = IMX_DATA;
+        if (_imxSearch) {
+          var q = _imxSearch.toLowerCase();
+          filtered = IMX_DATA.filter(function(d){
+            return d[1].toLowerCase().indexOf(q) !== -1 ||
+                   d[2].toLowerCase().indexOf(q) !== -1 ||
+                   (IMX_TEAMS[d[2]]||'').toLowerCase().indexOf(q) !== -1 ||
+                   d[3].toLowerCase().indexOf(q) !== -1;
+          });
+        }
+
+        h += '<div style="font-size:12px;color:#64748b;margin-bottom:8px">Showing ' + filtered.length + ' of 599 performances</div>';
+        h += '<div style="overflow-x:auto"><table style="' + tableS + '"><thead><tr>';
+        h += '<th style="' + thS + '">#</th><th style="' + thS + '">Swimmer</th><th style="' + thS + '">Team</th><th style="' + thS + '">Event</th><th style="' + thS + '">Time</th><th style="' + thS + '">Score</th>';
+        h += '</tr></thead><tbody>';
+        for (var i = 0; i < filtered.length; i++) {
+          var r = filtered[i];
+          h += '<tr><td style="' + tdS + '">' + placeBadge(r[0]) + '</td>';
+          h += '<td style="' + tdS + ';font-weight:600">' + r[1] + '</td>';
+          h += '<td style="' + tdS + '">' + teamBadgeShort(r[2]) + '</td>';
+          h += '<td style="' + tdS + '">' + r[3] + '</td>';
+          h += '<td style="' + tdS + ';font-family:monospace">' + r[4] + '</td>';
+          h += '<td style="' + tdS + '">' + scorebar(r[5], 837) + '</td></tr>';
+        }
+        h += '</tbody></table></div>';
+
+        // Restore focus to search after render
+        h += '<script>setTimeout(function(){var el=document.getElementById("imx-search");if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}},0);<\/script>';
+      }
+
+      // ── Render into container ──
+      if (!document.getElementById('imx-root')) {
+        c.innerHTML = '<div id="imx-root">' + h + '</div>';
+      } else {
+        document.getElementById('imx-root').innerHTML = h;
+      }
     }
 
     // ── Swim Analytics ──────────────────────────────────────────────
