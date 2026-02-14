@@ -1,10 +1,9 @@
 import express from "express";
 import helmet from "helmet";
 import { createProxyMiddleware } from "http-proxy-middleware";
-import { readFileSync, mkdirSync, existsSync } from "fs";
+import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import Database from "better-sqlite3";
 import bcrypt from "bcryptjs";
 import session from "express-session";
 
@@ -21,33 +20,21 @@ try {
   console.warn("Could not load assets.json:", err.message);
 }
 
-// ── SQLite user database ────────────────────────────────────────────
-const DATA_DIR = process.env.DATA_DIR || join(__dirname, "data");
-if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+// ── In-memory user store (seeded from env vars on each start) ───────
+const users = new Map();
 
-const db = new Database(join(DATA_DIR, "users.db"));
-db.pragma("journal_mode = WAL");
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    username      TEXT    NOT NULL UNIQUE COLLATE NOCASE,
-    password_hash TEXT    NOT NULL,
-    display_name  TEXT,
-    role          TEXT    NOT NULL DEFAULT 'admin',
-    created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
-    updated_at    TEXT    NOT NULL DEFAULT (datetime('now'))
-  )
-`);
-
-// Seed admin account from env vars when table is empty
-const userCount = db.prepare("SELECT COUNT(*) AS cnt FROM users").get().cnt;
-if (userCount === 0) {
+{
   const adminUser = process.env.ADMIN_USER || "admin";
   const adminPass = process.env.ADMIN_PASS;
   if (adminPass) {
     const hash = bcrypt.hashSync(adminPass, 10);
-    db.prepare("INSERT INTO users (username, password_hash, display_name, role) VALUES (?, ?, ?, ?)")
-      .run(adminUser, hash, "Administrator", "admin");
+    users.set(adminUser.toLowerCase(), {
+      id: 1,
+      username: adminUser,
+      password_hash: hash,
+      display_name: "Administrator",
+      role: "admin",
+    });
     console.log(`Seeded admin user "${adminUser}"`);
   } else {
     console.warn("No ADMIN_PASS set — no admin user seeded. Login will be unavailable.");
@@ -67,7 +54,7 @@ if (userCount === 0) {
  * - ADMIN_USER              (optional) default "admin" — username seeded on first run
  * - ADMIN_PASS              (required on first deploy) password for seeded admin account
  * - SESSION_SECRET           (required) random string for cookie signing
- * - DATA_DIR                (optional) path to SQLite data directory, default "./data"
+ * - DATA_DIR                (unused, reserved for future persistent storage)
  * - ANTHROPIC_API_KEY       (optional) Anthropic API key for Claude chat integration
  * - FORWARD_AUTH_HEADER     (optional) default "true" => forward Authorization header to upstream
  *
@@ -318,7 +305,7 @@ app.post("/login", (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.redirect("/login?error=1");
 
-  const user = db.prepare("SELECT * FROM users WHERE username = ?").get(username);
+  const user = users.get(username.toLowerCase());
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
     return res.redirect("/login?error=1");
   }
