@@ -272,8 +272,7 @@ app.get("/login", (req, res) => {
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
     background:#0d1117;color:#e6edf3;display:flex;align-items:center;justify-content:center;min-height:100vh}
   .card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:40px;width:100%;max-width:380px}
-  .logo{width:48px;height:48px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border-radius:10px;
-    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;color:#fff;margin:0 auto 16px}
+  .logo{width:64px;height:64px;margin:0 auto 16px}
   h1{text-align:center;font-size:20px;margin-bottom:4px}
   .sub{text-align:center;font-size:13px;color:#8b949e;margin-bottom:24px}
   label{display:block;font-size:13px;color:#8b949e;margin-bottom:6px}
@@ -287,7 +286,7 @@ app.get("/login", (req, res) => {
     border-radius:6px;padding:8px 12px;font-size:13px;margin-bottom:16px;text-align:center}
 </style></head><body>
 <div class="card">
-  <div class="logo">E</div>
+  <div class="logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-linecap="round"><defs><linearGradient id="fg" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#c026d3"/><stop offset="50%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#22d3ee"/></linearGradient></defs><g stroke="url(#fg)" stroke-width="2"><path d="M32 52c-11 0-20-9-20-20s9-20 20-20"/><path d="M32 46c-7.7 0-14-6.3-14-14s6.3-14 14-14"/><path d="M32 40c-4.4 0-8-3.6-8-8s3.6-8 8-8"/><path d="M32 36c-2.2 0-4-1.8-4-4s1.8-4 4-4"/><path d="M32 12c11 0 20 9 20 20"/><path d="M32 18c7.7 0 14 6.3 14 14"/><path d="M32 24c4.4 0 8 3.6 8 8"/><path d="M52 32c0 11-9 20-20 20"/><path d="M46 32c0 7.7-6.3 14-14 14"/><path d="M40 32c0 4.4-3.6 8-8 8"/></g><g fill="url(#fg)"><circle cx="12" cy="32" r="2.5"/><circle cx="18" cy="32" r="2"/><circle cx="24" cy="32" r="1.5"/><circle cx="32" cy="52" r="2.5"/><circle cx="32" cy="46" r="2"/><circle cx="32" cy="40" r="1.5"/></g></svg></div>
   <h1>GSA VC Portal</h1>
   <p class="sub">Sign in to continue</p>
   ${error ? '<div class="error">' + error + '</div>' : ''}
