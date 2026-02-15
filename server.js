@@ -14631,6 +14631,62 @@ app.get(UI_ROUTE, (req, res) => {
       document.body.appendChild(overlay);
       overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
     }
+
+    // ── Auto-logout after 5 minutes of inactivity ──
+    (function() {
+      var IDLE_MS = 5 * 60 * 1000;
+      var WARN_MS = 30 * 1000;
+      var idleTimer, warnTimer, warnOverlay;
+
+      function resetTimers() {
+        clearTimeout(idleTimer);
+        clearTimeout(warnTimer);
+        dismissWarning();
+        warnTimer = setTimeout(showWarning, IDLE_MS - WARN_MS);
+        idleTimer = setTimeout(doLogout, IDLE_MS);
+      }
+
+      function doLogout() { window.location.href = '/logout'; }
+
+      function showWarning() {
+        if (warnOverlay) return;
+        warnOverlay = document.createElement('div');
+        warnOverlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:100000';
+        var card = document.createElement('div');
+        card.style.cssText = 'background:#161b22;border:1px solid #30363d;border-radius:12px;padding:32px;max-width:380px;width:90%;text-align:center;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif';
+        var h = document.createElement('h2');
+        h.textContent = 'Session Expiring';
+        h.style.cssText = 'margin:0 0 12px;font-size:20px;color:#f0f6fc';
+        var p = document.createElement('p');
+        p.textContent = 'You will be signed out in 30 seconds due to inactivity.';
+        p.style.cssText = 'margin:0 0 24px;font-size:14px;color:#8b949e;line-height:1.5';
+        var stayBtn = document.createElement('button');
+        stayBtn.textContent = 'Stay Signed In';
+        stayBtn.style.cssText = 'display:block;width:100%;padding:10px 16px;background:#8b5cf6;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:12px';
+        stayBtn.addEventListener('click', function() { resetTimers(); });
+        var signOutLink = document.createElement('a');
+        signOutLink.textContent = 'Sign Out Now';
+        signOutLink.href = '#';
+        signOutLink.style.cssText = 'color:#8b949e;font-size:13px;text-decoration:none';
+        signOutLink.addEventListener('click', function(e) { e.preventDefault(); doLogout(); });
+        card.appendChild(h);
+        card.appendChild(p);
+        card.appendChild(stayBtn);
+        card.appendChild(signOutLink);
+        warnOverlay.appendChild(card);
+        document.body.appendChild(warnOverlay);
+      }
+
+      function dismissWarning() {
+        if (warnOverlay) { warnOverlay.remove(); warnOverlay = null; }
+      }
+
+      ['mousemove','mousedown','keydown','scroll','touchstart'].forEach(function(evt) {
+        document.addEventListener(evt, resetTimers, { passive: true });
+      });
+
+      resetTimers();
+    })();
   </script>
 </body>
 </html>`);
