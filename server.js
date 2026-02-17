@@ -14632,9 +14632,9 @@ app.get(UI_ROUTE, (req, res) => {
       overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
     }
 
-    // ── Auto-logout after 5 minutes of inactivity ──
+    // ── Auto-logout after 2 minutes of inactivity ──
     (function() {
-      var IDLE_MS = 5 * 60 * 1000;
+      var IDLE_MS = 2 * 60 * 1000;
       var WARN_MS = 30 * 1000;
       var idleTimer, warnTimer, warnOverlay;
 
