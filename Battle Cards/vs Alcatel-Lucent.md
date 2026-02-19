@@ -76,6 +76,53 @@ tags: [battle-card]
 
 ---
 
+### 4. "OmniVista UPAM provides built-in NAC with CyberElements ZTNA"
+
+> [!info] Their Claim
+> ALE positions OmniVista UPAM as a built-in NAC module providing 802.1X, MAC auth, captive portal, and guest access. For ZTNA, ALE resells Systancia CyberElements Gate. ALE also resells Aruba ClearPass as its enterprise-grade NAC option for customers who need more than UPAM.
+
+> [!tip] Counter-Argument
+> ALE's NAC/ZTNA story is the most fragmented in the industry. UPAM is a basic NAC module embedded in OmniVista — it has no posture assessment, no Certificate Authority, no Cloud PKI, and only works well on ALE hardware (OmniSwitch + Stellar APs). For enterprise-grade NAC, ALE literally resells Aruba ClearPass — a competitor's product. For ZTNA, ALE resells Systancia CyberElements — another third-party product from a separate French company. And in June 2025, ALE added yet another ZTNA partnership with Versa Networks. That's three different vendors (ALE + Systancia + Versa) for NAC + ZTNA, none of which share a unified policy engine. Extreme's EP1 Security delivers unified Cloud NAC + ZTNA as a single cloud-native platform from a single vendor — no OEM dependencies, no stitched-together partnerships.
+
+**Proof Points:**
+- UPAM has NO posture assessment — cannot check endpoint health or compliance
+- UPAM has NO Certificate Authority and NO Cloud PKI — cannot issue device certificates
+- CyberElements is NOT an ALE product — it's Systancia (separate French company) resold by ALE
+- ALE resells Aruba ClearPass for enterprise NAC — literally a competitor's product
+- UPAM is ALE-hardware-centric — third-party switch support is RADIUS-proxy only
+- ALE has THREE ZTNA options from THREE vendors: UPAM (ALE), CyberElements (Systancia), Versa SASE — no unified strategy
+- No unified policy engine across NAC and ZTNA — these are separate products from separate companies
+- UPAM device profiling uses an external cloud database — not built-in ML-based profiling
+- Gartner does not recognize UPAM as a standalone enterprise NAC product
+- EP1 Security Secure Plus = unified Cloud NAC + ZTNA — single vendor, single platform, single policy engine
+
+**NAC/PKI Architecture Comparison:**
+
+| Feature | ALE OmniVista UPAM / CyberElements | Extreme EP1 Security |
+|---------|-------------------------------------|----------------------|
+| **Architecture** | UPAM embedded in OmniVista (cloud + on-prem) | Cloud-native SaaS |
+| **802.1X NAC** | Yes (UPAM — ALE hardware only) | **Yes** — Cloud NAC (multi-vendor) |
+| **Built-in CA** | No | No (external CA) |
+| **Cloud PKI** | No | Cloud PKI roadmap |
+| **RADIUS** | Built-in (UPAM, ALE-hardware-centric) | Cloud RADIUS as a Service (RadSec) |
+| **ZTNA** | Resold — Systancia CyberElements or Versa | **Yes** (Secure Plus) — native |
+| **Posture Assessment** | No | Yes |
+| **Device Profiling** | External cloud DB (not built-in ML) | Yes — ML-based profiling |
+| **Multi-vendor NAS** | RADIUS-proxy only for third-party | Yes — vendor-agnostic |
+| **Enterprise NAC option** | Resells Aruba ClearPass | Native EP1 Security |
+| **Unified NAC + ZTNA policy** | No — separate products, separate vendors | Yes — single platform |
+| **Vendors for NAC + ZTNA** | 3 (ALE + Systancia + Versa) | 1 (Extreme) |
+
+**Discovery Questions:**
+- Is CyberElements an ALE-built product, or is it from Systancia? (Answer: It's Systancia)
+- Why does ALE resell Aruba ClearPass if UPAM is sufficient for enterprise NAC?
+- Does UPAM include posture assessment or endpoint compliance checking? (Answer: No)
+- Can UPAM issue device certificates for EAP-TLS? (Answer: No — no CA, no PKI)
+- How many separate vendor products are needed for ALE's NAC + ZTNA solution?
+- Do UPAM NAC policies and CyberElements ZTNA policies share a unified policy engine? (Answer: No)
+
+---
+
 ## When They Attack Extreme
 
 ### 1. "Extreme is more expensive than ALE"
@@ -124,7 +171,7 @@ tags: [battle-card]
 
 ## Summary
 
-Against ALE, the battle is **SPB vs SPB — same fabric, different ecosystem**. Both use IEEE 802.1aq, so the fabric protocol is not the differentiator. Instead, lead with Extreme's superior ecosystem: **XIQ CoPilot AI** (no ALE equivalent), **Digital Twin** (no ALE equivalent), **Fabric auto-attach** for wireless, **free Navigator management** (vs paid OmniVista Cirrus), and **Wi-Fi 7** (ALE has no Wi-Fi 7 yet). Emphasize Extreme's larger proven scale (1,000+ vs 500+ switches) and broader portfolio including SD-WAN. **Key killer questions**: Ask about AI capabilities, Wi-Fi 7 timeline, SD-WAN strategy, and 3-year TCO including management subscriptions.
+Against ALE, the battle is **SPB vs SPB — same fabric, different ecosystem**. Both use IEEE 802.1aq, so the fabric protocol is not the differentiator. Instead, lead with Extreme's superior ecosystem: **XIQ CoPilot AI** (no ALE equivalent), **Digital Twin** (no ALE equivalent), **unified Cloud NAC + ZTNA** (ALE's NAC/ZTNA is fragmented across 3 vendors), **free Navigator management** (vs paid OmniVista Cirrus), and **Wi-Fi 7** (ALE has no Wi-Fi 7 yet). ALE's NAC story is the weakest angle to attack: UPAM is basic (no posture, no CA, no PKI), CyberElements ZTNA is a Systancia resell, and ALE even resells Aruba ClearPass for enterprise NAC. EP1 Security delivers unified Cloud NAC + ZTNA from a single vendor. **Key killer questions**: Ask if CyberElements is an ALE product (it's Systancia). Ask why ALE resells Aruba ClearPass. Ask about AI capabilities, Wi-Fi 7 timeline, and 3-year TCO.
 
 ## Related
 
