@@ -75,6 +75,47 @@ tags: [battle-card]
 
 ---
 
+### 4. "Meraki provides simple cloud NAC with Adaptive Policy and Systems Manager"
+
+> [!info] Their Claim
+> Meraki positions Adaptive Policy (group-based segmentation) and Systems Manager (MDM/EMM) as providing NAC-like capabilities directly from the Meraki Dashboard. For full 802.1X NAC, Meraki relies on Cisco ISE or third-party RADIUS. Meraki recently launched cloud RADIUS capabilities but has no built-in Certificate Authority or Cloud PKI.
+
+> [!tip] Counter-Argument
+> Meraki's NAC story is fragmented. Adaptive Policy provides basic segmentation but is NOT true NAC — there's no 802.1X authentication engine, no RADIUS server, no certificate-based auth in the Meraki Dashboard. For real NAC, Meraki customers must buy Cisco ISE (on-prem, $50K+) or use a third-party RADIUS. Meraki has no built-in CA, no Cloud PKI, and no ZTNA (that's Cisco Secure Connect — yet another separate product and license). Extreme's EP1 Security delivers unified Cloud NAC + ZTNA with built-in RADIUS as a Service — all cloud-native, all in one platform, and your hardware still works if you stop paying.
+
+**Proof Points:**
+- Meraki Dashboard has no built-in RADIUS server — must use ISE or third-party for 802.1X
+- Meraki has no built-in Certificate Authority — no Cloud PKI capability
+- Meraki has no ZTNA — requires separate Cisco Secure Connect subscription
+- For full NAC, Meraki customers need ISE ($50K+ appliances + Advantage licenses + PS)
+- Adaptive Policy is group segmentation, not NAC — no auth, no profiling, no cert-based access
+- EP1 Security Secure Plus = unified Cloud NAC + ZTNA in one platform — cloud-native SaaS
+- If Meraki license expires, hardware bricks — including any NAC/security policies. EP1 Security has no hardware dependency
+- Meraki Systems Manager (MDM) is an additional per-device license on top of network licenses
+
+**NAC/PKI Architecture Comparison:**
+
+| Feature | Meraki | Extreme EP1 Security |
+|---------|--------|----------------------|
+| **Built-in RADIUS** | No — requires ISE or third-party | **Yes** — Cloud RADIUS as a Service (RadSec) |
+| **Built-in CA / Cloud PKI** | No | No (external CA) |
+| **802.1X NAC** | Via ISE or third-party only | **Yes** — native Cloud NAC |
+| **ZTNA** | No (separate Cisco Secure Connect) | **Yes** (Secure Plus) |
+| **Segmentation** | Adaptive Policy (group-based, no auth) | Fabric Connect + zero-trust policy engine |
+| **MDM** | Systems Manager (extra license) | Intune/Google Workspace integration |
+| **Hardware if license expires** | **Bricks** | Continues operating |
+| **Products needed for NAC+ZTNA** | 3+ (Meraki + ISE + Secure Connect) | 1 (EP1 Security) |
+| **On-prem infrastructure for NAC** | ISE appliances ($50K-$200K+) | None |
+
+**Discovery Questions:**
+- Does the Meraki Dashboard include a RADIUS server for 802.1X, or do we need ISE?
+- Does Meraki have a built-in Certificate Authority for EAP-TLS certificate-based authentication?
+- Does Meraki include ZTNA for remote users, or is that a separate Cisco Secure Connect purchase?
+- What is the total cost of Meraki licenses + ISE + Secure Connect for NAC + PKI + ZTNA for 5,000 endpoints?
+- If our Meraki license expires, what happens to our NAC policies and network segmentation?
+
+---
+
 ## When They Attack Extreme
 
 ### 1. "Extreme is too complicated compared to Meraki"
@@ -123,7 +164,7 @@ tags: [battle-card]
 
 ## Summary
 
-Against Meraki, lead with **freedom and flexibility**. Meraki customers are often happy until renewal time, until they need a feature Meraki doesn't support, or until they try to leave. **The hardware-bricking license model is your #1 weapon.** Every IT decision-maker understands the risk of their entire network shutting down because of a billing dispute or budget cut. Extreme's universal hardware and free Navigator tier is the antidote. **Key killer question**: "What happens to your network on Day 1 after your Meraki license expires?"
+Against Meraki, lead with **freedom and flexibility**, **hardware-bricking risk**, and **unified cloud NAC + ZTNA**. Meraki has no built-in RADIUS, no Certificate Authority, no Cloud PKI, and no ZTNA — full NAC requires Cisco ISE (on-prem, $50K+) and ZTNA requires separate Cisco Secure Connect. EP1 Security delivers unified Cloud NAC + ZTNA as cloud-native SaaS. And if your Meraki license expires, your entire network — including security policies — stops. **Key killer questions**: Ask what happens to their network when the Meraki license expires. Ask if Meraki Dashboard has a built-in RADIUS for 802.1X. Ask how many Cisco products are needed for NAC + PKI + ZTNA.
 
 ## Related
 
