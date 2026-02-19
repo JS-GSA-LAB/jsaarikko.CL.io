@@ -42,7 +42,7 @@ Establishes controls for protecting Personally Identifiable Information (PII) in
 
 The first international standard for AI Management Systems, published December 2023. Provides a framework for responsible AI development, deployment, and use — covering risk assessment, transparency, bias mitigation, and human oversight. Increasingly relevant as networking vendors embed AI/ML into cloud management platforms (e.g., AIOps, digital twins, anomaly detection). The EU AI Act and similar regulations are driving enterprise demand for formal AI governance certification.
 
-> **Extreme Networks:** No networking vendor currently holds ISO 42001. This represents a first-mover differentiation opportunity as AI features like ExtremeCloud IQ CoPilot become central to network management.
+> **Extreme Networks:** Extreme is actively pursuing ISO 42001 certification for ExtremeCloud IQ CoPilot — no other networking vendor has achieved or announced pursuit of this standard. First-mover advantage in AI governance as the EU AI Act drives enterprise demand.
 
 ---
 
