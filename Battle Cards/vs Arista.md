@@ -97,6 +97,50 @@ tags: [battle-card]
 
 ---
 
+### 5. "CloudVision AGNI provides cloud-native NAC with built-in PKI"
+
+> [!info] Their Claim
+> Arista positions CV AGNI (launched 2023) as a modern cloud-native NAC replacement for legacy solutions like Cisco ISE and Aruba ClearPass. AGNI includes built-in Cloud PKI with SCEP/EST certificate enrollment, 802.1X EAP-TLS, device profiling via AI/ML, and RadSec transport. Available as SaaS or on-prem appliance (DCA-AGNI-100, formalized July 2025).
+
+> [!tip] Counter-Argument
+> AGNI is a credible NAC product, but it launched in 2023 — it's roughly 2 years old competing against solutions with 12-15 years of maturity. More critically, Arista has NO native ZTNA product. For remote user zero-trust access, Arista relies entirely on a Zscaler partnership — that's a separate vendor, separate contract, separate dashboard. AGNI is also optimized for Arista infrastructure end-to-end; multi-vendor enforcement via RadSec is technically possible but not Arista's primary go-to-market. And AGNI's Cloud PKI is NAC-scoped only — not a general-purpose certificate management platform. Extreme's EP1 Security delivers unified Cloud NAC + ZTNA in a single platform from a single vendor, with no dependency on third-party partnerships for zero-trust remote access.
+
+**Proof Points:**
+- AGNI launched 2023 — only ~2 years in market vs EP1 Security's mature platform
+- Arista has NO native ZTNA — relies on Zscaler partnership (separate vendor, contract, and dashboard)
+- AGNI is optimized for all-Arista infrastructure — multi-vendor support is secondary
+- AGNI Cloud PKI is NAC-scoped only — not general-purpose certificate management
+- No native posture agent — relies on third-party EDR (CrowdStrike, Palo Alto XDR) for device compliance
+- EP1 Security Secure Plus = unified Cloud NAC + ZTNA — single vendor, single platform, single dashboard
+- Extreme Cloud NAC uses RadSec and works across Extreme and third-party infrastructure
+- For full zero-trust (NAC + ZTNA), Arista requires AGNI + Zscaler = 2 vendors. Extreme requires EP1 Security = 1 vendor
+- AGNI + MSS + Zscaler + NDR = 4 products for Arista's zero-trust architecture vs 1 EP1 Security platform
+
+**NAC/PKI Architecture Comparison:**
+
+| Feature | Arista CV AGNI | Extreme EP1 Security |
+|---------|----------------|----------------------|
+| **Architecture** | Cloud-native SaaS + on-prem appliance | Cloud-native SaaS |
+| **Built-in CA** | Yes (AGNI Cloud PKI) | No (external CA) |
+| **Cloud PKI** | Yes (NAC-scoped, SCEP/EST) | Cloud PKI roadmap |
+| **RADIUS** | Cloud RADIUS (RadSec) | Cloud RADIUS as a Service (RadSec) |
+| **ZTNA** | **No** — relies on Zscaler partnership | **Yes** (Secure Plus) — native |
+| **Device Profiling** | Yes (AI/ML + third-party integrations) | Yes — ML-based profiling |
+| **Posture Assessment** | Via third-party EDR only (CrowdStrike, Palo Alto XDR) | Yes — native |
+| **Multi-vendor NAS** | Technically supported (RadSec) — Arista-optimized | Yes — vendor-agnostic |
+| **Product maturity** | ~2 years (launched 2023) | Mature platform |
+| **Products for full zero trust** | 4+ (AGNI + MSS + Zscaler + NDR) | 1 (EP1 Security) |
+| **Vendors for NAC + ZTNA** | 2 (Arista + Zscaler) | 1 (Extreme) |
+
+**Discovery Questions:**
+- Does Arista offer a native ZTNA product, or do you rely on Zscaler for remote access?
+- How long has AGNI been in production? How many enterprise customers are running it at scale?
+- Can AGNI enforce policies on non-Arista switches and APs as effectively as on Arista infrastructure?
+- What is the total cost of AGNI + Zscaler for unified NAC + ZTNA for 5,000 users?
+- Does AGNI's PKI support general-purpose certificate management beyond NAC use cases?
+
+---
+
 ## When They Attack Extreme
 
 ### 1. "Extreme is too small compared to Arista"
@@ -167,7 +211,7 @@ tags: [battle-card]
 
 ## Summary
 
-Against Arista, lead with **campus expertise and operational simplicity**. Arista is a DC powerhouse entering campus — acknowledge their DC strength but emphasize that campus networking is a different discipline. Their campus products are 1-2 years old; Extreme has 28+ years. Fabric Connect vs campus EVPN-VXLAN is your strongest differentiator: simpler, proven, and doesn't require BGP expertise. **Key killer questions**: Ask how long their campus switching product has been in market. Ask if they have NAC. Ask about their wireless deployment track record. Ask what the CloudVision subscription costs vs Extreme's free Navigator tier.
+Against Arista, lead with **campus expertise**, **operational simplicity**, and **unified NAC + ZTNA**. Arista is a DC powerhouse entering campus — acknowledge their DC strength but emphasize that campus networking is a different discipline. Their campus products are 1-2 years old; Extreme has 28+ years. AGNI is a credible cloud-native NAC with built-in PKI, but Arista has NO native ZTNA — they rely on a Zscaler partnership (separate vendor, contract, dashboard). EP1 Security delivers unified Cloud NAC + ZTNA from a single vendor. Fabric Connect vs campus EVPN-VXLAN remains your strongest infrastructure differentiator. **Key killer questions**: Ask if Arista has a native ZTNA product (they don't — it's Zscaler). Ask how many products are needed for full zero trust (AGNI + MSS + Zscaler + NDR = 4). Ask how long AGNI has been in production (~2 years). Ask what CloudVision costs vs Extreme's free Navigator tier.
 
 ## Related
 
