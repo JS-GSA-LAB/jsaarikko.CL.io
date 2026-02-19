@@ -10,7 +10,7 @@ Cloud platform security and compliance certifications across vendors.
 | ISO/IEC 27001 | Yes | Yes | Yes | Partial | Partial | Partial | Partial | Partial | Partial | Yes |
 | ISO/IEC 27017 | Yes | No | Yes | No | Yes | Yes | No | No | No | Yes |
 | ISO/IEC 27018 | No | No | Yes | No | Yes | Yes | No | No | No | Yes |
-| ISO/IEC 42001 | No | No | No | No | No | No | No | No | No | No |
+| ISO/IEC 42001 | In Progress | No | No | No | No | No | No | No | No | No |
 | ISO/IEC 27701 | Yes | No | No | No | No | No | No | No | No | No |
 | SOC 2 Type II | Yes | Yes | Yes | Yes | Yes | Yes | Partial | No | Yes | No |
 | CSA STAR Level 1 | Yes | Yes | Yes | Yes | Yes | Yes | No | No | No | No |
@@ -30,7 +30,7 @@ Cloud platform security and compliance certifications across vendors.
 
 | Vendor | Certified | In Progress |
 |--------|-----------|-------------|
-| Extreme | 10 | 4 |
+| Extreme | 10 | 5 |
 | Cisco | 8 | 0 |
 | Meraki | 14 | 0 |
 | Aruba | 8 | 0 |
