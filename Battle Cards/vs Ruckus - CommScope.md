@@ -53,6 +53,47 @@ tags: [battle-card]
 
 ---
 
+### 3. "Cloudpath provides certificate-based onboarding and NAC"
+
+> [!info] Their Claim
+> Ruckus positions Cloudpath (now part of RUCKUS One) as a certificate-based onboarding and NAC solution with a built-in CA for issuing device certificates, BYOD onboarding portals, and 802.1X RADIUS. Cloudpath can issue certificates for EAP-TLS authentication.
+
+> [!tip] Counter-Argument
+> Cloudpath is a legacy on-prem product that was bolted onto the Ruckus portfolio via acquisition. It's transitioning to RUCKUS One cloud, but the transition is incomplete and the cloud platform itself lacks major security certifications (no ISO 27017, no ISO 27018, no CSA STAR). Cloudpath has no ZTNA — Ruckus has no ZTNA product at all. There's no unified policy engine combining campus NAC and remote access. And CommScope's financial instability ($9B+ debt, potential Ruckus divestiture) raises serious questions about long-term investment in Cloudpath/RUCKUS One. Extreme's EP1 Security delivers unified Cloud NAC + ZTNA as a cloud-native platform with strong security certifications (ISO 27001, 27017, 27701, SOC 2).
+
+**Proof Points:**
+- Cloudpath is a legacy acquisition — transitioning to RUCKUS One but migration incomplete
+- RUCKUS One cloud lacks ISO 27017, ISO 27018, and CSA STAR certifications
+- Ruckus has NO ZTNA product — zero remote access capability
+- No unified policy engine for campus NAC + remote access
+- CommScope $9B+ debt and potential Ruckus divestiture threatens product roadmap investment
+- EP1 Security Secure Plus = unified Cloud NAC + ZTNA — cloud-native with ISO 27001/27017/27701 certs
+- Ruckus has no network fabric — NAC policies can't leverage fabric-level segmentation like Extreme's Fabric Connect
+- Ruckus cloud management is less mature than ExtremeCloud IQ (fewer certifications, newer platform)
+
+**NAC/PKI Architecture Comparison:**
+
+| Feature | Ruckus Cloudpath / RUCKUS One | Extreme EP1 Security |
+|---------|-------------------------------|----------------------|
+| **Architecture** | Legacy on-prem (migrating to cloud) | Cloud-native SaaS |
+| **Built-in CA** | Yes (Cloudpath on-prem CA) | No (external CA) |
+| **Cloud PKI** | No | Cloud PKI roadmap |
+| **RADIUS** | On-prem (Cloudpath) / RUCKUS One cloud | Cloud RADIUS as a Service (RadSec) |
+| **ZTNA** | **No product** | **Yes** (Secure Plus) |
+| **Network fabric integration** | No (no fabric) | Fabric Connect segmentation |
+| **Cloud certifications** | Limited (no 27017/27018/CSA STAR) | ISO 27001, 27017, 27701, SOC 2, CSA STAR |
+| **Vendor stability** | CommScope $9B+ debt, potential divestiture | NASDAQ-listed, profitable, growing |
+| **SD-WAN** | None | Yes |
+
+**Discovery Questions:**
+- Has Cloudpath fully migrated to RUCKUS One cloud, or is it still on-prem?
+- Does Ruckus offer ZTNA for remote users? What is your remote access solution?
+- What security certifications does the RUCKUS One cloud platform hold? (ISO 27017? 27018? CSA STAR?)
+- What happens to Cloudpath/RUCKUS One investment if CommScope sells the Ruckus business unit?
+- Can Ruckus NAC policies leverage network fabric segmentation? (Answer: no fabric)
+
+---
+
 ## When They Attack Extreme
 
 ### 1. "Extreme's wireless can't match Ruckus RF performance in dense environments"
@@ -101,7 +142,7 @@ tags: [battle-card]
 
 ## Summary
 
-Against Ruckus, lead with **fabric capability**, **complete network stack**, and **financial stability**. Ruckus has strong wireless but lacks fabric, SD-WAN, and modern cloud management. CommScope's financial situation is a legitimate concern. **Key killer questions**: Ask about fabric (they don't have one). Ask about SD-WAN (they don't have one). Ask about CommScope's debt and potential Ruckus divestiture. Ask for dense environment benchmarks vs. Extreme's NFL stadium deployments.
+Against Ruckus, lead with **fabric capability**, **complete network stack**, **cloud-native NAC + ZTNA**, and **financial stability**. Ruckus has strong wireless but lacks fabric, SD-WAN, ZTNA, and modern cloud management. Cloudpath is a legacy NAC transitioning to RUCKUS One, but the cloud platform lacks key certifications. Ruckus has NO ZTNA product. CommScope's $9B+ debt is a legitimate concern. **Key killer questions**: Ask about fabric (they don't have one). Ask about ZTNA (they don't have one). Ask what certifications RUCKUS One cloud holds. Ask about CommScope's debt and potential divestiture.
 
 ## Related
 
