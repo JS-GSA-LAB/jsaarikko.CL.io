@@ -7,7 +7,7 @@ Cloud platform security and compliance certifications across vendors.
 
 | Certification | Extreme | Cisco | Meraki | Aruba | Juniper | Fortinet | Ruckus | Ubiquiti | Arista | Alcatel-Lucent |
 |---------------|---|---|---|---|---|---|---|---|---|---|
-| ISO/IEC 27001 | Yes | Partial | Partial | Partial | Partial | Partial | Partial | Partial | No | No |
+| ISO/IEC 27001 | Yes | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Yes |
 | ISO/IEC 27017 | Yes | No | No | No | No | No | No | No | No | No |
 | ISO/IEC 27701 | Yes | No | No | No | No | No | No | No | No | No |
 | SOC 2 Type II | Yes | Yes | Yes | Yes | Yes | Yes | Partial | No | Yes | No |
@@ -36,5 +36,5 @@ Cloud platform security and compliance certifications across vendors.
 | Fortinet | 9 | 0 |
 | Ruckus | 1 | 0 |
 | Ubiquiti | 1 | 0 |
-| Arista | 6 | 1 |
-| Alcatel-Lucent | 3 | 0 |
+| Arista | 7 | 1 |
+| Alcatel-Lucent | 4 | 0 |
