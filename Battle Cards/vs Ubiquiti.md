@@ -55,6 +55,51 @@ tags: [battle-card]
 
 ---
 
+### 3. "UniFi doesn't need NAC — RADIUS and VLANs are enough for access control"
+
+> [!info] Their Claim
+> Ubiquiti advocates will argue that built-in RADIUS support and VLAN assignment in the UniFi controller provides sufficient network access control without dedicated NAC, and that NAC is over-engineered for most networks.
+
+> [!tip] Counter-Argument
+> UniFi's RADIUS is basic WPA-Enterprise authentication only — it cannot profile devices, enforce posture policies, issue certificates, segment by role, or provide any zero-trust capability. There is no 802.1X wired NAC, no device profiling, no guest lifecycle management, no Certificate Authority, no Cloud PKI, and absolutely no ZTNA for remote users. UniFi has no concept of network access policy beyond "allow" or "deny." For any organization with compliance requirements (PCI-DSS, HIPAA, SOX, CMMC), Ubiquiti's lack of NAC is a disqualifier. Extreme's EP1 Security delivers unified Cloud NAC + ZTNA as cloud-native SaaS with RADIUS as a Service — zero on-prem infrastructure required.
+
+**Proof Points:**
+- UniFi has NO NAC product — zero. No device profiling, no posture checking, no policy engine
+- UniFi RADIUS is basic WPA-Enterprise only — no wired 802.1X NAC capability
+- No Certificate Authority, no Cloud PKI, no SCEP — cannot do certificate-based authentication
+- No ZTNA — Ubiquiti has no remote access security product whatsoever
+- No device profiling — cannot identify or classify IoT, BYOD, or rogue devices
+- No guest lifecycle management — no sponsored access, no timed credentials
+- No integration with MDM/UEM platforms (Intune, Workspace ONE, etc.)
+- PCI-DSS, HIPAA, SOX, and CMMC all require NAC-level access controls — Ubiquiti fails compliance
+- EP1 Security Secure Plus = unified Cloud NAC + ZTNA — cloud-native SaaS with RadSec
+- Extreme Cloud NAC includes device profiling, posture assessment, and role-based segmentation
+
+**NAC/PKI Architecture Comparison:**
+
+| Feature | Ubiquiti UniFi | Extreme EP1 Security |
+|---------|----------------|----------------------|
+| **Architecture** | No NAC product | Cloud-native SaaS |
+| **802.1X NAC** | WPA-Enterprise wireless only (no wired NAC) | **Yes** — Cloud NAC (wired + wireless) |
+| **Built-in CA** | No | No (external CA) |
+| **Cloud PKI** | No | Cloud PKI roadmap |
+| **RADIUS** | Basic built-in (wireless only) | Cloud RADIUS as a Service (RadSec) |
+| **ZTNA** | **No product** | **Yes** (Secure Plus) |
+| **Device Profiling** | No | Yes — ML-based profiling |
+| **Posture Assessment** | No | Yes |
+| **Network Fabric Integration** | No (basic VLANs only) | Fabric Connect segmentation |
+| **Compliance Certifications** | None (no FIPS, no CC, no JITC) | ISO 27001, 27017, 27701, SOC 2 |
+| **Enterprise Support** | Community forums only | 24/7 TAC with SLA |
+
+**Discovery Questions:**
+- Does UniFi provide 802.1X NAC for wired ports? (Answer: No)
+- Does Ubiquiti have any form of device profiling or classification? (Answer: No)
+- How does UniFi handle certificate-based authentication with EAP-TLS? (Answer: It doesn't — no CA, no PKI)
+- What is Ubiquiti's ZTNA solution for remote users? (Answer: They don't have one)
+- How do you meet PCI-DSS network segmentation and access control requirements with UniFi?
+
+---
+
 ## When They Attack Extreme
 
 ### 1. "Extreme is way too expensive — nobody needs all those enterprise features"
@@ -82,7 +127,7 @@ tags: [battle-card]
 
 ## Summary
 
-Against Ubiquiti, **don't compete on price — compete on risk**. Ubiquiti wins on cost; Extreme wins on everything else. Frame the conversation around compliance, security, support, and total business risk. A $4.45M average data breach makes a $100K networking investment look trivial. **Key killer questions**: Ask about compliance requirements (PCI, HIPAA, SOX). Ask who they call at 2 AM when the network is down. Ask about their cyber insurance provider's network security requirements. If the customer truly has no compliance needs and minimal risk tolerance, Ubiquiti may be the right choice — focus your time on prospects who need enterprise capabilities.
+Against Ubiquiti, **don't compete on price — compete on risk and security gaps**. Ubiquiti wins on cost; Extreme wins on everything else. Ubiquiti has NO NAC product whatsoever — no device profiling, no certificate-based auth, no Cloud PKI, and absolutely no ZTNA. For any compliance-driven organization, Ubiquiti is a non-starter. Frame the conversation around compliance, security, support, and total business risk. EP1 Security delivers unified Cloud NAC + ZTNA as cloud-native SaaS — capabilities Ubiquiti cannot match at any price. **Key killer questions**: Ask about NAC for 802.1X (they don't have one). Ask about ZTNA for remote users (they don't have one). Ask about compliance requirements (PCI, HIPAA, SOX). Ask who they call at 2 AM when the network is down.
 
 ## Related
 
