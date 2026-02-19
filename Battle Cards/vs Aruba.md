@@ -75,6 +75,46 @@ tags: [battle-card]
 
 ---
 
+### 4. "ClearPass Onboard has built-in PKI for certificate-based NAC"
+
+> [!info] Their Claim
+> Aruba positions ClearPass Onboard as a mature built-in Certificate Authority for BYOD and device onboarding — supporting SCEP and EST enrollment, EAP-TLS, and automated certificate provisioning without external PKI infrastructure. Onboard CA is a separate add-on license to ClearPass Policy Manager.
+
+> [!tip] Counter-Argument
+> ClearPass Onboard CA is on-premises only — it runs on the ClearPass appliance/VM, not in the cloud. This means you still need to deploy, patch, maintain, and cluster ClearPass infrastructure. Extreme's EP1 Security delivers Cloud NAC as a fully cloud-native SaaS with RADIUS as a Service — no on-prem NAC appliances. EP1 Security also unifies Cloud NAC + ZTNA in one policy engine. ClearPass has no ZTNA — Aruba sells that as a separate SSE product. And ClearPass Onboard is a separate add-on license on top of already expensive ClearPass Access licensing.
+
+**Proof Points:**
+- ClearPass Onboard CA is on-prem only — not cloud-native. Requires appliance deployment, patching, HA clustering
+- ClearPass Onboard is a SEPARATE add-on license ($30-$100/endpoint/yr) on top of ClearPass Access
+- ClearPass has no ZTNA — Aruba sells SSE/ZTNA as a separate product and subscription
+- EP1 Security Secure Plus = unified Cloud NAC + ZTNA in one platform — one policy, one license
+- ClearPass appliance costs $25K-$100K+ before licenses — EP1 Security has zero on-prem infrastructure
+- ClearPass typically requires $15K-$50K in professional services for initial deployment
+- Extreme Cloud NAC uses RadSec (RADIUS over TLS) — fully encrypted, no on-prem RADIUS servers
+
+**NAC/PKI Architecture Comparison:**
+
+| Feature | ClearPass + Onboard | Extreme EP1 Security |
+|---------|---------------------|----------------------|
+| **Architecture** | On-prem appliance/VM | Cloud-native SaaS |
+| **Built-in CA** | Yes (on-prem Onboard CA) | No (external CA) |
+| **SCEP** | Yes | External |
+| **EST (RFC 7030)** | Yes | External |
+| **RADIUS** | On-prem (ClearPass appliance) | Cloud RADIUS as a Service (RadSec) |
+| **ZTNA** | No (separate Aruba SSE purchase) | **Yes** (Secure Plus) |
+| **On-prem infrastructure** | ClearPass appliance ($25K-$100K+) | None (RadSec proxy optional for legacy) |
+| **NAC + PKI licensing** | ClearPass Access + Onboard add-on | EP1 Security per-user (5 devices) |
+| **Professional services** | Typically required ($15K-$50K) | Self-service cloud deployment |
+| **HA/DR** | Manual appliance clustering | Built into cloud platform |
+
+**Discovery Questions:**
+- What is the total cost of ClearPass Access + Onboard licenses + appliances + PS for 5,000 endpoints?
+- Is ClearPass Onboard CA cloud-hosted or does it run on the on-prem ClearPass appliance?
+- Does ClearPass include ZTNA for remote users, or is that a separate Aruba SSE purchase?
+- Can ClearPass Onboard CA auto-revoke certificates when devices are removed from Intune/Jamf?
+
+---
+
 ## When They Attack Extreme
 
 ### 1. "Extreme has a smaller wireless market share than Aruba"
@@ -123,7 +163,7 @@ tags: [battle-card]
 
 ## Summary
 
-Against Aruba, lead with **licensing freedom** and **fabric simplicity**. ClearPass is their trump card — acknowledge its quality but highlight its cost and complexity. Fabric Connect vs. Dynamic Segmentation is a strong differentiator: Extreme's fabric is simpler, standards-based, and doesn't require an external NAC appliance. **Key killer questions**: Ask about the total cost of ClearPass + Central Advanced for their deployment size. Ask if Aruba hardware works without a Central subscription. Ask how long Dynamic Segmentation + ClearPass takes to deploy vs. Fabric Connect.
+Against Aruba, lead with **licensing freedom**, **fabric simplicity**, and **cloud-native NAC + ZTNA**. ClearPass is their trump card — acknowledge its quality but highlight its cost, complexity, and on-prem-only architecture. ClearPass Onboard CA is on-prem, requires add-on licensing, and has no ZTNA — Extreme EP1 Security delivers unified Cloud NAC + ZTNA with zero on-prem infrastructure. Fabric Connect vs. Dynamic Segmentation remains a strong differentiator. **Key killer questions**: Ask about total ClearPass cost (Access + Onboard + appliances + PS). Ask if ClearPass Onboard CA is cloud-hosted. Ask if ClearPass includes ZTNA or if that's a separate SSE purchase.
 
 ## Related
 
