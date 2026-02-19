@@ -75,6 +75,48 @@ tags: [battle-card]
 
 ---
 
+### 4. "FortiNAC provides integrated NAC within the Security Fabric"
+
+> [!info] Their Claim
+> Fortinet positions FortiNAC as part of their converged Security Fabric — NAC that works natively with FortiGate, FortiSwitch, and FortiAP. They emphasize device profiling, automated onboarding, and integration with FortiGuard threat intelligence.
+
+> [!tip] Counter-Argument
+> FortiNAC is the weakest NAC offering among major competitors. It has no built-in Certificate Authority — zero PKI capability. For SCEP certificate enrollment, Fortinet requires a separate FortiAuthenticator appliance (additional purchase). FortiNAC is on-premises only with no cloud-native option. It has no ZTNA — that's FortiSASE/FortiZTNA, yet another separate product. Extreme's EP1 Security delivers unified Cloud NAC + ZTNA as cloud-native SaaS with RADIUS as a Service, zero on-prem infrastructure, and no dependency on a firewall appliance.
+
+**Proof Points:**
+- FortiNAC has NO built-in Certificate Authority — cannot issue certificates for EAP-TLS
+- SCEP requires a separate FortiAuthenticator appliance — additional $5K-$20K+ purchase
+- FortiNAC is on-prem only — no cloud-native NAC option from Fortinet
+- FortiNAC has no ZTNA — FortiZTNA/FortiSASE are separate products and licenses
+- FortiNAC depends on FortiGate for policy enforcement — another FortiGate dependency
+- EP1 Security Secure Plus = unified Cloud NAC + ZTNA — no firewall dependency, no on-prem infrastructure
+- Extreme Cloud NAC uses RadSec — fully encrypted RADIUS as a Service
+- FortiNAC is widely considered the least capable NAC among Cisco ISE, Aruba ClearPass, Juniper Mist, and Extreme
+
+**NAC/PKI Architecture Comparison:**
+
+| Feature | FortiNAC | Extreme EP1 Security |
+|---------|----------|----------------------|
+| **Architecture** | On-prem appliance/VM | Cloud-native SaaS |
+| **Built-in CA** | No | No (external CA) |
+| **SCEP** | No — requires separate FortiAuthenticator | External |
+| **Cloud PKI** | No | Cloud PKI roadmap |
+| **RADIUS** | On-prem (FortiNAC appliance) | Cloud RADIUS as a Service (RadSec) |
+| **ZTNA** | No (separate FortiSASE/FortiZTNA) | **Yes** (Secure Plus) |
+| **Firewall dependency** | Yes — requires FortiGate for enforcement | None |
+| **On-prem infrastructure** | FortiNAC + FortiAuthenticator + FortiGate | None (RadSec proxy optional for legacy) |
+| **Cloud-native option** | No | Yes |
+| **Products needed for NAC+PKI+ZTNA** | 4 (FortiNAC + FortiAuthenticator + FortiGate + FortiSASE) | 1 (EP1 Security) |
+
+**Discovery Questions:**
+- Does FortiNAC have a built-in Certificate Authority for issuing device certificates?
+- Is FortiNAC available as a cloud-native SaaS, or is it on-prem only?
+- Does FortiNAC include ZTNA, or is that a separate FortiSASE/FortiZTNA purchase?
+- What is the total cost of FortiNAC + FortiAuthenticator + FortiGate for 5,000 endpoints?
+- Can FortiNAC operate without a FortiGate?
+
+---
+
 ## When They Attack Extreme
 
 ### 1. "Extreme has no integrated NGFW — they can't do converged security + networking"
@@ -123,7 +165,7 @@ tags: [battle-card]
 
 ## Summary
 
-Against Fortinet, lead with **independence and enterprise switching depth**. Fortinet's networking products are accessories to FortiGate — they can't stand alone. This creates a single point of failure and deep vendor lock-in. Acknowledge FortiGate's NGFW excellence, then show that Extreme's networking is in a different league from FortiSwitch/FortiAP, and integrates with ANY firewall vendor. **Key killer questions**: Ask if FortiSwitch operates without FortiGate. Ask what the TOTAL infrastructure cost is (FortiGate + FortiCare + FortiGuard + FortiManager + FortiAnalyzer). Ask what L3 routing protocols FortiSwitch supports.
+Against Fortinet, lead with **independence**, **enterprise switching depth**, and **cloud-native NAC + ZTNA**. Fortinet's networking products are accessories to FortiGate — they can't stand alone. FortiNAC is the weakest major NAC: no built-in CA, no Cloud PKI, no cloud-native option, no ZTNA (separate FortiSASE purchase), and requires FortiAuthenticator for SCEP. EP1 Security delivers unified Cloud NAC + ZTNA with zero on-prem infrastructure and no firewall dependency. **Key killer questions**: Ask if FortiNAC has a built-in CA. Ask if FortiNAC is available as cloud SaaS. Ask how many separate Fortinet products are needed for NAC + PKI + ZTNA.
 
 ## Related
 
