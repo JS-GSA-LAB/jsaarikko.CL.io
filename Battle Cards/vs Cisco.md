@@ -96,6 +96,49 @@ tags: [battle-card]
 
 ---
 
+### 5. "ISE is the most deployed NAC with a built-in Certificate Authority"
+
+> [!info] Their Claim
+> Cisco positions ISE as the industry's most widely deployed NAC platform with a built-in Internal CA for BYOD provisioning, deep EAP-TLS support, and integration with the full Cisco security stack (TrustSec, SD-Access, SecureX). ISE Internal CA supports SCEP certificate enrollment. Requires Advantage or Premier licensing tier ($30-$100/endpoint/yr).
+
+> [!tip] Counter-Argument
+> ISE is on-premises only — it requires dedicated appliances or VMs, manual HA clustering, and Cisco-specific training to operate. ISE's Internal CA runs on the appliance, not in the cloud. There is no Cisco-hosted Cloud PKI — for cloud certificate management, Cisco customers must integrate with Microsoft Intune Cloud PKI (a Microsoft product, not Cisco). ISE also has no built-in ZTNA — Cisco sells Secure Access (formerly Umbrella ZTNA) as a completely separate product and subscription. Extreme's EP1 Security delivers Cloud NAC + ZTNA unified in one policy engine as cloud-native SaaS with zero on-prem infrastructure.
+
+**Proof Points:**
+- ISE is on-prem only — requires $50K-$200K+ in appliances before a single endpoint is managed
+- ISE Internal CA is on-prem, not cloud-hosted — Cisco has no Cloud PKI product
+- For cloud PKI, Cisco tells customers to use Microsoft Intune Cloud PKI — that's a Microsoft product, not Cisco
+- ISE has no ZTNA — Cisco Secure Access is a separate product, separate license, separate dashboard
+- ISE requires Advantage or Premier tier ($30-$100/endpoint/yr) for Internal CA and BYOD provisioning
+- ISE deployments almost always require Cisco PS ($50K-$200K+) and 3-6 months to production
+- EP1 Security Secure Plus = unified Cloud NAC + ZTNA in one platform — zero on-prem infrastructure
+- Extreme Cloud NAC uses RadSec — fully encrypted RADIUS as a Service, no on-prem RADIUS servers
+
+**NAC/PKI Architecture Comparison:**
+
+| Feature | Cisco ISE | Extreme EP1 Security |
+|---------|-----------|----------------------|
+| **Architecture** | On-prem appliance/VM | Cloud-native SaaS |
+| **Built-in CA** | Yes (on-prem Internal CA) | No (external CA) |
+| **Cloud PKI** | No — recommends Microsoft Intune Cloud PKI | Cloud PKI roadmap |
+| **SCEP** | Yes (via Internal CA or NDES) | External |
+| **RADIUS** | On-prem (ISE appliance) | Cloud RADIUS as a Service (RadSec) |
+| **ZTNA** | No (separate Cisco Secure Access purchase) | **Yes** (Secure Plus) |
+| **On-prem infrastructure** | ISE appliances ($50K-$200K+) | None (RadSec proxy optional for legacy) |
+| **PKI licensing** | Advantage or Premier tier required | EP1 Security per-user (5 devices) |
+| **Professional services** | Almost always required ($50K-$200K+) | Self-service cloud deployment |
+| **Deployment timeline** | 3-6 months typical | Days to weeks |
+| **Dashboards for NAC+PKI+ZTNA** | 3+ (ISE, Catalyst Center, Secure Access) | 1 (EP1 Security) |
+
+**Discovery Questions:**
+- Is ISE's Internal CA cloud-hosted or does it run on the on-prem ISE appliance?
+- Does Cisco offer a cloud-native PKI for issuing device certificates, or do you recommend Microsoft Intune Cloud PKI?
+- Does ISE include ZTNA for remote users, or is Cisco Secure Access a separate purchase?
+- What is the total cost of ISE (appliances + Advantage licenses + PS + SmartNet) for 5,000 endpoints over 5 years?
+- How many separate Cisco products and dashboards are needed for NAC + PKI + ZTNA?
+
+---
+
 ## When They Attack Extreme
 
 ### 1. "Extreme is too small — they could get acquired or won't be around"
@@ -168,7 +211,7 @@ tags: [battle-card]
 
 ## Summary
 
-Against Cisco Catalyst, lead with **total cost of ownership** and **operational simplicity**. Cisco's strength is breadth, but that breadth creates complexity and cost. Every feature they add requires another license tier, another integration, another training course. Extreme delivers 90% of the capability at 40-60% of the cost with dramatically less complexity. **Key killer questions**: Ask about the TOTAL cost including DNA licenses, ISE, Catalyst Center appliance, and SmartNet. Ask what happens to their hardware if they stop paying DNA subscriptions. Ask how many separate Cisco dashboards their team manages daily.
+Against Cisco Catalyst, lead with **total cost of ownership**, **operational simplicity**, and **cloud-native NAC + ZTNA**. Cisco's strength is breadth, but that breadth creates complexity and cost. ISE is on-prem only with no Cloud PKI — Cisco tells customers to use Microsoft Intune Cloud PKI. ISE has no ZTNA (separate Secure Access purchase). EP1 Security delivers unified Cloud NAC + ZTNA as cloud SaaS with zero on-prem infrastructure. **Key killer questions**: Ask about the TOTAL cost including ISE + Catalyst Center + DNA licenses + SmartNet. Ask if ISE's CA is cloud-hosted. Ask how many separate Cisco products and dashboards are needed for NAC + PKI + ZTNA.
 
 ## Related
 
