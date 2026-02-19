@@ -213,6 +213,102 @@ tags: [battle-card]
 
 Against Cisco Catalyst, lead with **total cost of ownership**, **operational simplicity**, and **cloud-native NAC + ZTNA**. Cisco's strength is breadth, but that breadth creates complexity and cost. ISE is on-prem only with no Cloud PKI — Cisco tells customers to use Microsoft Intune Cloud PKI. ISE has no ZTNA (separate Secure Access purchase). EP1 Security delivers unified Cloud NAC + ZTNA as cloud SaaS with zero on-prem infrastructure. **Key killer questions**: Ask about the TOTAL cost including ISE + Catalyst Center + DNA licenses + SmartNet. Ask if ISE's CA is cloud-hosted. Ask how many separate Cisco products and dashboards are needed for NAC + PKI + ZTNA.
 
+---
+
+## How to Win — Strategic Playbook
+
+> Source: Extreme Networks Competitive Intelligence Battlecard vs Cisco Catalyst (February 2026)
+
+| Competitor Weakness | Extreme Proofpoint | How to Win Response |
+|---|---|---|
+| **Lead with cost efficiency** | Lower TCO with flexible subscription tiers and support for open standards | Emphasize Extreme's lower long-term costs vs. Cisco's expensive licensing and support |
+| **Embrace cloud simplicity** | Fully AI-powered, cloud-based management via Extreme Platform ONE | Contrast Extreme's unified cloud-native platform with Cisco's hybrid complexity |
+| **Promote open ecosystems and agility** | Fabric automation and integrations without vendor lock-in; faster software update cycles | Highlight Extreme's vendor-agnostic approach and faster updates |
+| **Target multi-cloud weakness** | Native integrations with AWS and Azure ecosystems | Use native AWS/Azure integration as a key differentiator |
+| **Challenge legacy mindset** | Position Cisco as complex and legacy-bound during its transition | Position Cisco as slow-moving and complex during its transition to cloud |
+
+---
+
+## Footprint Comparison
+
+| Aspect | Cisco Catalyst | Extreme Networks |
+|---|---|---|
+| **Management** | DNA Center + Meraki Dashboard (hybrid) | ExtremeCloud IQ (cloud-native) |
+| **Security** | Integrated ISE, TrustSec, ETA | ExtremeAI Security / EP1 Security |
+| **Licensing** | Limited native multi-cloud | Flexible subscription tiers |
+| **Cloud integration** | Limited native multi-cloud | AWS/Azure native integrations |
+
+---
+
+## Elevator Pitches
+
+1. "Extreme offers cloud-native networking without Cisco's licensing complexity."
+2. "Lower TCO with flexible subscription and open standards support."
+3. "Fabric automation without vendor lock-in."
+
+---
+
+## SWOT Analysis (Extreme vs Cisco)
+
+### Strengths
+
+- **Lower total cost of ownership (TCO):** Flexible subscription models and support for open standards reduce long-term costs compared to Cisco's premium pricing and proprietary ecosystem.
+- **Cloud choice with data sovereignty:** Offers a fully AI-powered, cloud-based management platform (Extreme Platform ONE), which contrasts with Cisco's hybrid (Catalyst Center + Meraki) complexity.
+- **Open ecosystem & agility:** Promotes multi-vendor integration and avoids vendor lock-in, appealing to enterprises seeking flexibility. Faster, software-centric feature releases unencumbered by legacy hardware dependencies.
+- **Fabric automation:** Provides advanced automation capabilities without being tied to a single-vendor stack.
+
+### Weaknesses
+
+- **Brand recognition & installed base:** Lacks the global enterprise footprint, brand strength, and entrenched account presence of Cisco.
+- **Integrated stack depth:** May not offer the same depth of natively integrated security (e.g., ISE, TrustSec), switching, wireless, and SD-Access under a single vendor umbrella.
+- **Partner & support scale:** Likely has a smaller global partner ecosystem and support infrastructure compared to Cisco's extensive channel and services network.
+
+### Opportunities
+
+- **Market shift to cloud & OpEx models:** Capitalize on the industry trend toward cloud managed networking and subscription-based consumption, where Cisco is perceived as complex and expensive.
+- **Cisco's transition challenges:** Target enterprises frustrated by Cisco's hybrid model complexity, slow feature cycles, and high costs during its Catalyst-Meraki unification phase.
+- **Multi-cloud support:** Grow market share by emphasizing global support for AWS and Azure clouds, directly attacking Cisco's weakness in multi-cloud integration.
+
+### Threats
+
+- **Cisco's unified strategy:** Cisco's "Networking Cloud" vision and convergence of Catalyst and Meraki could eventually mitigate its current hybrid complexity and strengthen its value proposition.
+- **Intense competition:** Faces strong competition not only from Cisco but also from other cloud-native leaders like Aruba (HPE) and Juniper Mist in the LAN/WLAN space.
+- **Enterprise inertia:** Large enterprises with deep Cisco investments and skill sets may be resistant to change, despite potential TCO benefits from alternatives.
+
+---
+
+## Recommended Counter Enhancements
+
+> [!tip] Additional recommendations to strengthen Extreme's competitive positioning against Cisco
+
+### 1. Strengthen the NAC + ZTNA narrative in every engagement
+
+The official battlecard focuses on cost, cloud, and open ecosystems — but **underplays the unified NAC + ZTNA advantage**, which is one of Extreme's strongest differentiators. Cisco needs ISE + Catalyst Center + Secure Access = 3 products and 3+ dashboards for what EP1 Security delivers in one platform. This should be a primary talking point, not an afterthought. Every Cisco displacement conversation should include: *"How many separate Cisco products do you need for NAC + PKI + ZTNA?"*
+
+### 2. Attack the Catalyst-Meraki identity crisis harder
+
+The SWOT correctly identifies Cisco's transition challenges, but the battlecard could be more aggressive. Cisco is actively trying to unify Catalyst and Meraki — but today's reality is two incompatible platforms, two hardware lines, two licensing models, two dashboards, and customers stuck deciding between them. Ask customers: *"Has Cisco told you whether your next purchase should be Catalyst or Meraki? Did two different Cisco reps give you two different answers?"*
+
+### 3. Counter the "Integrated stack depth" weakness proactively
+
+The SWOT honestly notes Extreme may lack Cisco's integrated stack depth. **Counter this by reframing depth as dependency**: Cisco's "integrated" stack means ISE depends on Catalyst Center depends on DNA licenses depends on SmartNet — a chain of dependencies where one failure cascades. Extreme's approach delivers the same outcomes (segmentation, NAC, analytics) without the dependency chain. Integration should mean "works together" not "can't work without each other."
+
+### 4. Add Cisco's licensing complexity as an explicit attack vector
+
+The battlecard mentions licensing but underestimates how much confusion Cisco licensing creates. Cisco has: DNA Essentials, DNA Advantage, DNA Premier, Network Essentials, Network Advantage, Smart Licensing, Enterprise Agreement, and Flex EA. Few Cisco customers can explain their own licensing model. Counter: *"Can you explain the difference between DNA Essentials, Advantage, and Premier — and what features you lose at each tier?"*
+
+### 5. Address the "enterprise inertia" threat with migration support
+
+The SWOT correctly identifies enterprise inertia as a threat. Counter by emphasizing Extreme's **coexistence capabilities**: Extreme switches and APs can run alongside Cisco infrastructure during migration. Customers don't need a forklift — they can migrate building-by-building. ExtremeCloud IQ manages the Extreme devices while Cisco manages theirs. No big-bang required.
+
+### 6. Leverage Cisco's R&D dilution
+
+Cisco now owns Splunk ($28B), AppDynamics, ThousandEyes, Webex, Duo, and 200+ other acquisitions. Their R&D budget is massive but spread across collaboration, security, observability, and networking. **Extreme's 100% networking focus** means every R&D dollar goes to the products competing against Cisco's networking division. Ask: *"What percentage of Cisco's R&D goes specifically to campus networking vs. Splunk, Webex, and AppDynamics?"*
+
+### 7. Add "Extreme Platform ONE" branding consistency
+
+The battlecard references "Extreme Platform ONE" as the unified cloud management platform. Ensure all battle cards and customer-facing materials consistently use this branding alongside ExtremeCloud IQ / CoPilot AI to present a unified platform narrative that competes with Cisco's "Networking Cloud" vision.
+
 ## Related
 
 - [[Cisco]] — Vendor profile
