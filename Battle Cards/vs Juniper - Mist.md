@@ -75,6 +75,44 @@ tags: [battle-card]
 
 ---
 
+### 4. "Mist Access Assurance is the best cloud-native NAC with built-in Cloud PKI"
+
+> [!info] Their Claim
+> Juniper positions Mist Access Assurance as the only cloud-native NAC with a built-in Onboard Certificate Authority — eliminating the need for on-prem PKI (AD CS, NDES). Standard tier at ~$6/client/yr covers 802.1X, Cloud RADIUS, MAB, and IoT. Advanced tier at ~$9/client/yr adds Cloud PKI (Onboard CA), MDM posture checking (Intune/Jamf), and firewall integrations.
+
+> [!tip] Counter-Argument
+> Mist Access Assurance is campus NAC only — it has no remote ZTNA capability. Extreme's EP1 Security unifies Cloud NAC and ZTNA in a single zero-trust policy engine. One policy governs both on-campus (802.1X via Cloud RADIUS) and remote (ZTNA agent) access. Juniper requires a separate Secure Edge product for remote access. Additionally, Mist's Cloud PKI has no automatic certificate revocation — when a device is wiped or removed from MDM, an admin must manually revoke the cert in Mist.
+
+**Proof Points:**
+- EP1 Security Secure Plus = Cloud NAC + ZTNA in one platform — Mist has no ZTNA
+- Mist Access Assurance is campus-only; remote users need a separate Juniper Secure Edge solution
+- Mist Cloud PKI (Onboard CA) has NO automatic cert revocation — manual process when devices leave MDM
+- Extreme per-user licensing covers 5 devices per user vs. Mist per-active-client — better value for multi-device users
+- Mist requires Mist Edge (on-prem appliance) for non-Juniper switches — Extreme supports third-party via lightweight RadSec proxy
+- At $9/client/yr Advanced for 5,000 clients over 5 years = $225K just for NAC — no ZTNA included
+
+**Mist Access Assurance Tier Comparison:**
+
+| Feature | Mist Standard (~$6/client/yr) | Mist Advanced (~$9/client/yr) | Extreme EP1 Secure (per user) | Extreme EP1 Secure Plus (per user) |
+|---------|-------------------------------|-------------------------------|-------------------------------|-------------------------------------|
+| 802.1X / EAP-TLS | Yes | Yes | Yes | Yes |
+| Cloud RADIUS (RadSec) | Yes | Yes | Yes | Yes |
+| MAB / IoT Onboarding | Yes | Yes | Yes | Yes |
+| IdP Integration (Entra, Okta, Google) | Yes | Yes | Yes | Yes |
+| Policy Engine | Yes | Yes | Yes | Yes |
+| **Cloud PKI (Onboard CA)** | No | **Yes** | No | No |
+| **MDM Posture (Intune/Jamf)** | No | **Yes** | Yes | Yes |
+| **Remote ZTNA** | No | No | No | **Yes** |
+| Devices per license | 1 active client | 1 active client | Up to 5 per user | Up to 5 per user |
+
+**Discovery Questions:**
+- Does Mist Access Assurance provide ZTNA for remote users, or only campus NAC?
+- Does Mist automatically revoke certificates when a device is wiped or removed from Intune/Jamf?
+- What is the cost of Mist Edge for non-Juniper switch infrastructure?
+- At $9/client/yr Advanced, what is the 5-year total for 5,000 clients? Does that include remote access?
+
+---
+
 ## When They Attack Extreme
 
 ### 1. "Extreme's AI is behind Juniper/Mist — CoPilot is immature"
@@ -123,7 +161,7 @@ tags: [battle-card]
 
 ## Summary
 
-Against Juniper/Mist, lead with **operational simplicity** and **free management entry point**. Acknowledge Marvis AI quality but counter with CoPilot + Digital Twin and the free Navigator tier. The fabric debate (SPB vs EVPN-VXLAN) is your strongest technical differentiator for campus-focused deals. **Key killer questions**: Ask what their minimum management cost is (Juniper: paid subscription; Extreme: free). Ask if Marvis has Digital Twin. Ask how many campus engineers on their team have BGP experience for EVPN-VXLAN.
+Against Juniper/Mist, lead with **operational simplicity**, **free management entry point**, and **unified NAC + ZTNA**. Acknowledge Marvis AI quality but counter with CoPilot + Digital Twin and the free Navigator tier. The fabric debate (SPB vs EVPN-VXLAN) is your strongest technical differentiator for campus-focused deals. On security, Mist Access Assurance is campus-only NAC — Extreme EP1 Security unifies Cloud NAC + ZTNA in one policy engine. Mist's Cloud PKI advantage is real but limited by manual cert revocation and no ZTNA. **Key killer questions**: Ask what their minimum management cost is (Juniper: paid subscription; Extreme: free). Ask if Marvis has Digital Twin. Ask if Mist Access Assurance includes ZTNA for remote users. Ask about automatic cert revocation in Mist Cloud PKI.
 
 ## Related
 
