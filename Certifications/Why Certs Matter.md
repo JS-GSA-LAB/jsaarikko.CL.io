@@ -26,6 +26,16 @@ Extends ISO 27001 with cloud-specific security controls covering shared responsi
 
 ---
 
+## ISO/IEC 27018
+
+**Impact:** HIGH
+
+Establishes controls for protecting Personally Identifiable Information (PII) in public cloud environments. Based on ISO 27002 with additional cloud privacy controls, it addresses data processor obligations including consent, transparency, data portability, and sub-processor oversight. Critical for enterprises routing user traffic metadata through cloud-managed networking platforms.
+
+> **Extreme Networks:** Extreme does not currently hold ISO 27018. ALE (Alcatel-Lucent Enterprise) is the only networking vendor with this certification via their OpenRainbow cloud platform.
+
+---
+
 ## ISO/IEC 27701
 
 **Impact:** HIGH
