@@ -47,6 +47,7 @@ tags: [index, moc]
 ## Products & Replacements
 - [[Product Catalog]]
 - [[Competitive Replacements]]
+- [[EOS-EOL Database]]
 
 ## Fabric & Compliance
 - [[Fabric Compare]]
