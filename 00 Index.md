@@ -36,6 +36,7 @@ tags: [index, moc]
 - [[TCO Comparison]]
 - [[Value Scores]]
 - [[Licensing Models]]
+- [[Cloud Licensing]]
 - [[Hidden Costs]]
 
 ## Certifications
