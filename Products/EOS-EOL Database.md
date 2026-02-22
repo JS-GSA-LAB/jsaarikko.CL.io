@@ -16,12 +16,12 @@ tags: [products, eos-eol, lifecycle]
 | [[Meraki]] | ~8 | MR/MS/MX series (basic coverage) |
 | [[Aruba]] | 63 | APs (802.11n → Wi-Fi 6), Switches (ProCurve → CX), Controllers, ClearPass, Routers |
 | [[Juniper - Mist]] | 126 | Mist APs (AP12-AP63), EX switches (EX2200-EX9253), QFX DC, SRX firewalls, MX routers, SSR, PTX/ACX/NFX |
-| [[Fortinet]] | 229 | FortiAP (46), FortiGate (70), FortiSwitch (30), FortiAnalyzer (16), FortiMail (10), FortiWeb (11), FortiManager (9), FortiSandbox (7), FortiADC (7), FortiDDoS (6), FortiAuthenticator (6), FortiWLC (5), FortiExtender (6) |
+| [[Fortinet]] | 263 | FortiAP (53 incl. K-series Wi-Fi 7), FortiGate (89 incl. G-series SP5), FortiSwitch (31), FortiAnalyzer (16), FortiMail (10), FortiWeb (11), FortiManager (9), FortiSandbox (7), FortiADC (7), FortiDDoS (6), FortiAuthenticator (6), FortiWLC (5), FortiExtender (6), FortiWiFi (3), FortiVoice (5) |
 | [[Ruckus - CommScope]] | 122 | ZoneFlex APs (802.11n → Wi-Fi 7 R770), ZoneDirector/SmartZone controllers, SmartZone software, ICX switches (6xxx-8200) |
 | [[Ubiquiti]] | 217 | UniFi APs (802.11n → Wi-Fi 7 U7/E7), Switches (Gen1 → ECS), Gateways (USG/UDM/UCG/EdgeRouter), Cameras, airMAX/airFiber, Access, Talk |
 | [[Arista]] | 97 | 7010-7800R3 switches, Campus CCS, Wireless C-series APs, CloudVision appliances |
 | [[Alcatel-Lucent]] | 105 | OmniSwitch (6400-9912), Stellar APs (802.11n → Wi-Fi 7 AP15xx), OAW controllers, OmniVista, OmniPCX/Rainbow |
-| **TOTAL** | **~1,100+** | |
+| **TOTAL** | **~1,130+** | |
 
 ---
 
@@ -75,7 +75,9 @@ tags: [products, eos-eol, lifecycle]
 ### [[Fortinet]]
 - Standard policy: EOS (End of Support) = EOO (End of Order) + 60 months
 - FortiAPs/FortiSwitches managed by FortiGate = ZERO per-device subscription
-- F-series transitioning to G-series (2025-2026)
+- F-series transitioning to G-series (2025-2026): FortiGate 100F first F-series EOO (Apr 2026)
+- G-series (SP5 ASIC): 30G/50G/70G announced Feb 2025; 700G/900G announced May 2025
+- FortiAP K-series (Wi-Fi 7): 231K/233K/241K/243K/441K/443K now shipping; G-series APs going EOO mid-2025
 
 ### [[Ruckus - CommScope]]
 - 60-day grace period after license expiration
