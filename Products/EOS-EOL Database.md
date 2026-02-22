@@ -12,16 +12,16 @@ tags: [products, eos-eol, lifecycle]
 | Vendor | Entries | Key Product Families |
 |--------|---------|---------------------|
 | [[Extreme Networks]] | 111 | APs (Altitude → AP5020), Switches (Summit X → 5520), Controllers (NX/C/V series), Enterasys legacy |
-| [[Cisco]] | ~15 | Catalyst, Meraki CW, Aironet (basic coverage — expand from Cisco EOL advisories) |
-| [[Meraki]] | ~8 | MR/MS/MX series (basic coverage) |
-| [[Aruba]] | 63 | APs (802.11n → Wi-Fi 6), Switches (ProCurve → CX), Controllers, ClearPass, Routers |
+| [[Cisco]] | 124 | Aironet (1700-4800), Catalyst Wi-Fi 6/6E/7 (9105-CW9178), Catalyst switches (2960/3000/9000), Nexus DC (2000-9500), Small Business (SG/CBS), ISR 4000, ASR 1000, Catalyst 8000 SD-WAN, ASA 5500-X, Firepower, Secure Firewall, WLC/9800/CW9800 controllers |
+| [[Meraki]] | 45 | MR APs (MR20-MR86, Wave 2 → Wi-Fi 6E), MS switches (MS120-MS450), MX security appliances (MX64-MX450) |
+| [[Aruba]] | 129 | APs (802.11n → Wi-Fi 7 AP-745), Instant On APs, CX switches (6000-8400), Instant On switches, Gateways (9004/9012/9240), Controllers, ClearPass, AirWave, Silver Peak/EdgeConnect SD-WAN |
 | [[Juniper - Mist]] | 126 | Mist APs (AP12-AP63), EX switches (EX2200-EX9253), QFX DC, SRX firewalls, MX routers, SSR, PTX/ACX/NFX |
 | [[Fortinet]] | 263 | FortiAP (53 incl. K-series Wi-Fi 7), FortiGate (89 incl. G-series SP5), FortiSwitch (31), FortiAnalyzer (16), FortiMail (10), FortiWeb (11), FortiManager (9), FortiSandbox (7), FortiADC (7), FortiDDoS (6), FortiAuthenticator (6), FortiWLC (5), FortiExtender (6), FortiWiFi (3), FortiVoice (5) |
 | [[Ruckus - CommScope]] | 122 | ZoneFlex APs (802.11n → Wi-Fi 7 R770), ZoneDirector/SmartZone controllers, SmartZone software, ICX switches (6xxx-8200) |
 | [[Ubiquiti]] | 217 | UniFi APs (802.11n → Wi-Fi 7 U7/E7), Switches (Gen1 → ECS), Gateways (USG/UDM/UCG/EdgeRouter), Cameras, airMAX/airFiber, Access, Talk |
-| [[Arista]] | 97 | 7010-7800R3 switches, Campus CCS, Wireless C-series APs, CloudVision appliances |
+| [[Arista]] | 116 | 7010-7800R3 switches, Campus CCS/C-series APs, CloudVision/vEOS appliances, DMF/CCF monitoring, Pluribus Freedom 9000, ETM/Untangle NG Firewall |
 | [[Alcatel-Lucent]] | 105 | OmniSwitch (6400-9912), Stellar APs (802.11n → Wi-Fi 7 AP15xx), OAW controllers, OmniVista, OmniPCX/Rainbow |
-| **TOTAL** | **~1,130+** | |
+| **TOTAL** | **~1,370+** | |
 
 ---
 
@@ -56,15 +56,25 @@ tags: [products, eos-eol, lifecycle]
 - DNA license required for full functionality post-EOS
 - Cisco publishes formal EOL milestones: EoS → EoSW → EoRFA → EoVSP → EoSCR → LDoS
 - IOS XE devices continue forwarding without license but lose cloud management
+- ISR 4000 series fully EOS Nov 2023-Jan 2025; replaced by Catalyst 8000 SD-WAN
+- ASA 5500-X series being replaced by Firepower → Secure Firewall 1200/3100/4200
+- Catalyst 9800-40/80 wireless controllers EOS Dec 2025; replaced by CW9800M/H
+- Small Business SG/CBS lines transitioning to Catalyst 1200/1300
 
 ### [[Meraki]]
 - **Hardware ceases ALL traffic upon license expiration** — most aggressive policy
 - No on-prem fallback option
+- CW9164/CW9176I/CW9178I support both Meraki and Catalyst/DNA management
+- MS120/MS125/MS390 EOS Mar 2025; MS210/MS225 EOS Apr 2026; MS250/MS350/MS355 EOS Aug 2025
+- MR Wave 2 APs (MR33/MR42/MR52/MR53) support ending Jul 2026
 
 ### [[Aruba]]
 - Standard 5-year support post-EOS
 - Hardware operates standalone but loses cloud features without Central subscription
 - HPE/Juniper acquisition may affect future lifecycle
+- Wi-Fi 7 APs: AP-734/AP-735/AP-745 active; Wi-Fi 6E AP-615/635/655 active
+- CX 6000-8400 switches are current gen; legacy ProCurve/OfficeConnect fully EOL
+- Silver Peak EdgeConnect SD-WAN acquired → HPE Aruba EdgeConnect current gen
 
 ### [[Juniper - Mist]]
 - Publishes formal TSB (Technical Service Bulletin) for each EOL
@@ -96,6 +106,9 @@ tags: [products, eos-eol, lifecycle]
 - Perpetual EOS license — hardware works without CloudVision
 - Publishes formal End of Sale advisories
 - Strong OpenConfig support aids migration
+- DMF/CCF monitoring platform winding down — migrate to UCN (Universal Cloud Networking)
+- Pluribus Freedom 9000 / NVOS EOS Dec 2024 (acquired 2022)
+- ETM/Untangle NG Firewall line: Q6E/Q6EWL last call Jan 2026
 
 ### [[Alcatel-Lucent]]
 - 5-year hardware warranty post-EOS (Limited Lifetime Warranty on some)
