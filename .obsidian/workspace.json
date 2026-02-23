@@ -1,0 +1,233 @@
+{
+  "main": {
+    "id": "24fb24452ed32a8c",
+    "type": "split",
+    "children": [
+      {
+        "id": "3f732854bf5b1446",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fad66b78172f48ea",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "878a9bd92d2bd20c",
+    "type": "split",
+    "children": [
+      {
+        "id": "599b3b4bfe345fd3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "92b81737d2105cbc",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "e6a23699c98dc646",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "0d102c96be98e6b2",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "a308245d5e636c37",
+    "type": "split",
+    "children": [
+      {
+        "id": "e3ea4cac3a2c7a42",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1e6d37f02eaad69c",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "da25cda9f048149b",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "ed4310a33851bb6a",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "89ce08ea3a00b67f",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "7ef19145eb6b1f93",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          },
+          {
+            "id": "fc4aa8fd2eca0eef",
+            "type": "leaf",
+            "state": {
+              "type": "juggl_nodes",
+              "state": {},
+              "icon": "ag-node-list",
+              "title": "Juggl nodes"
+            }
+          },
+          {
+            "id": "3c642060dcba093b",
+            "type": "leaf",
+            "state": {
+              "type": "juggl_style",
+              "state": {},
+              "icon": "ag-style",
+              "title": "Juggl style"
+            }
+          },
+          {
+            "id": "21d6a72090803670",
+            "type": "leaf",
+            "state": {
+              "type": "git-view",
+              "state": {},
+              "icon": "git-pull-request",
+              "title": "Source Control"
+            }
+          }
+        ],
+        "currentTab": 7
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "obsidian-git:Open Git source control": false,
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
+      "juggl:Juggl global graph": false
+    }
+  },
+  "active": "fad66b78172f48ea",
+  "lastOpenFiles": [
+    "Products/EOS-EOL Database.md",
+    "Cost Analysis/Cloud Licensing.md",
+    "Categories/Management.md",
+    "Battle Cards/vs Arista.md",
+    "Vendors/Juniper - Mist.md",
+    "Replacements/Competitive Replacements.md",
+    "Vendors/Alcatel-Lucent.md",
+    "Categories/Wireless.md",
+    "Untitled.canvas",
+    "Battle Cards/vs Alcatel-Lucent.md",
+    "Battle Cards/vs Juniper - Mist.md",
+    "Cost Analysis/TCO Comparison.md",
+    "Compliance/Compliance Verticals.md",
+    "Cost Analysis/Licensing Models.md",
+    "Vendors/Meraki.md",
+    "Cost Analysis/Hidden Costs.md",
+    "00 Index.md",
+    "Untitled.md"
+  ]
+}
