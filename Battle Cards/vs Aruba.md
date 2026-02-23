@@ -165,6 +165,92 @@ tags: [battle-card]
 
 Against Aruba, lead with **licensing freedom**, **fabric simplicity**, and **cloud-native NAC + ZTNA**. ClearPass is their trump card — acknowledge its quality but highlight its cost, complexity, and on-prem-only architecture. ClearPass Onboard CA is on-prem, requires add-on licensing, and has no ZTNA — Extreme EP1 Security delivers unified Cloud NAC + ZTNA with zero on-prem infrastructure. Fabric Connect vs. Dynamic Segmentation remains a strong differentiator. **Key killer questions**: Ask about total ClearPass cost (Access + Onboard + appliances + PS). Ask if ClearPass Onboard CA is cloud-hosted. Ask if ClearPass includes ZTNA or if that's a separate SSE purchase.
 
+---
+
+## How to Win — Strategic Playbook
+
+| Competitor Weakness | Extreme Proofpoint | How to Win Response |
+|---|---|---|
+| **Expose ClearPass cost and complexity** | EP1 Security cloud-native NAC + ZTNA, zero on-prem | Total ClearPass cost (appliances + licenses + PS) vs EP1 Security cloud SaaS — no on-prem infrastructure |
+| **Lead with free management** | Free Navigator tier vs mandatory Aruba Central subscription | Aruba Central Foundation is limited; Advanced is $150+/dev/yr. XIQ Navigator is free with no restrictions |
+| **Attack on-prem NAC architecture** | Cloud RADIUS as a Service (RadSec) | ClearPass is on-prem only — requires appliances, patching, HA clustering. EP1 is fully cloud-native |
+| **Highlight unified NAC + ZTNA** | EP1 Security Secure Plus | ClearPass has no ZTNA — Aruba sells SSE as a separate product. EP1 unifies NAC + ZTNA in one policy |
+| **Fabric simplicity advantage** | Fabric Connect (SPB) deploys in hours | Dynamic Segmentation requires ClearPass + Central. Fabric Connect needs no separate NAC appliance |
+| **Target HPE acquisition uncertainty** | 100% networking-focused, no conglomerate overhead | HPE acquired Aruba — R&D priorities now compete with servers, storage, and GreenLake |
+
+---
+
+## Footprint Comparison
+
+| Aspect | Aruba | Extreme Networks |
+|---|---|---|
+| **Management** | Aruba Central (mandatory subscription) | ExtremeCloud IQ (free Navigator tier available) |
+| **NAC** | ClearPass (on-prem appliance) | EP1 Security (cloud-native SaaS) |
+| **ZTNA** | Separate SSE product | EP1 Security Secure Plus (unified with NAC) |
+| **Fabric** | Dynamic Segmentation (requires ClearPass) | Fabric Connect (IEEE 802.1aq, no NAC dependency) |
+| **Licensing** | Central Foundation/Advanced mandatory | Free Navigator; paid tiers optional |
+
+---
+
+## Elevator Pitches
+
+1. "Cloud-native NAC + ZTNA without the ClearPass appliance tax."
+2. "Free cloud management — because basic visibility shouldn't cost $150/device/year."
+3. "Fabric Connect deploys in hours. Dynamic Segmentation takes weeks."
+
+---
+
+## SWOT Analysis (Extreme vs Aruba)
+
+### Strengths
+
+- **Free management tier:** XIQ Navigator is genuinely free — Aruba Central has no free option, and Foundation tier is severely limited.
+- **Cloud-native NAC + ZTNA:** EP1 Security unifies NAC + ZTNA in one cloud platform — ClearPass is on-prem only with no ZTNA.
+- **Fabric simplicity:** Fabric Connect deploys in hours with no dependency on a separate NAC appliance — Dynamic Segmentation requires ClearPass integration.
+- **Universal hardware:** Same Extreme hardware works with cloud, on-prem, or hybrid management — Aruba Central is moving cloud-only.
+- **Digital Twin:** XIQ CoPilot includes Digital Twin for pre-deployment validation — Aruba Central does not.
+
+### Weaknesses
+
+- **ClearPass market reputation:** ClearPass is a mature, well-respected NAC product — Extreme must demonstrate EP1 Security is a credible alternative.
+- **Aruba's Gartner position:** Aruba is consistently a Gartner MQ Leader alongside Extreme — this is a peer-to-peer battle.
+- **HPE enterprise relationships:** HPE's existing server/storage footprint gives Aruba sales teams access to CIO-level relationships Extreme may not have.
+
+### Opportunities
+
+- **ClearPass renewal cycles:** ClearPass appliance refresh and license renewals create natural displacement windows every 3-5 years.
+- **Cloud NAC migration:** Organizations moving from on-prem NAC to cloud-native create opportunities where EP1 Security's architecture is a natural fit.
+- **HPE GreenLake frustration:** Some Aruba customers report HPE is pushing GreenLake subscription models aggressively, creating pricing friction.
+- **ZTNA convergence:** The trend toward unified NAC + ZTNA plays directly to EP1 Security's architecture vs ClearPass + separate SSE.
+
+### Threats
+
+- **Aruba Central maturation:** Aruba Central is improving rapidly — the management gap may narrow.
+- **ClearPass cloud roadmap:** If Aruba migrates ClearPass to cloud-native, Extreme's architectural advantage diminishes.
+- **HPE bundling:** HPE can bundle networking with compute/storage at enterprise scale.
+
+---
+
+## Recommended Counter Enhancements
+
+> [!tip] Additional recommendations to strengthen Extreme's competitive positioning against Aruba
+
+### 1. Build a ClearPass TCO comparison tool
+
+ClearPass total cost is often underestimated: appliances ($25K-$100K) + Access licenses + Onboard add-on + PS ($15K-$50K) + annual support. Create a calculator that reveals the true 5-year cost vs EP1 Security cloud SaaS.
+
+### 2. Exploit the ClearPass-to-SSE gap
+
+When an Aruba customer needs ZTNA for remote users, they discover ClearPass doesn't include it. They need to buy Aruba SSE — a separate product, separate license, separate dashboard. Ask: *"If ClearPass is your NAC and SSE is your ZTNA, do they share a policy engine? Can one policy govern both campus and remote access?"* (Answer: No.)
+
+### 3. Target the "Central Foundation trap"
+
+Many Aruba customers start on Central Foundation thinking it's adequate. They quickly discover it's severely limited and must upgrade to Advanced ($150-$165/dev/yr). Position Extreme's free Navigator tier as "the real foundation" and CoPilot as the paid upgrade — but only when you actually need AI.
+
+### 4. Leverage the HPE conglomerate argument
+
+HPE's R&D priorities span servers, storage, HPC, GreenLake, and networking. Ask: *"What percentage of HPE's R&D budget goes specifically to campus wireless and switching?"* Extreme's answer is 100%.
+
 ## Related
 
 - [[Aruba]] — Vendor profile

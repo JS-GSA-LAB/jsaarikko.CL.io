@@ -95,13 +95,13 @@ tags: [vendor]
 
 > Scenario: 100 APs / 50 Access Switches / 5 Core Switches / 10 SD-WAN Sites
 
-| Component | Cost |
-|-----------|------|
-| Hardware Total | $654,575 |
-| Mgmt Platform | $0 |
-| Annual License | $41,500/yr |
-| Annual Support | $42,000/yr |
-| **3-Year TCO** | **$905,075** |
+| Component      | Cost           |
+| -------------- | -------------- |
+| Hardware Total | $654,575       |
+| Mgmt Platform  | $0             |
+| Annual License | $41,500/yr     |
+| Annual Support | $42,000/yr     |
+| **3-Year TCO** | **$905,075**   |
 | **5-Year TCO** | **$1,072,075** |
 
 **Hardware:** APs: 100x AP47 @ $1,799 | Access: 50x EX4400-48T @ $7,495 | Core: 5x QFX5120-48T @ $15,995 | SD-WAN: 10x SSR120 @ $1,995

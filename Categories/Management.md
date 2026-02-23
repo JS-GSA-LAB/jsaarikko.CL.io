@@ -57,10 +57,10 @@ tags: [category]
 
 ### Aruba
 
-| Model | Type | Price | License |
-|-------|------|-------|---------|
-| Central Foundation | Basic cloud mgmt | $75-$110/dev/yr | Subscription |
-| Central Advanced | AIOps + analytics | $150-$165/dev/yr | Subscription |
+| Model              | Type              | Price            | License      |
+| ------------------ | ----------------- | ---------------- | ------------ |
+| Central Foundation | Basic cloud mgmt  | $75-$110/dev/yr  | Subscription |
+| Central Advanced   | AIOps + analytics | $150-$165/dev/yr | Subscription |
 
 > Subscription required for cloud management. Tiered model with clear feature delineation.
 

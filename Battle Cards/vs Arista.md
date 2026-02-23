@@ -213,6 +213,97 @@ tags: [battle-card]
 
 Against Arista, lead with **campus expertise**, **operational simplicity**, and **unified NAC + ZTNA**. Arista is a DC powerhouse entering campus — acknowledge their DC strength but emphasize that campus networking is a different discipline. Their campus products are 1-2 years old; Extreme has 28+ years. AGNI is a credible cloud-native NAC with built-in PKI, but Arista has NO native ZTNA — they rely on a Zscaler partnership (separate vendor, contract, dashboard). EP1 Security delivers unified Cloud NAC + ZTNA from a single vendor. Fabric Connect vs campus EVPN-VXLAN remains your strongest infrastructure differentiator. **Key killer questions**: Ask if Arista has a native ZTNA product (they don't — it's Zscaler). Ask how many products are needed for full zero trust (AGNI + MSS + Zscaler + NDR = 4). Ask how long AGNI has been in production (~2 years). Ask what CloudVision costs vs Extreme's free Navigator tier.
 
+## How to Win — Strategic Playbook
+
+| Competitor Weakness | Extreme Proofpoint | How to Win Response |
+|---|---|---|
+| **Position Arista as a campus newcomer** | 28+ years, 50,000+ campus customers | Arista's campus products (CCS-720, Cognitive Wi-Fi) launched 2023-2024. Extreme has decades of campus expertise |
+| **Fabric simplicity** | Fabric Connect (SPB) deploys in hours, no BGP | EVPN-VXLAN campus requires BGP expertise most campus teams don't have — SPB is purpose-built for campus |
+| **Lead with free management** | Free Navigator tier vs mandatory CloudVision subscription | CloudVision starts at $20-$35/switch/mo with no free tier. XIQ Navigator is free |
+| **Expose the ZTNA gap** | EP1 Security unified Cloud NAC + ZTNA | AGNI has NAC with Cloud PKI, but Arista has NO native ZTNA — relies on Zscaler (separate vendor) |
+| **Highlight multi-product complexity** | EP1 Security = 1 platform | Arista zero-trust requires AGNI + MSS + Zscaler + NDR = 4 products from 2+ vendors |
+| **Target wireless immaturity** | Wi-Fi 7 AP5020, NFL/FIFA stadium deployments | Arista wireless (Cognitive Wi-Fi) launched 2024 — less than 2 years in market vs Extreme's proven track record |
+
+---
+
+## Footprint Comparison
+
+| Aspect | Arista | Extreme Networks |
+|---|---|---|
+| **Management** | CloudVision + CUE (separate portals) | ExtremeCloud IQ (single pane, free tier) |
+| **NAC** | CV AGNI (cloud-native, ~2 yrs old) | EP1 Security (mature, cloud-native) |
+| **ZTNA** | None — Zscaler partnership | EP1 Security Secure Plus (native) |
+| **Fabric** | EVPN-VXLAN (BGP required) | Fabric Connect SPB (no BGP needed) |
+| **Campus heritage** | ~2 years (CCS-720 launched 2023) | 28+ years, 50,000+ customers |
+
+---
+
+## Elevator Pitches
+
+1. "28 years of campus expertise vs. 2 years of campus products."
+2. "Campus fabric that deploys in hours without BGP — because your campus team isn't a DC ops team."
+3. "Unified NAC + ZTNA from one vendor — not NAC from Arista and ZTNA from Zscaler."
+
+---
+
+## SWOT Analysis (Extreme vs Arista)
+
+### Strengths
+
+- **Campus heritage:** 28+ years and 50,000+ campus customers. Arista's campus products are ~2 years old. This is the strongest differentiator.
+- **Fabric simplicity:** SPB is purpose-built for campus — no BGP expertise required. EVPN-VXLAN brings unnecessary DC complexity.
+- **Free management tier:** Navigator is free. CloudVision has no free option and costs $20-$35/switch/month.
+- **Unified NAC + ZTNA:** EP1 Security delivers NAC + ZTNA in one platform. Arista needs AGNI + Zscaler (2 vendors).
+- **Single pane of glass:** XIQ manages wired + wireless + SD-WAN. CloudVision has separate portals for wired (CV) and wireless (CUE).
+- **Proven wireless:** NFL stadiums, FIFA World Cup, Bundesliga. Arista wireless launched in 2024.
+
+### Weaknesses
+
+- **Arista's brand prestige:** Arista is a $8.75B revenue powerhouse with a stellar reputation in DC networking. Their brand carries weight with CIOs.
+- **AGNI Cloud PKI:** AGNI includes built-in Cloud PKI for certificate-based NAC — Extreme doesn't have this yet (roadmap).
+- **Arista AVD automation:** AVD (Arista Validated Designs) is genuinely best-in-class for network automation — Extreme has no equivalent Ansible collection.
+- **DC-to-campus convergence story:** For organizations that run Arista DC switching, the "one EOS everywhere" story is compelling even if campus execution is immature.
+
+### Opportunities
+
+- **Campus-only deals:** For evaluations without DC requirements, Arista's DC heritage is irrelevant. Focus on campus expertise, fabric simplicity, and free management.
+- **BGP expertise gap:** Most campus teams have zero BGP experience. Every EVPN-VXLAN proposal should trigger the BGP readiness question.
+- **Wireless track record:** Arista wireless is brand new. Every high-density wireless requirement should reference Extreme's NFL/FIFA deployments.
+- **ZTNA convergence:** As zero trust becomes mandatory, the AGNI + Zscaler split becomes a liability. EP1 Security's unified approach wins.
+
+### Threats
+
+- **Arista's campus momentum:** Arista is investing heavily in campus — their products will mature rapidly.
+- **AGNI maturation:** AGNI is improving quickly. With Cloud PKI included, it could become a strong NAC contender if ZTNA is eventually added.
+- **CloudVision unification:** If Arista unifies CV and CUE into a single portal, the "separate dashboard" argument weakens.
+- **Enterprise DC leverage:** Organizations with large Arista DC footprints may adopt campus networking for operational consistency.
+
+---
+
+## Recommended Counter Enhancements
+
+> [!tip] Additional recommendations to strengthen Extreme's competitive positioning against Arista
+
+### 1. Always establish campus vs. DC context first
+
+Before any technical discussion, ask: *"Is this evaluation primarily for campus networking, data center, or both?"* If campus-only (which most are), Arista's DC heritage is irrelevant. This immediately neutralizes their biggest brand advantage.
+
+### 2. Force the BGP expertise conversation
+
+For every EVPN-VXLAN campus proposal, insist on a skills assessment: *"How many engineers on your campus team hold JNCIP-DC or equivalent BGP certification? What's the training timeline and cost?"* Most campus teams have zero BGP experience. Fabric Connect requires none.
+
+### 3. Demand wireless proof points
+
+Arista's Cognitive Wi-Fi launched in 2024. Ask: *"Can you name 10 enterprise customers running Arista wireless in production? Can you name one high-density venue deployment comparable to Extreme's 32 NFL stadiums?"* The answer exposes the maturity gap.
+
+### 4. Make the ZTNA conversation a deal requirement
+
+Every Arista deal should include: *"Our security team requires unified NAC + ZTNA. Can Arista deliver this from a single vendor and a single dashboard?"* The answer is no — AGNI handles NAC, Zscaler handles ZTNA. Two vendors, two contracts, two dashboards.
+
+### 5. Track AGNI maturation closely
+
+AGNI is the most credible cloud-native NAC from any competitor. Monitor its feature development, customer wins, and potential ZTNA roadmap. Extreme needs to keep EP1 Security ahead, especially on Cloud PKI delivery.
+
 ## Related
 
 - [[Arista]] — Vendor profile

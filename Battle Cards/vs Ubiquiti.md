@@ -129,6 +129,92 @@ tags: [battle-card]
 
 Against Ubiquiti, **don't compete on price — compete on risk and security gaps**. Ubiquiti wins on cost; Extreme wins on everything else. Ubiquiti has NO NAC product whatsoever — no device profiling, no certificate-based auth, no Cloud PKI, and absolutely no ZTNA. For any compliance-driven organization, Ubiquiti is a non-starter. Frame the conversation around compliance, security, support, and total business risk. EP1 Security delivers unified Cloud NAC + ZTNA as cloud-native SaaS — capabilities Ubiquiti cannot match at any price. **Key killer questions**: Ask about NAC for 802.1X (they don't have one). Ask about ZTNA for remote users (they don't have one). Ask about compliance requirements (PCI, HIPAA, SOX). Ask who they call at 2 AM when the network is down.
 
+---
+
+## How to Win — Strategic Playbook
+
+| Competitor Weakness | Extreme Proofpoint | How to Win Response |
+|---|---|---|
+| **Don't compete on price — compete on risk** | Compliance, security, and support capabilities | Frame the total business risk: breaches, compliance failures, and zero vendor support |
+| **Expose zero enterprise support** | 24/7 TAC with SLA, professional services | "Who do you call at 2 AM when the network is down?" — Ubiquiti answer: Reddit/community forums |
+| **Highlight compliance disqualification** | FIPS, Common Criteria, JITC certifications | Ubiquiti has zero enterprise security certifications — auto-disqualified for regulated industries |
+| **Attack the NAC void** | EP1 Security unified Cloud NAC + ZTNA | Zero NAC capability: no 802.1X wired NAC, no profiling, no ZTNA, no certificate-based auth |
+| **Target scaling limitations** | Cloud-scale XIQ managing 7M+ devices | UniFi controller is fragile at scale (1,000+ devices reported unstable), no multi-tenant |
+| **Leverage the free tier** | Free Navigator tier matches UniFi simplicity | "We're just as easy AND free — but when you need enterprise depth, we have it and Ubiquiti doesn't" |
+
+---
+
+## Footprint Comparison
+
+| Aspect | Ubiquiti | Extreme Networks |
+|---|---|---|
+| **Management** | UniFi controller (self-hosted or cloud) | ExtremeCloud IQ (cloud-native, free tier) |
+| **NAC** | None | EP1 Security (Cloud NAC + ZTNA) |
+| **Support** | Community forums only | 24/7 TAC with SLA |
+| **Fabric** | None (basic VLANs) | Fabric Connect (IEEE 802.1aq SPB) |
+| **Certifications** | None (no FIPS, CC, JITC) | FIPS, Common Criteria, JITC, FedRAMP |
+
+---
+
+## Elevator Pitches
+
+1. "Enterprise-grade networking with a free tier — the same simplicity as UniFi with the depth you'll eventually need."
+2. "When a $4.45M breach happens, the $100K you saved on networking won't matter."
+3. "We have a TAC number. They have a Reddit thread."
+
+---
+
+## SWOT Analysis (Extreme vs Ubiquiti)
+
+### Strengths
+
+- **Enterprise capabilities:** NAC, fabric, segmentation, compliance certifications, AI CoPilot — Ubiquiti has none of these.
+- **Vendor support:** 24/7 TAC with SLA vs. community forums only.
+- **Compliance readiness:** FIPS, Common Criteria, JITC, SOC 2 — Ubiquiti fails every compliance audit.
+- **Scalability:** XIQ manages 7M+ devices with 99.999% uptime SLA. UniFi is fragile at enterprise scale.
+- **Free management tier:** Navigator matches UniFi's cost (free) while providing enterprise upgrade path.
+
+### Weaknesses
+
+- **Price perception:** Ubiquiti is 5-10x cheaper on hardware — this is an undeniable gap that some buyers prioritize above all else.
+- **Simplicity reputation:** UniFi's consumer-friendly interface is deeply loved by prosumer IT. Extreme must demonstrate comparable ease.
+- **Grassroots adoption:** Ubiquiti grows bottom-up through IT enthusiasts who became decision-makers. Extreme's traditional enterprise sales motion may miss these buyers.
+
+### Opportunities
+
+- **Compliance-driven displacement:** Any organization that faces a compliance audit (PCI-DSS, HIPAA, SOX, CMMC) discovers Ubiquiti fails — Extreme is the natural upgrade path.
+- **Cyber insurance requirements:** Insurance providers increasingly require enterprise-grade network security controls — Ubiquiti may not meet policy requirements.
+- **Scale-related failures:** Organizations that outgrow UniFi's capabilities (1,000+ devices, multi-site, segmentation) are prime Extreme prospects.
+- **"Graduated" IT teams:** IT teams that started with Ubiquiti and now need enterprise features represent a natural upgrade path to Extreme with free Navigator.
+
+### Threats
+
+- **"Good enough" mentality:** Many organizations genuinely don't need enterprise features — Ubiquiti IS sufficient for simple environments.
+- **Ubiquiti's product expansion:** Ubiquiti continues adding features (cameras, access control, phones) — their ecosystem is growing.
+- **Price sensitivity in SMB:** In price-sensitive segments, even a free management tier can't overcome a 5-10x hardware cost difference.
+
+---
+
+## Recommended Counter Enhancements
+
+> [!tip] Additional recommendations to strengthen Extreme's competitive positioning against Ubiquiti
+
+### 1. Know when to walk away
+
+If the customer has no compliance requirements, no security concerns, minimal risk exposure, and a tiny budget — Ubiquiti may genuinely be the right choice. Don't waste sales cycles on deals where the customer's true requirement is "cheapest possible." Focus on prospects who need enterprise capabilities.
+
+### 2. Lead with the compliance conversation
+
+Before discussing features, ask: *"What compliance frameworks does your organization need to meet? PCI-DSS? HIPAA? SOX? CMMC?"* If the answer is any of these, Ubiquiti is immediately disqualified. The conversation shifts from price to compliance capability.
+
+### 3. Use the free Navigator tier as a bridge
+
+For Ubiquiti customers who want to upgrade gradually, offer a migration path: *"Start managing your new Extreme APs with free Navigator — same cost as UniFi cloud. When you're ready for AI, fabric, or NAC, upgrade to CoPilot or EP1 Security."* No big-bang required.
+
+### 4. Make the support conversation personal
+
+Don't talk about "enterprise support" in the abstract. Ask: *"Picture this: it's 2 AM, your network is down, 500 employees can't work in the morning. With Ubiquiti, you post on a forum and hope someone answers. With Extreme, you call TAC and get a certified engineer with an SLA. Which do you want at 2 AM?"*
+
 ## Related
 
 - [[Ubiquiti]] — Vendor profile
