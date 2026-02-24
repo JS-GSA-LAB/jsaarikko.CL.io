@@ -951,14 +951,56 @@ body.mark-mode .main { filter:brightness(var(--mm-bright,1)) contrast(var(--mm-c
 .erate-output { display:none; }
 .erate-output.active { display:block; }
 .erate-cover-letter {
-  background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:32px;
-  font-size:14px; line-height:1.7; max-width:800px;
+  background:#fff; border:1px solid #ddd; border-radius:4px; padding:0;
+  font-size:14px; line-height:1.7; max-width:800px; color:#333; font-family:Georgia,'Times New Roman',serif;
 }
-.erate-cover-letter .erate-letter-header { margin-bottom:24px; }
-.erate-cover-letter .erate-letter-date { color:var(--text-dim); margin-bottom:16px; }
-.erate-cover-letter .erate-letter-to { margin-bottom:16px; }
-.erate-cover-letter .erate-letter-body p { margin-bottom:12px; }
-.erate-cover-letter .erate-letter-sig { margin-top:24px; font-weight:600; }
+.erate-letterhead {
+  text-align:center; padding:36px 40px 20px; border-bottom:none;
+}
+.erate-letterhead .erate-logo-mark {
+  width:64px; height:72px; margin:0 auto 12px; display:flex; align-items:flex-end; justify-content:center;
+}
+.erate-letterhead .erate-logo-mark svg { width:64px; height:72px; }
+.erate-letterhead .erate-company-name {
+  font-family:'Segoe UI',Arial,Helvetica,sans-serif; font-size:18px; font-weight:400; letter-spacing:8px;
+  color:#5D2FBA; text-transform:uppercase; margin-bottom:4px;
+}
+.erate-letterhead .erate-dept-name {
+  font-family:'Segoe UI',Arial,Helvetica,sans-serif; font-size:12px; color:#888; margin-bottom:0;
+}
+.erate-memo-section {
+  padding:20px 48px 0;
+}
+.erate-memo-section .erate-memo-label {
+  font-family:'Segoe UI',Arial,Helvetica,sans-serif; font-size:14px; font-weight:400; letter-spacing:1px;
+  color:#333; margin-bottom:12px;
+}
+.erate-memo-section .erate-memo-date {
+  font-size:13px; color:#555; margin-bottom:16px;
+}
+.erate-memo-section .erate-memo-fields {
+  font-size:13px; color:#333; margin-bottom:16px; line-height:2;
+}
+.erate-memo-section .erate-memo-fields strong {
+  font-weight:700; display:inline-block; width:80px;
+}
+.erate-memo-section .erate-memo-fields .erate-field-value {
+  font-weight:400;
+}
+.erate-memo-hr {
+  border:none; border-top:1px solid #ccc; margin:0 48px 20px;
+}
+.erate-cover-letter .erate-letter-body {
+  padding:0 48px; text-align:justify;
+}
+.erate-cover-letter .erate-letter-body p { margin-bottom:14px; color:#333; }
+.erate-cover-letter .erate-letter-sig {
+  padding:0 48px 8px; margin-top:20px; font-weight:600; font-family:'Segoe UI',Arial,Helvetica,sans-serif;
+}
+.erate-cover-letter .erate-letter-footer {
+  text-align:center; padding:16px 48px; border-top:1px solid #eee; margin-top:24px;
+  font-family:'Segoe UI',Arial,Helvetica,sans-serif; font-size:11px; color:#aaa;
+}
 .erate-product-table { width:100%; border-collapse:collapse; margin-bottom:20px; }
 .erate-product-table th {
   background:var(--accent); color:#fff; padding:10px 14px; text-align:left; font-size:12px;
@@ -999,7 +1041,7 @@ body.mark-mode .main { filter:brightness(var(--mm-bright,1)) contrast(var(--mm-c
   #view-erate470 .erate-print-btn,
   #view-erate470 .tab-bar { display:none !important; }
   #view-erate470 .tab-panel { display:block !important; page-break-inside:avoid; margin-bottom:20px; }
-  #view-erate470 .erate-cover-letter { border:none; padding:0; }
+  #view-erate470 .erate-cover-letter { border:none; padding:0; background:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   #view-erate470 .erate-product-table th { background:#333 !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   #view-erate470 .erate-rfp-zone { display:none !important; }
   #view-erate470 .erate-rfp-req-table th { background:#333 !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
@@ -15532,12 +15574,36 @@ function renderErate470Package(data, formData) {
   var today = new Date();
   var dateStr = today.toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
 
-  // --- Cover Letter ---
+  // --- Cover Letter (Extreme Executive Letterhead) ---
   var coverHtml = '<div class="erate-cover-letter">';
-  coverHtml += '<div class="erate-letter-header">';
-  coverHtml += '<div class="erate-letter-date">' + dateStr + '</div>';
-  coverHtml += '<div class="erate-letter-to"><strong>' + formData.applicant + '</strong><br>Re: E-Rate Funding Year ' + formData.fundingYear + ' &mdash; Form 470 Response</div>';
+
+  // Letterhead
+  coverHtml += '<div class="erate-letterhead">';
+  coverHtml += '<div class="erate-logo-mark"><svg viewBox="0 0 80 90" fill="none" xmlns="http://www.w3.org/2000/svg">';
+  coverHtml += '<rect x="8" y="0" width="64" height="14" rx="2" fill="#5D2FBA"/>';
+  coverHtml += '<rect x="8" y="19" width="40" height="14" rx="2" fill="#5D2FBA"/>';
+  coverHtml += '<rect x="8" y="38" width="52" height="14" rx="2" fill="#5D2FBA"/>';
+  coverHtml += '<rect x="8" y="57" width="40" height="14" rx="2" fill="#5D2FBA"/>';
+  coverHtml += '<rect x="8" y="76" width="64" height="14" rx="2" fill="#5D2FBA"/>';
+  coverHtml += '</svg></div>';
+  coverHtml += '<div class="erate-company-name">E X T R E M E &nbsp; N E T W O R K S</div>';
+  coverHtml += '<div class="erate-dept-name">Office of E-Rate Programs</div>';
   coverHtml += '</div>';
+
+  // Memo fields
+  coverHtml += '<div class="erate-memo-section">';
+  coverHtml += '<div class="erate-memo-label">MEMORANDUM</div>';
+  coverHtml += '<div class="erate-memo-date">' + dateStr + '</div>';
+  coverHtml += '<div class="erate-memo-fields">';
+  coverHtml += '<div><strong>TO:</strong> <span class="erate-field-value">' + formData.applicant.toUpperCase() + ', E-RATE REVIEW COMMITTEE</span></div>';
+  coverHtml += '<div><strong>FROM:</strong> <span class="erate-field-value">' + formData.partner.toUpperCase() + '</span></div>';
+  coverHtml += '<div><strong>SUBJECT:</strong> <span class="erate-field-value">E-Rate Funding Year ' + formData.fundingYear + ' &mdash; Form 470 Response (' + formData.sites + ' Sites)</span></div>';
+  coverHtml += '</div></div>';
+
+  // Horizontal rule
+  coverHtml += '<hr class="erate-memo-hr">';
+
+  // Body
   coverHtml += '<div class="erate-letter-body">';
   if(data.coverLetterBody) {
     var paragraphs = data.coverLetterBody.split('\\n');
@@ -15547,12 +15613,20 @@ function renderErate470Package(data, formData) {
   } else {
     coverHtml += '<p>Dear ' + formData.applicant + ' E-Rate Review Committee,</p>';
     coverHtml += '<p>' + formData.partner + ' is pleased to submit this response to your FCC Form 470 for E-Rate Funding Year ' + formData.fundingYear + '. We have carefully reviewed your requirements and are confident that Extreme Networks provides the most cost-effective, reliable, and E-Rate-compliant solution for your ' + formData.sites + ' site(s).</p>';
-    coverHtml += '<p>Extreme Networks has deployed networking infrastructure in over 16,000 schools worldwide, with E-Rate Category 2 eligible products that include ENERGY STAR certified access points, PoE+ switches, and cloud management — all designed for the unique demands of the K-12 environment.</p>';
+    coverHtml += '<p>Extreme Networks has deployed networking infrastructure in over 16,000 schools worldwide, with E-Rate Category 2 eligible products that include ENERGY STAR certified access points, PoE+ switches, and cloud management &mdash; all designed for the unique demands of the K-12 environment.</p>';
   }
   coverHtml += '</div>';
+
+  // Signature
   coverHtml += '<div class="erate-letter-sig">';
-  coverHtml += formData.partner + '<br><span style="font-weight:normal;color:var(--text-dim)">Authorized Extreme Networks E-Rate Partner</span>';
-  coverHtml += '</div></div>';
+  coverHtml += 'Respectfully,<br><br>';
+  coverHtml += '<strong>' + formData.partner + '</strong><br>';
+  coverHtml += '<span style="font-weight:normal;color:#888;font-size:13px">Authorized Extreme Networks E-Rate Partner</span>';
+  coverHtml += '</div>';
+
+  // Footer
+  coverHtml += '<div class="erate-letter-footer">Extreme Networks, Inc. &bull; 6480 Via Del Oro, San Jose, CA 95119 &bull; extremenetworks.com</div>';
+  coverHtml += '</div>';
   document.getElementById('erate470-cover').innerHTML = coverHtml;
 
   // --- Products ---
@@ -15867,19 +15941,102 @@ function downloadErate470Zip() {
   // 1. Cover Letter PDF
   var coverEl = document.getElementById('erate470-cover');
   if(coverEl && coverEl.innerHTML.trim()) {
-    var coverPdf = erateCreatePdf('Cover Letter', function(doc, h) {
+    var coverPdf = (function() {
+      var jsPDF = window.jspdf.jsPDF;
+      var doc = new jsPDF({unit:'mm', format:'letter'});
+      var pageW = doc.internal.pageSize.getWidth();
+      var m = 24;
+      var usable = pageW - m * 2;
+      var y = 20;
+      var cx = pageW / 2;
+
+      function checkPage(need) { if(y + need > 254) { doc.addPage(); addFooter(doc.internal.getNumberOfPages()); y = 20; } }
+
+      // --- Extreme "E" logo (5 purple bars) ---
+      var barW = 28, barH = 5.5, gap = 2.5;
+      var logoX = cx - barW/2;
+      doc.setFillColor(93,47,186);
+      doc.rect(logoX, y, barW, barH, 'F');
+      doc.rect(logoX, y + barH + gap, barW * 0.63, barH, 'F');
+      doc.rect(logoX, y + (barH + gap) * 2, barW * 0.82, barH, 'F');
+      doc.rect(logoX, y + (barH + gap) * 3, barW * 0.63, barH, 'F');
+      doc.rect(logoX, y + (barH + gap) * 4, barW, barH, 'F');
+      y += (barH + gap) * 5 + 4;
+
+      // Company name
+      doc.setFontSize(13); doc.setFont('helvetica','normal'); doc.setTextColor(93,47,186);
+      doc.text('E X T R E M E    N E T W O R K S', cx, y, {align:'center'});
+      y += 6;
+      doc.setFontSize(9); doc.setTextColor(140,140,140);
+      doc.text('Office of E-Rate Programs', cx, y, {align:'center'});
+      y += 12;
+
+      // MEMORANDUM
+      doc.setFontSize(11); doc.setFont('helvetica','normal'); doc.setTextColor(50,50,50);
+      doc.text('MEMORANDUM', m, y); y += 8;
+
+      // Date
       var letterEl = coverEl.querySelector('.erate-cover-letter');
-      if(!letterEl) return;
-      var dateEl = letterEl.querySelector('.erate-letter-date');
-      if(dateEl) { h.bodyText(dateEl.textContent); h.spacer(2); }
-      var toEl = letterEl.querySelector('.erate-letter-to');
-      if(toEl) { h.bodyText(toEl.textContent); h.spacer(4); }
-      var bodyEl = letterEl.querySelector('.erate-letter-body');
-      if(bodyEl) { bodyEl.querySelectorAll('p').forEach(function(p) { h.bodyText(p.textContent); }); }
-      h.spacer(8);
-      var sigEl = letterEl.querySelector('.erate-letter-sig');
-      if(sigEl) { h.subheading(sigEl.textContent); }
-    });
+      var dateEl = letterEl ? letterEl.querySelector('.erate-memo-date') : null;
+      doc.setFontSize(10); doc.setTextColor(80,80,80);
+      doc.text(dateEl ? dateEl.textContent.trim() : new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}), m, y);
+      y += 10;
+
+      // TO / FROM / SUBJECT
+      var fieldsEl = letterEl ? letterEl.querySelector('.erate-memo-fields') : null;
+      if(fieldsEl) {
+        var fieldDivs = fieldsEl.querySelectorAll('div');
+        doc.setFontSize(10);
+        fieldDivs.forEach(function(div) {
+          var strong = div.querySelector('strong');
+          var val = div.querySelector('.erate-field-value');
+          if(strong && val) {
+            doc.setFont('helvetica','bold'); doc.setTextColor(50,50,50);
+            doc.text(strong.textContent.trim(), m, y);
+            doc.setFont('helvetica','normal'); doc.setTextColor(60,60,60);
+            doc.text(val.textContent.trim(), m + 22, y);
+            y += 6;
+          }
+        });
+      }
+      y += 4;
+
+      // HR
+      doc.setDrawColor(190); doc.line(m, y, pageW - m, y); y += 8;
+
+      // Body
+      var bodyEl = letterEl ? letterEl.querySelector('.erate-letter-body') : null;
+      doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(50,50,50);
+      if(bodyEl) {
+        bodyEl.querySelectorAll('p').forEach(function(p) {
+          var lines = doc.splitTextToSize(p.textContent, usable);
+          checkPage(lines.length * 5 + 4);
+          doc.text(lines, m, y, {align:'justify', maxWidth:usable});
+          y += lines.length * 5 + 4;
+        });
+      }
+
+      // Signature
+      y += 6;
+      checkPage(24);
+      doc.setFontSize(10); doc.setTextColor(50,50,50);
+      doc.text('Respectfully,', m, y); y += 10;
+      var sigEl = letterEl ? letterEl.querySelector('.erate-letter-sig strong') : null;
+      doc.setFont('helvetica','bold');
+      doc.text(sigEl ? sigEl.textContent.trim() : '', m, y); y += 5;
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(120,120,120);
+      doc.text('Authorized Extreme Networks E-Rate Partner', m, y);
+
+      // Footer on each page
+      function addFooter(pg) {
+        doc.setPage(pg);
+        doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(160,160,160);
+        doc.text('Extreme Networks, Inc.  \u2022  6480 Via Del Oro, San Jose, CA 95119  \u2022  extremenetworks.com', cx, 266, {align:'center'});
+      }
+      var totalPages = doc.internal.getNumberOfPages();
+      for(var pg = 1; pg <= totalPages; pg++) addFooter(pg);
+      return doc.output('arraybuffer');
+    })();
     folder.file('01_Cover_Letter.pdf', coverPdf);
   }
 
