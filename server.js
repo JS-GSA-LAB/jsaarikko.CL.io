@@ -15579,12 +15579,8 @@ function renderErate470Package(data, formData) {
 
   // Letterhead
   coverHtml += '<div class="erate-letterhead">';
-  coverHtml += '<div class="erate-logo-mark"><svg viewBox="0 0 80 90" fill="none" xmlns="http://www.w3.org/2000/svg">';
-  coverHtml += '<rect x="8" y="0" width="64" height="14" rx="2" fill="#5D2FBA"/>';
-  coverHtml += '<rect x="8" y="19" width="40" height="14" rx="2" fill="#5D2FBA"/>';
-  coverHtml += '<rect x="8" y="38" width="52" height="14" rx="2" fill="#5D2FBA"/>';
-  coverHtml += '<rect x="8" y="57" width="40" height="14" rx="2" fill="#5D2FBA"/>';
-  coverHtml += '<rect x="8" y="76" width="64" height="14" rx="2" fill="#5D2FBA"/>';
+  coverHtml += '<div class="erate-logo-mark"><svg viewBox="0 0 80 88" xmlns="http://www.w3.org/2000/svg">';
+  coverHtml += '<path d="M0,0 H80 V16 H22 V34 H54 V52 H22 V70 H80 V88 H0 Z" fill="#5D2FBA"/>';
   coverHtml += '</svg></div>';
   coverHtml += '<div class="erate-company-name">E X T R E M E &nbsp; N E T W O R K S</div>';
   coverHtml += '<div class="erate-dept-name">Office of E-Rate Programs</div>';
@@ -15952,16 +15948,16 @@ function downloadErate470Zip() {
 
       function checkPage(need) { if(y + need > 254) { doc.addPage(); addFooter(doc.internal.getNumberOfPages()); y = 20; } }
 
-      // --- Extreme "E" logo (5 purple bars) ---
-      var barW = 28, barH = 5.5, gap = 2.5;
-      var logoX = cx - barW/2;
+      // --- Extreme "E" block logo ---
+      var logoW = 26, logoH = 30;
+      var logoX = cx - logoW/2;
+      var armH = 5.5, gapH = 4.2, vertW = 7.2, midW = logoW * 0.67;
       doc.setFillColor(93,47,186);
-      doc.rect(logoX, y, barW, barH, 'F');
-      doc.rect(logoX, y + barH + gap, barW * 0.63, barH, 'F');
-      doc.rect(logoX, y + (barH + gap) * 2, barW * 0.82, barH, 'F');
-      doc.rect(logoX, y + (barH + gap) * 3, barW * 0.63, barH, 'F');
-      doc.rect(logoX, y + (barH + gap) * 4, barW, barH, 'F');
-      y += (barH + gap) * 5 + 4;
+      doc.rect(logoX, y, vertW, logoH, 'F');
+      doc.rect(logoX, y, logoW, armH, 'F');
+      doc.rect(logoX, y + armH + gapH, midW, armH, 'F');
+      doc.rect(logoX, y + (armH + gapH) * 2, logoW, armH, 'F');
+      y += logoH + 4;
 
       // Company name
       doc.setFontSize(13); doc.setFont('helvetica','normal'); doc.setTextColor(93,47,186);
