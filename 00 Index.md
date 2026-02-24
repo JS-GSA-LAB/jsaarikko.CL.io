@@ -32,12 +32,16 @@ tags: [index, moc]
 - [[SD-WAN]]
 - [[Management]]
 
+## Strategy
+- [[Top 5 Differentiators]]
+
 ## Cost Analysis
 - [[TCO Comparison]]
 - [[Value Scores]]
 - [[Licensing Models]]
 - [[Cloud Licensing]]
 - [[Hidden Costs]]
+- [[MSP Programs]]
 
 ## Certifications
 - [[Cloud Certifications]]
