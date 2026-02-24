@@ -22,6 +22,23 @@ function getAnthropicClient() {
   return new Anthropic({ apiKey: key });
 }
 
+async function callWithRetry(client, params, maxRetries = 3) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await client.messages.create(params);
+    } catch (err) {
+      const status = err.status || err.statusCode || 0;
+      if ((status === 529 || status === 429 || status >= 500) && attempt < maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, attempt) + Math.random() * 500, 15000);
+        console.log('API ' + status + ' on attempt ' + (attempt+1) + ', retrying in ' + Math.round(delay) + 'ms...');
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 const HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16242,7 +16259,7 @@ app.post('/api/analyze', upload.single('file'), async (req, res) => {
     }
 
     const client = getAnthropicClient();
-    const response = await client.messages.create({
+    const response = await callWithRetry(client, {
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
       messages: [{ role: 'user', content }]
@@ -16361,7 +16378,7 @@ Be thorough — capture EVERY requirement from the RFP. Use "exceeds" when Extre
     }
 
     const client = getAnthropicClient();
-    const response = await client.messages.create({
+    const response = await callWithRetry(client, {
       model: 'claude-sonnet-4-6',
       max_tokens: hasRfp ? 16384 : 8192,
       messages: [{ role: 'user', content }]
