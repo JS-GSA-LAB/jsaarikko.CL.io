@@ -22,7 +22,7 @@ The global gold standard for information security management. Required by most e
 Extends ISO 27001 with cloud-specific security controls covering shared responsibility, data segregation, and virtualization security. Critical for enterprises evaluating cloud-managed networking where sensitive traffic metadata flows to the cloud.
 
 > [!tip] Extreme Networks Differentiator
-> Extreme is the ONLY cloud networking vendor with ISO 27017 certification — a key differentiator for cloud security-conscious customers.
+> Extreme is one of only three cloud networking vendors with ISO 27017 certification (alongside Meraki and ALE) — a key differentiator vs the majority of competitors who lack cloud-specific security controls.
 
 ---
 
@@ -32,7 +32,7 @@ Extends ISO 27001 with cloud-specific security controls covering shared responsi
 
 Establishes controls for protecting Personally Identifiable Information (PII) in public cloud environments. Based on ISO 27002 with additional cloud privacy controls, it addresses data processor obligations including consent, transparency, data portability, and sub-processor oversight. Critical for enterprises routing user traffic metadata through cloud-managed networking platforms.
 
-> **Extreme Networks:** Extreme does not currently hold ISO 27018. ALE (Alcatel-Lucent Enterprise) is the only networking vendor with this certification via their OpenRainbow cloud platform.
+> **Extreme Networks:** Extreme does not currently hold ISO 27018. Meraki and ALE hold this certification — ALE via OpenRainbow/OmniVista Cirrus, Meraki via Cisco's cloud platform.
 
 ---
 
