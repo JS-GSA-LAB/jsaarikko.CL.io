@@ -11,10 +11,14 @@
             "id": "fad66b78172f48ea",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "type": "markdown",
+              "state": {
+                "file": "NASPO Public Sector/State Contracts Matrix.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "State Contracts Matrix"
             }
           }
         ]
@@ -211,6 +215,7 @@
   },
   "active": "fad66b78172f48ea",
   "lastOpenFiles": [
+    "Competitive-Dashboard/Competitive-Dashboard/naspo-map.png",
     "NASPO Public Sector/State Contracts Matrix.md",
     "NASPO Public Sector",
     "Competitive-Dashboard/Top 5 Differentiators.md",
