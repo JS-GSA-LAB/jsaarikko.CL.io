@@ -51,12 +51,12 @@ See also: [[Compliance Verticals]]
 
 ## 4. Universal HW + Licensing
 
-Platform ONE delivers full-portfolio universal hardware and licensing with no bricking, a free tier, and the lowest lock-in in the industry. Cisco's CW-series APs now offer Meraki-vs-Catalyst mode flexibility, but only for wireless — switches remain separate product lines and Meraki-mode devices still brick without license.
+Platform ONE delivers universal licensing with no hardware bricking, a free tier, and the lowest lock-in in the industry. Same AP and switch hardware works cloud, on-prem, or hybrid — customers choose and can switch at any time. Cisco now offers Catalyst-vs-Meraki mode flexibility on CW-series APs and Catalyst 9300/9200/9500H switches, but Meraki-mode devices still brick without license, Meraki MS switches cannot migrate to Catalyst Center, and no Cisco option works license-free.
 
-- **Full-Portfolio Universal HW** — APs *and* switches work cloud, on-prem, or hybrid. Cisco's CW-series covers APs only; switches are still siloed
-- **Free Tier** — XIQ Connect provides cloud management at no cost
-- **No Bricking** — Hardware fully functional without active license. Cisco CW APs under Meraki management still shut down 30 days after license expiry
-- **Low Lock-In** — Export configs, switch management modes, keep your hardware
+- **License-Free Operation** — Hardware fully functional without any active license. Cisco Catalyst/Meraki mode flexibility still requires DNA or Meraki licensing; Meraki mode bricks 30 days after expiry
+- **Free Tier** — XIQ Connect provides cloud management at no cost — no Cisco equivalent
+- **True 3-Mode Flexibility** — Cloud, on-prem (XIQ-SE), or hybrid on the same hardware. Cisco offers Catalyst Center vs Meraki Dashboard but not a true on-prem-equivalent third option
+- **Low Lock-In** — Export configs, switch management modes, keep your hardware. Meraki MS switches still cannot migrate to Catalyst Center (one-way only)
 - **Consumption Billing** — Subscription, perpetual, or consumption-based pricing options
 
 See also: [[Licensing Models]] · [[Cloud Licensing]] · [[Hidden Costs]] · [[MSP Programs]]
