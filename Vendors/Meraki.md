@@ -87,10 +87,11 @@ tags: [vendor]
 - **Model:** Mandatory Subscription (All-in)
 - **Mandatory:** Yes
 - **Free Tier:** No
-- **Hardware Works Without License:** No
+- **Hardware Works Without License:** No (Meraki MS bricks; Catalyst in Meraki mode degrades)
 - **Tiers:** Enterprise ($150-500/dev/yr) — single tier, all-in
-- **Lock-In:** Very High — Hardware completely non-functional without active license. Cloud-only — no on-prem escape hatch.
-- **Exit Cost:** Very High — 100% hardware forklift required. Zero residual value from Meraki hardware. Full network redesign needed.
+- **Dual-Mode (Catalyst only):** Catalyst 9300/9200/9500H in Meraki mode can migrate back to Catalyst Center (DNA mode). Native Meraki MS switches cannot.
+- **Lock-In:** Very High — Meraki MS switches completely non-functional without active license. Cloud-only, no on-prem escape. Catalyst switches in Meraki mode can revert to DNA mode.
+- **Exit Cost:** Very High — Meraki MS: 100% forklift, zero residual value. Catalyst in Meraki mode: can revert to DNA, reducing stranded assets within Cisco. Full redesign still needed to exit Cisco.
 
 ## TCO Summary
 

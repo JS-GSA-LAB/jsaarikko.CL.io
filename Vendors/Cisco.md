@@ -83,12 +83,13 @@ tags: [vendor]
 
 ## Licensing
 
-- **Model:** Mandatory Subscription (DNA)
+- **Model:** Mandatory Subscription (DNA / MSLA)
 - **Mandatory:** Yes
 - **Free Tier:** No
-- **Hardware Works Without License:** No
-- **Tiers:** DNA Essentials (~$100/dev/yr) → DNA Advantage (~$175-450/dev/yr) → DNA Premier
-- **Lock-In:** High — DNA license required for full functionality. Features degrade without active subscription. Proprietary protocols.
+- **Hardware Works Without License:** No (features degrade without DNA or Meraki subscription)
+- **Tiers:** DNA Essentials (~$100/dev/yr) → DNA Advantage (~$175-450/dev/yr) → DNA Premier. MSLA monthly uncommitted option.
+- **Dual-Mode Hardware:** Catalyst 9300/9200/9500H and CW-series APs can switch between Catalyst Center and Meraki Dashboard modes. Still requires a license in either mode.
+- **Lock-In:** High — DNA license required for full functionality. Dual-mode flexibility reduces hardware stranding within Cisco ecosystem but does not help exiting Cisco. Proprietary protocols (ISE, TrustSec, SD-Access).
 - **Exit Cost:** High — Significant migration effort. DNA/ISE/SD-Access deeply integrated. Retraining costs for new platform.
 
 ## TCO Summary

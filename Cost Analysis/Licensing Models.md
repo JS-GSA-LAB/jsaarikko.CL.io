@@ -6,8 +6,8 @@ tags: [cost-analysis]
 | Vendor | Model | Mandatory | Free Tier | HW Works Without | Lock-In | Exit Cost |
 |--------|-------|-----------|-----------|------------------|---------|-----------|
 | [[Extreme Networks]] | Platform ONE / XIQ Subscription | No | Yes (Connect) | Yes | Low | Low |
-| [[Cisco]] | Mandatory Subscription (DNA) | Yes | No | Partial | High | High |
-| [[Meraki]] | Mandatory Subscription (All-in) | Yes | No | No | Very High | Very High |
+| [[Cisco]] | Mandatory Subscription (DNA / MSLA) | Yes | No | Partial | High | High |
+| [[Meraki]] | Mandatory Subscription (All-in) | Yes | No | No (MS) / Partial (Cat in Meraki mode) | Very High | Very High |
 | [[Aruba]] | Central Foundation / Advanced | Yes | No | Yes | Medium | Medium |
 | [[Juniper - Mist]] | Assurance Subscriptions | Yes | No | Yes | Medium | Medium |
 | [[Fortinet]] | FortiGuard Bundles (Gateway-only) | No | No | Yes | Medium-High | Medium |
@@ -36,16 +36,18 @@ tags: [cost-analysis]
 - **Exit Cost:** Low — No hardware bricking. Export configs and migrate. Universal hardware reduces stranded assets.
 - **Source:** ExtremeCloud IQ v25.6.0 Licensing Guide
 
-### Cisco (Catalyst / DNA)
+### Cisco (Catalyst / DNA / MSLA)
 
-- **Model:** Mandatory Subscription (DNA)
+- **Model:** Mandatory Subscription (DNA / MSLA)
 - **Tiers:**
   - **DNA Essentials** (~$92/AP/yr wireless, ~$165/yr switching annualized from 3yr) — Base management, monitoring, automation
   - **DNA Advantage** (~$400-500/device/yr) — AI Analytics, Cisco AI Network Analytics, Assurance features
   - **DNA Premier** — Being discontinued; replaced by Catalyst Software Subscription (DNX)
+  - **MSLA** — Monthly uncommitted post-paid option; poolable across customers
 - **Catalyst Software Subscription (DNX):** New unified licensing replacing DNA — covers switching + wireless + SD-WAN
 - **SLP (Smart Licensing with Policy):** All Cisco IOS XE 17.3.2+ devices use policy-based licensing with Cisco Smart Account
-- **Lock-In:** High — DNA license required for full functionality. Features degrade without active subscription. Proprietary protocols.
+- **Dual-Mode Hardware:** Catalyst 9300/9200/9500H switches and CW-series APs can switch between Catalyst Center (DNA) and Meraki Dashboard management modes. Still requires a license in either mode.
+- **Lock-In:** High — DNA license required for full functionality. Features degrade without active subscription. Dual-mode flexibility reduces hardware stranding within Cisco ecosystem but does not help exiting Cisco. Proprietary protocols (ISE, TrustSec, SD-Access).
 - **Exit Cost:** High — Significant migration effort. DNA/ISE/SD-Access deeply integrated. Retraining costs for new platform.
 
 ### Meraki
@@ -54,10 +56,11 @@ tags: [cost-analysis]
 - **Tiers:**
   - **Enterprise** ($119-500/device/yr) — Single tier, all features included
   - APs: ~$119/AP/yr, Switches: ~$73/yr, MX Security: ~$249/yr
-- **CW (Catalyst Wireless):** New unified platform — CW9164/CW9176I/CW9178I hardware runs under either Meraki cloud or Catalyst/DNA management
-- **Critical:** Hardware ceases to pass ALL traffic upon license expiration. Zero functionality without active license.
-- **Lock-In:** Very High — Cloud-only, no on-prem escape hatch.
-- **Exit Cost:** Very High — 100% hardware forklift required. Zero residual value. Full network redesign needed.
+- **CW (Catalyst Wireless):** CW9164/CW9176I/CW9178I hardware runs under either Meraki cloud or Catalyst/DNA management
+- **Catalyst Switches in Meraki Mode:** Catalyst 9300/9200/9500H can be managed via Meraki Dashboard and can migrate back to Catalyst Center (DNA mode) — reducing lock-in for those specific models
+- **Meraki MS Switches:** Native Meraki MS hardware ceases to pass ALL traffic upon license expiration. Zero functionality without active license. Cannot migrate to Catalyst Center.
+- **Lock-In:** Very High — Meraki MS switches: cloud-only, no on-prem escape hatch. Catalyst switches in Meraki mode can revert to DNA mode (one-way flexibility).
+- **Exit Cost:** Very High — Meraki MS: 100% hardware forklift required, zero residual value. Catalyst in Meraki mode: can revert to DNA, reducing stranded assets within Cisco ecosystem. Full network redesign still needed to exit Cisco entirely.
 
 ### Aruba (HPE)
 
