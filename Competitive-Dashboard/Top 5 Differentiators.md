@@ -7,11 +7,11 @@ Extreme Networks' five key competitive advantages — backed by data from the Co
 
 ---
 
-## 1. Cloud Certification
+## 1. Privacy Certification
 
-[[Extreme Networks]] holds the industry's most comprehensive cloud security certification portfolio.
+[[Extreme Networks]] is the only enterprise networking vendor to hold ISO 27701 Privacy Information Management certification.
 
-- **ISO 27701** — Only cloud networking vendor with Privacy Information Management certification (GDPR/CCPA aligned)
+- **ISO 27701** — Only networking vendor with Privacy Information Management certification (GDPR/CCPA aligned)
 - **ISO 42001** — First and only networking vendor pursuing AI Management System certification for CoPilot
 - **ISO 27017** — Cloud-specific security controls held by very few competitors
 - **SOC 2 Type II + CSA STAR** — Full trust assurance coverage
@@ -21,7 +21,7 @@ See also: [[Cloud Certifications]] · [[Product Certifications]] · [[Why Certs 
 
 ---
 
-## 2. Fabric
+## 2. Fabric Connect
 
 Fabric Connect (IEEE 802.1aq SPB) is a native, no-overlay campus fabric.
 
@@ -35,45 +35,45 @@ See also: [[Fabric Compare]]
 
 ---
 
-## 3. Products
+## 3. ENERGY STAR Sustainability
 
-Universal Hardware architecture, CoPilot AI, Digital Twin, and integrated SD-WAN/UZTNA.
+36 ENERGY STAR certified switch models — more than all other vendors combined.
 
-- **Universal Hardware** — Same AP/switch works cloud, on-prem, or hybrid without swap
-- **CoPilot AI** — AI-driven network insights and natural language troubleshooting
-- **Digital Twin** — Full pre-deployment network validation and what-if scenarios
-- **SD-WAN + UZTNA** — Integrated without additional appliances
-- **AI Expert + AI Exchange** — Next-gen AI ecosystem for network operations
+- **36 ENERGY STAR Models** — More certified switches than all competitors combined
+- **80 PLUS Platinum PSUs** — Industry-leading power supply efficiency across enterprise switches
+- **Lowest Wi-Fi 7 AP Power** — AP5020 draws just 21W typical, the lowest of any enterprise Wi-Fi 7 AP
+- **Federal EO 14057** — Meets US Federal sustainability procurement mandates
+- **EU Green Procurement** — Qualified for sustainability-scored enterprise and public-sector RFPs
 
-See also: [[Wireless]] · [[Switching]] · [[SD-WAN]] · [[Management]]
-
----
-
-## 4. Security
-
-Broadest product security certifications with natively integrated security features.
-
-- **FIPS 140-2 Validated** — Cryptographic module validation across switching portfolio
-- **Common Criteria (NDcPP)** — International security evaluation for defense/government
-- **WPA3 + MACsec** — Latest wireless and wired encryption on all platforms
-- **Integrated NAC** — ExtremeControl built-in, not a separate purchase (unlike Cisco ISE)
-- **WIPS + PPSK** — AI-driven wireless intrusion prevention and unlimited private pre-shared keys
-
-See also: [[Product Certifications]] · [[Compliance Verticals]]
+See also: [[Compliance Verticals]]
 
 ---
 
-## 5. Licensing
+## 4. Universal HW + Licensing
 
-Platform ONE universal licensing with no hardware bricking and lowest vendor lock-in.
+Platform ONE delivers full-portfolio universal hardware and licensing with no bricking, a free tier, and the lowest lock-in in the industry. Cisco's CW-series APs now offer Meraki-vs-Catalyst mode flexibility, but only for wireless — switches remain separate product lines and Meraki-mode devices still brick without license.
 
+- **Full-Portfolio Universal HW** — APs *and* switches work cloud, on-prem, or hybrid. Cisco's CW-series covers APs only; switches are still siloed
 - **Free Tier** — XIQ Connect provides cloud management at no cost
-- **No Bricking** — Hardware fully functional without active license (unlike Meraki/Cisco)
-- **Universal Model** — Subscription, perpetual, or consumption-based pricing
+- **No Bricking** — Hardware fully functional without active license. Cisco CW APs under Meraki management still shut down 30 days after license expiry
 - **Low Lock-In** — Export configs, switch management modes, keep your hardware
-- **90-Day Trial** — Full-featured trial without commitment
+- **Consumption Billing** — Subscription, perpetual, or consumption-based pricing options
 
 See also: [[Licensing Models]] · [[Cloud Licensing]] · [[Hidden Costs]] · [[MSP Programs]]
+
+---
+
+## 5. CoPilot AI
+
+ExtremeCloud IQ CoPilot is the industry's most comprehensive AI assistant for networking — spanning network operations, security, procurement, and compliance.
+
+- **Cross-Domain AI** — Covers network, security, procurement, and compliance in a single assistant
+- **Multimodal AI Canvas** — Natural-language driven visualization and analysis
+- **Autonomous AI Agents** — Advisor, Service, Validation, and Health agents work independently
+- **Digital Twin** — Full pre-deployment network validation and what-if scenarios
+- **AI Knowledge Scope** — Docs, CVEs, training materials, and third-party integrations
+
+See also: [[Management]]
 
 ---
 
@@ -81,11 +81,11 @@ See also: [[Licensing Models]] · [[Cloud Licensing]] · [[Hidden Costs]] · [[M
 
 | Differentiator | Key Metric | Detail |
 |---------------|------------|--------|
-| Cloud Certification | Certs held or in progress | Most comprehensive cloud cert portfolio in networking |
-| Fabric | Score across 21 aspects | Highest fabric score — no-overlay, IS-IS only |
-| Products | Features rated 4/4 | Most top-rated features across wireless/switching/mgmt |
-| Security | Product certs achieved | Broadest security cert coverage + integrated features |
-| Licensing | 5/5 favorable attributes | Only vendor with no mandatory sub, free tier, no bricking, consumption option, low lock-in |
+| Privacy Certification | 3/3 exclusive privacy certs | ISO 27701 / 42001 / 27017 — exclusive or near-exclusive certifications |
+| Fabric Connect | 82% of max across 20 aspects | Highest fabric score — no-overlay, IS-IS only |
+| ENERGY STAR | 36 certified switch models | More ENERGY STAR models than all other vendors combined |
+| Universal HW + Licensing | 5/5 favorable attributes | No mandatory sub, free tier, no bricking, consumption option, low lock-in |
+| CoPilot AI | 8 AI features rated 4/4 | Most top-rated AI features across all vendors |
 
 ---
 
