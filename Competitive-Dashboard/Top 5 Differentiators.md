@@ -63,15 +63,15 @@ See also: [[Licensing Models]] · [[Cloud Licensing]] · [[Hidden Costs]] · [[M
 
 ---
 
-## 5. CoPilot AI
+## 5. CoPilot & AI Expert (Platform ONE)
 
-ExtremeCloud IQ CoPilot is the industry's most comprehensive AI assistant for networking — spanning network operations, security, procurement, and compliance.
+Extreme Platform ONE combines CoPilot (AIOps and Digital Twin) with AI Expert — the industry's first networking platform with conversational, multimodal, and agentic AI in a single solution. CoPilot handles anomaly detection and natural-language troubleshooting; AI Expert adds multimodal canvas, autonomous agents, and cross-domain intelligence.
 
-- **Cross-Domain AI** — Covers network, security, procurement, and compliance in a single assistant
-- **Multimodal AI Canvas** — Natural-language driven visualization and analysis
-- **Autonomous AI Agents** — Advisor, Service, Validation, and Health agents work independently
-- **Digital Twin** — Full pre-deployment network validation and what-if scenarios
-- **AI Knowledge Scope** — Docs, CVEs, training materials, and third-party integrations
+- **CoPilot AIOps** — Explainable ML-driven anomaly detection, proactive alerts, and natural-language troubleshooting across wired and wireless
+- **AI Expert Canvas** — Multimodal AI canvas generates real-time dashboards, shareable insights, and visual reports via natural language (Platform ONE)
+- **Autonomous AI Agents** — Service, Advisor, Validation, and Health agents with human-in-the-loop design — up to 98% faster resolution (Platform ONE)
+- **Digital Twin** — CoPilot's pre-deployment network validation — virtually stage devices before pushing to production
+- **Cross-Domain Scope** — AI Expert spans network ops, security, procurement, compliance, CVEs, and third-party integrations (Platform ONE)
 
 See also: [[Management]]
 
@@ -85,7 +85,7 @@ See also: [[Management]]
 | Fabric Connect | 82% of max across 20 aspects | Highest fabric score — no-overlay, IS-IS only |
 | ENERGY STAR | 36 certified switch models | More ENERGY STAR models than all other vendors combined |
 | Universal HW + Licensing | 5/5 favorable attributes | No mandatory sub, free tier, no bricking, consumption option, low lock-in |
-| CoPilot AI | 8 AI features rated 4/4 | Most top-rated AI features across all vendors |
+| CoPilot & AI Expert | 8 AI features rated 4/4 | Most top-rated AI features across all vendors |
 
 ---
 
