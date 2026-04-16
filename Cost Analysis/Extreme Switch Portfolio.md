@@ -4,6 +4,20 @@ Every Extreme switch with approximate MSRP and equivalents across 9 competitors:
 
 > **⚠️ Prices are estimates** (training data cutoff May 2025) — verify with current price lists before quoting externally.
 
+## Cambium-to-Extreme Migration Map
+
+These Extreme switches are validated drop-in replacements for specific Cambium cnMatrix SKUs from prior BOM review:
+
+| Cambium SKU | Cambium Model | Extreme Replacement | Why |
+|---|---|---|---|
+| MXEX3024FxFxA01 | EX3024F | **5120-24X-4Y** | 24× 10G SFP+ fiber agg, same role, ~40% cheaper than 5520-24X |
+| MXEX3052MxPA11 | EX3052RM-P | **4120-48MW-4Y** | 48× mGig PoE++ + 25G uplinks — exact functional match |
+| MX-EX2010PxA-U | EX2010-P | **5320-16P-4XE** | Closest small-port PoE access (16-port vs Cambium 8-port) |
+
+> AP mapping (not shown in switch portfolio): Cambium X7-55X → **Extreme AP5050U-1-WR**; Cambium XV2-23T → **AP410e-WR**.
+
+---
+
 ## Series Overview
 
 | Series | Role | Positioning |
