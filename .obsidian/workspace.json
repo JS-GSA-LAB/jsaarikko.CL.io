@@ -164,12 +164,42 @@
             "state": {
               "type": "juggl_nodes",
               "state": {},
+              "icon": "lucide-ghost",
+              "title": "juggl_nodes"
+            }
+          },
+          {
+            "id": "3c642060dcba093b",
+            "type": "leaf",
+            "state": {
+              "type": "juggl_style",
+              "state": {},
+              "icon": "lucide-ghost",
+              "title": "juggl_style"
+            }
+          },
+          {
+            "id": "21d6a72090803670",
+            "type": "leaf",
+            "state": {
+              "type": "git-view",
+              "state": {},
+              "icon": "lucide-ghost",
+              "title": "git-view"
+            }
+          },
+          {
+            "id": "a3735ebb2be50c9e",
+            "type": "leaf",
+            "state": {
+              "type": "juggl_nodes",
+              "state": {},
               "icon": "ag-node-list",
               "title": "Juggl nodes"
             }
           },
           {
-            "id": "3c642060dcba093b",
+            "id": "2ae6ced4d94fba78",
             "type": "leaf",
             "state": {
               "type": "juggl_style",
@@ -179,17 +209,27 @@
             }
           },
           {
-            "id": "21d6a72090803670",
+            "id": "bf036363f1503e54",
             "type": "leaf",
             "state": {
-              "type": "git-view",
+              "type": "BC-matrix",
               "state": {},
-              "icon": "git-pull-request",
-              "title": "Source Control"
+              "icon": "BC-trail-icon",
+              "title": "Breadcrumbs Matrix"
+            }
+          },
+          {
+            "id": "ff2a287f67a987e0",
+            "type": "leaf",
+            "state": {
+              "type": "BC-tree",
+              "state": {},
+              "icon": "feather-corner-right-down",
+              "title": "Breadcrumbs Down"
             }
           }
         ],
-        "currentTab": 7
+        "currentTab": 11
       }
     ],
     "direction": "horizontal",
@@ -198,7 +238,6 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "obsidian-git:Open Git source control": false,
       "switcher:Open quick switcher": false,
       "graph:Open graph view": false,
       "canvas:Create new canvas": false,
@@ -206,30 +245,33 @@
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
       "bases:Create new base": false,
-      "juggl:Juggl global graph": false
+      "juggl:Juggl global graph": false,
+      "obsidian-git:Open Git source control": false,
+      "breadcrumbs:Breadcrumbs Visualisation": false
     }
   },
   "active": "fad66b78172f48ea",
   "lastOpenFiles": [
+    "2026-02-23.md",
+    "Untitled.canvas",
+    "Untitled 2.canvas",
+    "Untitled 1.canvas",
+    "Battle Cards/vs Alcatel-Lucent.md",
+    "Categories/Management.md",
+    "Cost Analysis/Extreme Switch Portfolio.md",
     "Categories/Switching.md",
     "Competitive-Dashboard/Top 5 Differentiators.md",
     "Competitive-Dashboard/Competitive-Dashboard/naspo-map.png",
     "Categories/Wireless.md",
-    "Untitled 2.canvas",
     "NASPO Public Sector/State Contracts Matrix.md",
     "NASPO Public Sector",
     "Cost Analysis/MSP Programs.md",
-    "Untitled 1.canvas",
-    "Untitled.canvas",
-    "2026-02-23.md",
     "Products/EOS-EOL Database.md",
     "Cost Analysis/Cloud Licensing.md",
-    "Categories/Management.md",
     "Battle Cards/vs Arista.md",
     "Vendors/Juniper - Mist.md",
     "Replacements/Competitive Replacements.md",
     "Vendors/Alcatel-Lucent.md",
-    "Battle Cards/vs Alcatel-Lucent.md",
     "Battle Cards/vs Juniper - Mist.md",
     "Cost Analysis/TCO Comparison.md",
     "Compliance/Compliance Verticals.md",
