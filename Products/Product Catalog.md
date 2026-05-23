@@ -11,20 +11,20 @@ Full product catalog grouped by vendor and category.
 
 | Model | Tier | Use Case | List Price |
 |-------|------|----------|------------|
-| AP5020 | Wi-Fi 7 | Flagship Wi-Fi 7 high-density indoor | $2,399 |
-| AP4060 | Wi-Fi 7 | Wi-Fi 7 weatherized outdoor | $2,495 |
-| AP5010 | Wi-Fi 6E | High-performance Wi-Fi 6E indoor (4x4) | $1,999 |
-| AP4000 | Wi-Fi 6E | Enterprise Wi-Fi 6E tri-radio indoor | $1,249 |
-| AP3000 | Wi-Fi 6E | Value Wi-Fi 6E dual-radio indoor | $900 |
-| AP3000X | Wi-Fi 6E | Wi-Fi 6E extended-temp with external antennas | $1,150 |
-| AP5050U | Wi-Fi 6E | Wi-Fi 6E stadium / outdoor omni | $3,899 |
-| AP5050D | Wi-Fi 6E | Wi-Fi 6E stadium directional | $3,899 |
-| AP410C | Wi-Fi 6 | Tri-radio Wi-Fi 6 indoor (4x4 on 5 GHz) | $1,203 |
-| AP305C | Wi-Fi 6 | Compact Wi-Fi 6 value indoor | $709 |
-| AP305CX | Wi-Fi 6 | Compact Wi-Fi 6 with external antennas | $709 |
-| AP302W | Wi-Fi 6 | Wall-plate AP + switch for hospitality/MDU | $574 |
-| AP460C | Wi-Fi 6 | Tri-radio Wi-Fi 6 outdoor (4x4 on 5 GHz) | $1,481 |
-| AP360i | Wi-Fi 6 | Compact Wi-Fi 6 outdoor (IP67) | $1,261 |
+| AP5020 | Wi-Fi 7 | Flagship Wi-Fi 7 high-density indoor | $2,639 |
+| AP4060 | Wi-Fi 7 | Wi-Fi 7 weatherized outdoor | $2,199 |
+| AP5010 | Wi-Fi 6E | High-performance Wi-Fi 6E indoor (4x4) | $2,199 |
+| AP4000 | Wi-Fi 6E | Enterprise Wi-Fi 6E tri-radio indoor | $1,374 |
+| AP3000 | Wi-Fi 6E | Value Wi-Fi 6E dual-radio indoor | $714 |
+| AP3000X | Wi-Fi 6E | Wi-Fi 6E extended-temp with external antennas | $714 |
+| AP5050U | Wi-Fi 6E | Wi-Fi 6E stadium / outdoor omni | $4,587 |
+| AP5050D | Wi-Fi 6E | Wi-Fi 6E stadium directional | $5,881 |
+| AP410C | Wi-Fi 6 | Tri-radio Wi-Fi 6 indoor (4x4 on 5 GHz) | $1,533 |
+| AP305C | Wi-Fi 6 | Compact Wi-Fi 6 value indoor | $549 |
+| AP305CX | Wi-Fi 6 | Compact Wi-Fi 6 with external antennas | $549 |
+| AP302W | Wi-Fi 6 | Wall-plate AP + switch for hospitality/MDU | $527 |
+| AP460C | Wi-Fi 6 | Tri-radio Wi-Fi 6 outdoor (4x4 on 5 GHz) | $1,584 |
+| AP360i | Wi-Fi 6 | Compact Wi-Fi 6 outdoor (IP67) | $1,484 |
 
 <details><summary>AP5020 — Flagship Wi-Fi 7 high-density indoor</summary>
 
@@ -397,33 +397,33 @@ Full product catalog grouped by vendor and category.
 |-------|------|----------|------------|
 | 5320-16P-4XE | Edge | 16-port compact edge / branch access | $2,495 |
 | 5320-24P-8XE | Edge | 24-port edge access with extended temp | $3,495 |
-| 5320-48P-8XE | Edge | 48-port edge access with extended temp | $5,495 |
+| 5320-48P-8XE | Edge | 48-port edge access with extended temp | $10,265 |
 | 5320-16P-4XE-FAN | Edge | Fanless 16-port for quiet environments | $2,695 |
-| 5420F-24P-4XE | Access | 24-port fixed-PSU campus access | $4,495 |
-| 5420F-48P-4XE | Access | 48-port fixed-PSU campus access | $6,495 |
+| 5420F-24P-4XE | Access | 24-port fixed-PSU campus access | $8,100 |
+| 5420F-48P-4XE | Access | 48-port fixed-PSU campus access | $12,454 |
 | 5420F-24S-4XE | Access | 24-port multi-gig fixed-PSU access | $5,495 |
 | 5420M-24W-4YE | Access | 24-port modular-PSU campus access | $5,995 |
 | 5420M-48W-4YE | Access | 48-port modular-PSU campus access | $7,995 |
 | 5420M-24S-4YE | Access | 24-port multi-gig modular access | $6,995 |
-| 5520-24T | Access | 24-port campus access | $4,995 |
+| 5520-24T | Access | 24-port campus access | $7,075 |
 | 5520-24W | Access | 24-port PoE campus access | $5,995 |
-| 5520-48T | Access | 48-port campus access | $6,995 |
+| 5520-48T | Access | 48-port campus access | $10,882 |
 | 5520-48W | Access | 48-port PoE campus access | $8,495 |
 | 5520-12MW-36W | Access | 12-port multi-gig + 36-port GbE access | $9,495 |
 | 5520-48SE | Access | 48-port SFP fiber access | $7,495 |
 | 5520-24X | Access | 24-port 10G SFP+ aggregation | $9,995 |
-| 5720-24MXW | Aggregation | 24-port multi-rate campus aggregation | $12,995 |
-| 5720-48MXW | Aggregation | 48-port multi-rate campus aggregation | $19,995 |
+| 5720-24MXW | Aggregation | 24-port multi-rate campus aggregation | $27,052 |
+| 5720-48MXW | Aggregation | 48-port multi-rate campus aggregation | $34,111 |
 | 7520-48XT-6C | Core | 48-port 10G copper core / aggregation | $29,995 |
-| 7520-48Y-8C | Core | 48-port 25G fiber core / aggregation | $34,995 |
-| 7520-48YE-8CE | Core | 48-port 25G MACsec core (no stacking) | $39,995 |
-| 7720-32C | Spine | 32-port 100G spine / data center core | $44,995 |
+| 7520-48Y-8C | Core | 48-port 25G fiber core / aggregation | $36,823 |
+| 7520-48YE-8CE | Core | 48-port 25G MACsec core (no stacking) | $36,823 |
+| 7720-32C | Spine | 32-port 100G spine / data center core | $44,700 |
 | 4120-24MW-4Y | Cloud-Managed | 24-port multi-gig cloud-managed access | $7,995 |
 | 4120-48MW-4Y | Cloud-Managed | 48-port multi-gig cloud-managed access | $11,995 |
 | 4220-12P-4X | Cloud-Managed | 12-port compact cloud-managed PoE | $2,495 |
-| 4220-24P-4X | Cloud-Managed | 24-port cloud-managed PoE access | $3,995 |
-| 4220-48P-4X | Cloud-Managed | 48-port cloud-managed PoE access | $5,995 |
-| 4220-8MW-40P-4X | Cloud-Managed | 48-port multi-gig/GbE cloud-managed | $7,495 |
+| 4220-24P-4X | Cloud-Managed | 24-port cloud-managed PoE access | $4,395 |
+| 4220-48P-4X | Cloud-Managed | 48-port cloud-managed PoE access | $6,595 |
+| 4220-8MW-40P-4X | Cloud-Managed | 48-port multi-gig/GbE cloud-managed | $8,795 |
 
 <details><summary>5320-16P-4XE — 16-port compact edge / branch access</summary>
 

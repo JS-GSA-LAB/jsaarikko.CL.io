@@ -65,7 +65,7 @@ tags: [cost-analysis]
 
 | Component | Model | Price |
 |-----------|-------|-------|
-| WiFi 7 AP (x4) | AP5020 | $1,368 ea ($5,472) |
+| WiFi 7 AP (x4) | AP5020 | $2,639 ea ($5,472) |
 | 24-Port PoE Switch | 5520-24W | $4,349 |
 | Gateway/Firewall | 3rd-party (est.) | $650 |
 | **Hardware Total** | | **$10,471** |
@@ -151,7 +151,7 @@ tags: [cost-analysis]
 |--------|-------|-------|-----|-------|----------|-------|
 | Ubiquiti | U7-Pro | $189 | U7-Pro Wall | $199 | U7-Pro Max | $280 |
 | Fortinet | FAP-231K | $366 | FAP-243K | $652 | FAP-441K | $1,043 |
-| Extreme | AP4020 | $755 | — | — | AP5020 | $1,368 |
+| Extreme | AP4020 | $1,456 | — | — | AP5020 | $1,368 |
 | Cisco | CW9164 (6E) | $1,136 | CW9176I | $1,266 | CW9178I | $1,520 |
 | Aruba | AP-734 | ~$1,300 | AP-735 | $1,396 | AP-745 | ~$1,800 |
 | Juniper | — | — | — | — | AP47 | $2,238 |

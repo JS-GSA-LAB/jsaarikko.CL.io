@@ -30,9 +30,9 @@ tags: [category]
 
 | Model | Type | Price | License |
 |-------|------|-------|---------|
-| AP5020 | Wi-Fi 7 Indoor Flagship | $1,495 | Included with ExtremeCloud IQ Pilot |
-| AP4000 | Wi-Fi 6E Indoor | $1,095 | Included with XIQ |
-| AP3000 | Wi-Fi 6 Indoor | $695 | Included with XIQ |
+| AP5020 | Wi-Fi 7 Indoor Flagship | $2,639 | Included with ExtremeCloud IQ Pilot |
+| AP4000 | Wi-Fi 6E Indoor | $1,374 | Included with XIQ |
+| AP3000 | Wi-Fi 6 Indoor | $714 | Included with XIQ |
 
 > ExtremeCloud IQ: Navigator (free), Pilot ($150/AP/yr), or CoPilot ($180/AP/yr)
 

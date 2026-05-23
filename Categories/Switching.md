@@ -29,8 +29,8 @@ tags: [category]
 
 | Model | Type | Price | License |
 |-------|------|-------|---------|
-| 5520-24T | 24-port Campus Access | $3,995 | XIQ Pilot optional |
-| 5520-48T | 48-port Campus Access | $6,995 | XIQ Pilot optional |
+| 5520-24T | 24-port Campus Access | $7,075 | XIQ Pilot optional |
+| 5520-48T | 48-port Campus Access | $10,882 | XIQ Pilot optional |
 | 5720-24MW | Multi-rate Campus | $8,495 | XIQ Pilot optional |
 
 > No mandatory per-switch cloud license. XIQ Navigator is free. Pilot adds AIOps at ~$100/switch/yr.

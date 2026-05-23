@@ -3,6 +3,11 @@ tags: [replacements]
 ---
 # Competitive Replacements
 
+> [!info]
+> **Pricing source (Extreme):** Official Extreme PL US 05-01-2026 product price book ("Product List Price" column). Updated 2026-05-22.
+> **Pricing source (competitors):** Market street pricing from CDW / vendor websites — may not be apples-to-apples vs Extreme list. Treat the dollar deltas as directional, not strict like-for-like, until competitor list/MSRP is independently verified.
+
+
 Displacement recommendations grouped by source vendor.
 
 ## Replacing [[Cisco]]
@@ -11,7 +16,7 @@ Displacement recommendations grouped by source vendor.
 
 **Match:** EXCELLENT
 
-Direct Wi-Fi 7 flagship replacement. Both tri-band with comparable performance. Extreme's AP5020 delivers 18.4 Gbps aggregate throughput at 40% lower list price ($1,495 vs $2,495) with no mandatory licensing.
+Direct Wi-Fi 7 flagship replacement. Both tri-band with comparable performance. Extreme's AP5020 delivers 18.4 Gbps aggregate throughput at 40% lower list price ($2,639 vs $2,495) with no mandatory licensing.
 
 **Advantages:**
 - 40% lower hardware cost
@@ -69,7 +74,7 @@ Juniper's Wi-Fi 7 flagship with best-in-class Marvis AI. Comparable specs and pe
 
 **Match:** EXCELLENT
 
-Direct Wi-Fi 6E replacement. Both tri-band 802.11ax. Extreme AP4000 at $1,095 vs Cisco C9136I at $1,895 — 42% savings before licensing.
+Direct Wi-Fi 6E replacement. Both tri-band 802.11ax. Extreme AP4000 at $1,374 vs Cisco C9136I at $1,895 — 42% savings before licensing.
 
 **Advantages:**
 - 42% lower hardware cost
@@ -87,7 +92,7 @@ Direct Wi-Fi 6E replacement. Both tri-band 802.11ax. Extreme AP4000 at $1,095 vs
 
 **Match:** EXCELLENT
 
-Direct replacement for enterprise access switching. Extreme 5520-48T provides comparable port density and PoE with Fabric Connect automation. $2,000 lower list price and no mandatory DNA license saves $1,200+/yr per switch.
+Direct replacement for enterprise access switching. Extreme 5520-48T provides comparable port density and PoE with Fabric Connect automation. $10,882 lower list price and no mandatory DNA license saves $1,200+/yr per switch.
 
 **Advantages:**
 - $2,000 lower list price ($6,995 vs $8,995)
@@ -352,7 +357,7 @@ Extreme 5520-48T upgrades from Aruba CX with double the PoE budget and Fabric Co
 
 **Match:** GOOD
 
-Extreme AP5020 at $300 less with no mandatory subscription. Trades Marvis AI for CoPilot + Digital Twin and adds universal hardware flexibility.
+Extreme AP5020 at $2,639 less with no mandatory subscription. Trades Marvis AI for CoPilot + Digital Twin and adds universal hardware flexibility.
 
 **Advantages:**
 - $304 lower list price
@@ -437,7 +442,7 @@ Extreme 5520-48T provides standalone enterprise switching that Fortinet lacks. F
 
 **Match:** EXCELLENT
 
-Extreme AP5020 replaces R770 with comparable wireless performance plus superior cloud management and fabric integration. $100 less with free management.
+Extreme AP5020 replaces R770 with comparable wireless performance plus superior cloud management and fabric integration. $2,639 less with free management.
 
 **Advantages:**
 - $100 lower list price
@@ -567,7 +572,7 @@ Extreme 5720-24MW provides multi-rate campus switching with Fabric Connect. Lowe
 
 **Match:** GOOD
 
-Extreme AP5020 is a proven Wi-Fi 7 flagship with $600 lower list price and no mandatory CUE subscription. Free XIQ Navigator vs Arista CUE at $175/AP/yr.
+Extreme AP5020 is a proven Wi-Fi 7 flagship with $2,639 lower list price and no mandatory CUE subscription. Free XIQ Navigator vs Arista CUE at $175/AP/yr.
 
 **Advantages:**
 - $600 lower list price ($1,495 vs $2,095)
@@ -587,7 +592,7 @@ Extreme AP5020 is a proven Wi-Fi 7 flagship with $600 lower list price and no ma
 
 **Match:** GOOD
 
-Extreme AP4000 at $300 less with comparable Wi-Fi 6E performance and no mandatory subscription.
+Extreme AP4000 at $1,374 less with comparable Wi-Fi 6E performance and no mandatory subscription.
 
 **Advantages:**
 - $300 lower list price ($1,095 vs $1,395)
@@ -649,7 +654,7 @@ Extreme 5720-24MW provides modern multi-rate campus core with Fabric Connect, su
 
 **Match:** EXCELLENT
 
-Extreme AP4000 offers comparable Wi-Fi 6E performance at $200 less with superior cloud management, AI radio optimization, and Digital Twin.
+Extreme AP4000 offers comparable Wi-Fi 6E performance at $1,374 less with superior cloud management, AI radio optimization, and Digital Twin.
 
 **Advantages:**
 - $200 lower list price ($1,095 vs $1,295)
