@@ -51,6 +51,7 @@ tags: [index, moc]
 ## Products & Replacements
 - [[Product Catalog]]
 - [[Competitive Replacements]]
+- [[Ruckus Substitution Playbook]] — full Ruckus → Extreme playbook with Belden M&A risk framing (v2)
 - [[EOS-EOL Database]]
 
 ## NASPO / Public Sector
