@@ -147,6 +147,18 @@ See [[Product Catalog]] for full specs.
 |-------|----------|------------|
 | FG-40F | Branch NGFW + SD-WAN | $495 |
 
+## Product Notes — verified 2026-07-02 (fortinet.com / docs.fortinet.com)
+
+Source of truth = Fortinet-owned datasheets + FortiSwitchOS 7.6.6 feature matrix. Prices are **not** published by Fortinet (dashboard prices are estimates).
+
+**Access Points (FortiAP):** Current lineup is the **K-series** (Wi-Fi 7): FAP-441K/443K (flagship 4x4, 21.3 Gbps, 2x10GbE, 802.3bt), 241K/243K (mid), 231K (entry, single 5GbE-class port), 244K (outdoor), 222KL (outdoor + LoRaWAN/LTE/GNSS — **dual-band, ~3.57 Gbps, no 6 GHz**). Newer official models not yet in dashboard: **FAP-221K, FAP-23JK, FAP-432G (6E outdoor 4x4), FAP-432FR (C1D2), FAP-831F (8x8)**. The older 6E/6 models (431G/433G/231G, 431F/433F/231F, U231F/U431F) have had their spec datasheets **retired from fortinet.com** — treat as superseded/unverified.
+
+**Switches (FortiSwitch):** FS-1024E is campus-core/DC (24x 10G SFP+ + **2x 100G/40G QSFP28**) and **supports MACsec** (PSK/dynamic-CAK). FS-448E has 4x 10G SFP+ uplinks; base has no PoE (PoE via -POE 421W / -FPOE 772W). FS-248E-FPOE is a **48-port** 802.3af/at 740W switch with 4x GE SFP (no mGig, no 10G). MACsec available on select models (FS-1024E, FS-624F). Managed via FortiGate/FortiLink — no per-switch license.
+
+**Fabric:** Fortinet has **no campus L2/L3 data-plane fabric** (no SPB/EVPN-VXLAN for campus). "Security Fabric" = a security/management integration architecture (FortiOS). Campus LAN convergence = **FortiLink** (FortiGate-managed FortiSwitch/FortiAP), packaged as **Secure SD-Branch**. WAN = **Fortinet Secure SD-WAN**. (EVPN/VXLAN appears only on data-center FortiSwitch models.) → Legit Extreme differentiator: true campus **Fabric Connect (SPB)**.
+
+**Cloud:** **FortiEdge Cloud** is the current controller-less cloud manager for standalone FortiAP/FortiSwitch/FortiExtender; **FortiLAN Cloud is its retired predecessor**. **FortiCloud** = the account/identity umbrella (SSO/IAM/Organizations+OUs), not the LAN manager. Other services under FortiCloud: FortiGate Cloud, FortiManager Cloud, FortiSASE. **EOL nuance:** only FortiEdge Cloud **multi-tenancy license extensions** end **Dec 31 2026** (migrate to FortiCloud Organization/OUs) — the product is **not** sunset.
+
 ## Related
 
 - [[vs Fortinet]] — Battle card
