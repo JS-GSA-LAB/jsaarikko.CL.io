@@ -3,18 +3,19 @@ vendor_code: RKUS
 color: "#fdb813"
 tagline: "High-performance wireless"
 flagship: "Ruckus One, ICX Switches"
-ownership: "Vistance Networks → Belden (pending close 2H 2026)"
+ownership: "Part of Belden Inc. (acquisition CLOSED 2026-07-01, from Vistance Networks)"
+updated: 2026-07-02
 aliases:
   - Ruckus
   - Ruckus - Vistance
   - Ruckus - Belden
 tags: [vendor]
 ---
-# Ruckus — Vistance → Belden (pending close 2H 2026)
+# RUCKUS — part of Belden (acquisition CLOSED 2026-07-01)
 
 > **High-performance wireless**
 > Flagship: Ruckus One, ICX Switches
-> **M&A:** Belden Inc. (NYSE: BDC) announced acquisition of RUCKUS from Vistance Networks for ~$1.85B on 2026-04-30. Expected close 2H 2026.
+> **M&A:** Belden Inc. (NYSE: BDC) **CLOSED** its acquisition of RUCKUS from Vistance Networks (~$1.85B) on **2026-07-01**. Announced 2026-04-30; deal is now complete. RUCKUS is a Belden business unit.
 
 ## M&A Status (updated 2026-05-22)
 
@@ -24,7 +25,7 @@ tags: [vendor]
 | Seller | **Vistance Networks** (NASDAQ: VISN) — the renamed remaining CommScope entity post broadband/cable divestiture to Amphenol |
 | Deal Size | **~$1.85B** |
 | Announced | 2026-04-30 |
-| Expected Close | 2H 2026 (subject to regulatory approval) |
+| **Closed** | **2026-07-01** — acquisition complete; RUCKUS now a Belden business unit |
 | Financing | Fully committed J.P. Morgan debt; cash/debt mix not disclosed |
 | Brand Retention | **Not announced** — RUCKUS brand in active use pre-close; longer-term not addressed in release |
 | Belden's Framing | "Accelerating its transformation into a full-stack networking solutions provider" |
@@ -42,6 +43,37 @@ The old story — "CommScope debt = vendor viability risk" — is **resolved by 
 - 🟢 **Roadmap intact** pre-close: Wi-Fi 7 (LAFC at BMO Stadium), Nokia fiber-LAN partnership, DoDIN-approved ICX via Carahsoft, Pro AV ICX expansion all shipping in 2026
 
 **Sources:** Belden investor release 2026-04-30; SDxCentral; Light Reading; Pulse 2.0; Alston & Bird (Vistance counsel).
+
+## Product Notes — verified 2026-07-02
+
+All facts verified against official **ruckusnetworks.com / commscope.com** sources on 2026-07-02.
+
+**Ownership:** Belden acquisition **CLOSED 2026-07-01** (acquired from Vistance Networks, the renamed remaining CommScope entity). RUCKUS is now a Belden business unit; brand retained in active use.
+
+**Cloud & management stack:**
+- **RUCKUS One** — cloud management platform (subscription; ~$150/AP/yr, ~$120/switch/yr)
+- **RUCKUS AI** — AIOps / assurance layer within RUCKUS One
+- **SmartZone** — on-prem controller (perpetual license)
+- **RUCKUS Edge** — new edge platform (Edge 144 appliance + virtual; VXLAN fabric/services at the edge)
+- **RUCKUS Unleashed** — controller-less small-site management
+
+**SD-WAN:** RUCKUS **does** have an SD-WAN offering — **RUCKUS WAN Gateway (RWG)**. The prior competitive framing "no SD-WAN offering" was **wrong** and has been corrected in the dashboard.
+
+**Access Points (current):**
+- **Wi-Fi 7 indoor:** R770 (flagship, BeamFlex+), R670 (mid), **R575** (mid, tri-band, dual 2.5GbE LAG — added), R370 (entry)
+- **Wi-Fi 7 outdoor:** **T670** and **T670sn** — **REAL products** (previously mis-flagged as fabricated; now confirmed at ruckusnetworks.com/products/wireless-access-points/t670 and /t670sn). 9.3 Gbps tri-band US/Canada, 6.45 Gbps dual-band global; 2x2:2. T670sn has a programmable/switchable **sector antenna** for stadiums/arenas.
+- **Wi-Fi 7 wall-plate:** **H670** (5GbE uplink + 4x 1/2.5GbE downlinks, 2 PoE-out) — added; corrected from prior Wi-Fi 6E / $1,095 entry to Wi-Fi 7 / ~$695 est.
+- **Corrections:** R760 (Wi-Fi 6E flagship) max rate corrected **7.8 → 8.35 Gbps** (datasheet 8,348 Mb/s). **R670X does not exist** — fabricated SKU removed. R650 soft-flagged as possibly EOL (not on current AP index).
+
+**Switches (ICX):**
+- **ICX 8200 / 8100** — current access series (**new entry**). ICX 8200-48ZP2 = mGig (1/2.5/5/10G), 60/90W 802.3bt, up to 8x 25G SFP28 uplink/stack, VXLAN. **MACsec NOT supported on 8200.**
+- **ICX 7550 / 7850** — mid/aggregation-core. **MACsec supported on 7550 and 7850-48FS.**
+- **ICX 7150 / 7650** — legacy.
+
+### Could-not-verify caveats (carried into dashboard notes)
+- **R650 EOL status** — not on the current ruckusnetworks.com AP index; may be EOL. Soft-flagged `[VERIFY]`, not removed.
+- **R575 / H670 / ICX 8200 pricing** — specs verified; list prices are **estimates** (no CDW/partner-portal confirmation). Flagged `[!]` in the built dashboard.
+- **ICX 7550 per-SKU PoE wattages** — not re-verified in this pass.
 
 ## Market Position
 
